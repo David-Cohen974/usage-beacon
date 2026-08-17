@@ -3,6 +3,7 @@ import Foundation
 enum ProviderKind: String, Codable, CaseIterable, Identifiable {
     case cursorPersonal
     case cursorAdmin
+    case claudePersonal
     case anthropicAdmin
     case manual
     case customREST
@@ -15,6 +16,8 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
             return "Cursor Personal"
         case .cursorAdmin:
             return "Cursor Admin"
+        case .claudePersonal:
+            return "Claude Personal"
         case .anthropicAdmin:
             return "Anthropic Admin"
         case .manual:
@@ -30,6 +33,8 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
             return "Signs into Cursor like the web UI and reads your personal usage page. No admin API key required."
         case .cursorAdmin:
             return "Uses Cursor's Team Admin API and expects a Team API key, not a User API key."
+        case .claudePersonal:
+            return "Signs into Claude like the web UI and reads your own usage. No admin API key required."
         case .anthropicAdmin:
             return "Uses Anthropic's admin cost report API."
         case .manual:
@@ -45,12 +50,32 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
             return "Cursor Personal"
         case .cursorAdmin:
             return "Cursor"
+        case .claudePersonal:
+            return "Claude Personal"
         case .anthropicAdmin:
             return "Claude"
         case .manual:
             return "Manual Budget"
         case .customREST:
             return "REST Provider"
+        }
+    }
+
+    var supportsTodaySpend: Bool {
+        switch self {
+        case .claudePersonal:
+            return false
+        case .cursorPersonal, .cursorAdmin, .anthropicAdmin, .manual, .customREST:
+            return true
+        }
+    }
+
+    var supportsLastPromptCost: Bool {
+        switch self {
+        case .claudePersonal, .anthropicAdmin:
+            return false
+        case .cursorPersonal, .cursorAdmin, .manual, .customREST:
+            return true
         }
     }
 }
@@ -197,6 +222,42 @@ struct CursorAdminSettings: Codable, Equatable {
     var useOverallSpend: Bool = true
 }
 
+struct ClaudePersonalSettings: Codable, Equatable {
+    var usagePageURL: String = "https://claude.ai/settings/usage"
+    var monthlyBudgetOverrideUSD: Decimal = 0
+    var budgetResetDay: Int = 1
+
+    init(
+        usagePageURL: String = "https://claude.ai/settings/usage",
+        monthlyBudgetOverrideUSD: Decimal = 0,
+        budgetResetDay: Int = 1
+    ) {
+        self.usagePageURL = usagePageURL
+        self.monthlyBudgetOverrideUSD = monthlyBudgetOverrideUSD
+        self.budgetResetDay = max(1, min(budgetResetDay, 28))
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case usagePageURL
+        case monthlyBudgetOverrideUSD
+        case budgetResetDay
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        usagePageURL = try container.decodeIfPresent(String.self, forKey: .usagePageURL)
+            ?? "https://claude.ai/settings/usage"
+        monthlyBudgetOverrideUSD = try container.decodeIfPresent(
+            Decimal.self,
+            forKey: .monthlyBudgetOverrideUSD
+        ) ?? 0
+        budgetResetDay = max(
+            1,
+            min(try container.decodeIfPresent(Int.self, forKey: .budgetResetDay) ?? 1, 28)
+        )
+    }
+}
+
 struct AnthropicAdminSettings: Codable, Equatable {
     var apiBaseURL: String = "https://api.anthropic.com"
     var workspaceID: String = ""
@@ -234,6 +295,7 @@ struct StoredProvider: Identifiable, Codable, Equatable {
     var isEnabled: Bool
     var cursorPersonal: CursorPersonalSettings?
     var cursor: CursorAdminSettings?
+    var claudePersonal: ClaudePersonalSettings?
     var anthropic: AnthropicAdminSettings?
     var manual: ManualBudgetSettings?
     var customREST: CustomRESTSettings?
@@ -252,30 +314,42 @@ struct StoredProvider: Identifiable, Codable, Equatable {
         case .cursorPersonal:
             cursorPersonal = CursorPersonalSettings()
             cursor = nil
+            claudePersonal = nil
             anthropic = nil
             manual = nil
             customREST = nil
         case .cursorAdmin:
             cursorPersonal = nil
             cursor = CursorAdminSettings()
+            claudePersonal = nil
+            anthropic = nil
+            manual = nil
+            customREST = nil
+        case .claudePersonal:
+            cursorPersonal = nil
+            cursor = nil
+            claudePersonal = ClaudePersonalSettings()
             anthropic = nil
             manual = nil
             customREST = nil
         case .anthropicAdmin:
             cursorPersonal = nil
             cursor = nil
+            claudePersonal = nil
             anthropic = AnthropicAdminSettings()
             manual = nil
             customREST = nil
         case .manual:
             cursorPersonal = nil
             cursor = nil
+            claudePersonal = nil
             anthropic = nil
             manual = ManualBudgetSettings()
             customREST = nil
         case .customREST:
             cursorPersonal = nil
             cursor = nil
+            claudePersonal = nil
             anthropic = nil
             manual = nil
             customREST = CustomRESTSettings()
@@ -323,6 +397,22 @@ struct RawBudgetSnapshot {
     var spentTodayUSD: Decimal? = nil
     var lastPromptCostUSD: Decimal?
     var notes: [String]
+    var usageWindows: [UsageWindowSnapshot] = []
+}
+
+enum UsageWindowKind: String, Equatable {
+    case fiveHour
+    case sevenDay
+    case modelSpecific
+}
+
+struct UsageWindowSnapshot: Identifiable, Equatable {
+    var kind: UsageWindowKind
+    var title: String
+    var usedPercent: Decimal
+    var resetsAt: Date?
+
+    var id: String { kind.rawValue + title }
 }
 
 struct ProviderSnapshotState: Identifiable, Equatable {
@@ -342,6 +432,7 @@ struct ProviderSnapshotState: Identifiable, Equatable {
     var lastUpdatedAt: Date?
     var notes: [String]
     var errorMessage: String?
+    var usageWindows: [UsageWindowSnapshot]
 
     static func placeholder(from provider: StoredProvider) -> ProviderSnapshotState {
         ProviderSnapshotState(
@@ -360,7 +451,8 @@ struct ProviderSnapshotState: Identifiable, Equatable {
             lastPromptCostUSD: nil,
             lastUpdatedAt: nil,
             notes: [],
-            errorMessage: nil
+            errorMessage: nil,
+            usageWindows: []
         )
     }
 }

@@ -7,6 +7,13 @@ enum DebugCommandRunner {
             let customURL = arguments.indices.contains(index + 1) ? arguments[index + 1] : nil
             return .debugCursorPersonal(pageURLOverride: customURL)
         }
+        if let index = arguments.firstIndex(of: "--debug-claude-personal") {
+            let customURL = arguments.indices.contains(index + 1) ? arguments[index + 1] : nil
+            return .debugClaudePersonal(pageURLOverride: customURL)
+        }
+        if arguments.contains("--debug-calendar") {
+            return .debugCalendar
+        }
         return nil
     }
 
@@ -15,8 +22,137 @@ enum DebugCommandRunner {
         switch command {
         case let .debugCursorPersonal(pageURLOverride):
             await runCursorPersonalDiagnostic(pageURLOverride: pageURLOverride)
+        case let .debugClaudePersonal(pageURLOverride):
+            await runClaudePersonalDiagnostic(pageURLOverride: pageURLOverride)
+        case .debugCalendar:
+            runCalendarDiagnostic()
         }
         NSApplication.shared.terminate(nil)
+    }
+
+    @MainActor
+    private static func runCalendarDiagnostic() {
+        let service = WorkingDayService()
+        let calendars = service.availableCalendars(refreshStore: true)
+        let selectedIDs = Set(ConfigurationStore().load().settings.selectedCalendarIDs)
+        let report: [String: Any] = [
+            "authorization": calendarAccessDescription(service.authorizationState),
+            "availableCalendarCount": calendars.count,
+            "selectedCalendarCount": selectedIDs.count,
+            "matchedSelectedCalendarCount": calendars.filter { selectedIDs.contains($0.id) }.count
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]),
+           let string = String(data: data, encoding: .utf8) {
+            print(string)
+        }
+    }
+
+    private static func calendarAccessDescription(_ state: CalendarAccessState) -> String {
+        switch state {
+        case .notDetermined: return "notDetermined"
+        case .fullAccess: return "fullAccess"
+        case .writeOnly: return "writeOnly"
+        case .denied: return "denied"
+        case .restricted: return "restricted"
+        case .unknown: return "unknown"
+        }
+    }
+
+    @MainActor
+    private static func runClaudePersonalDiagnostic(pageURLOverride: String?) async {
+        let configuration = ConfigurationStore().load()
+        let provider = configuration.providers.first(where: { $0.kind == .claudePersonal })
+        let pageURL = pageURLOverride
+            ?? provider?.claudePersonal?.usagePageURL
+            ?? ClaudePersonalSettings().usagePageURL
+        let sessionController = ClaudeDashboardSessionController.shared
+
+        var report: [String: Any] = [
+            "date": ISO8601DateFormatter().string(from: Date()),
+            "pageURL": pageURL
+        ]
+
+        let sessionState = await sessionController.refreshSessionState(pageURL: pageURL)
+        report["sessionState"] = sessionState.description
+
+        if let provider {
+            do {
+                let snapshot = try await ClaudePersonalProvider.fetch(
+                    provider: provider,
+                    now: Date()
+                )
+                report["liveProviderSnapshot"] = [
+                    "spentUSD": snapshot.spentUSD.description,
+                    "remainingUSD": snapshot.remainingUSD?.description ?? "nil",
+                    "usageWindows": snapshot.usageWindows.map {
+                        [
+                            "title": $0.title,
+                            "usedPercent": $0.usedPercent.description,
+                            "resetsAt": $0.resetsAt.map(ISO8601DateFormatter().string) ?? "nil"
+                        ]
+                    },
+                    "notes": snapshot.notes
+                ] as [String: Any]
+            } catch {
+                report["liveProviderError"] = error.localizedDescription
+            }
+        }
+
+        do {
+            let page = try await sessionController.loadUsagePage(pageURL: pageURL)
+            report["pageTitle"] = page.title
+            report["resolvedURL"] = page.urlString
+            report["looksUnauthenticated"] = page.looksUnauthenticated
+            report["looksUsageLike"] = page.looksUsageLike
+            report["bodySample"] = String(page.bodyText.prefix(5000))
+            report["bodyLength"] = page.bodyText.count
+            report["links"] = page.anchorHrefs.filter {
+                $0.localizedCaseInsensitiveContains("claude.ai")
+                    || $0.localizedCaseInsensitiveContains("anthropic.com")
+            }
+            report["resourceURLs"] = page.resourceURLs
+            report["nextDataSample"] = page.nextDataSample ?? ""
+            report["currencyMatches"] = currencyMatches(in: page.bodyText)
+
+            if ClaudePersonalProvider.usageEndpoint(from: page) != nil {
+                report["parserMode"] = "authenticated usage endpoint"
+            } else {
+                let parsed = try ClaudePersonalUsageParser.parse(
+                    page: page,
+                    now: Date(),
+                    budgetOverrideUSD: {
+                        guard let value = provider?.claudePersonal?.monthlyBudgetOverrideUSD, value > 0 else {
+                            return nil
+                        }
+                        return value
+                    }()
+                )
+                report["parserMode"] = "page text fallback"
+                report["parsed"] = [
+                    "monthlyBudgetUSD": parsed.monthlyBudgetUSD?.description ?? "nil",
+                    "spentUSD": parsed.spentUSD.description,
+                    "remainingUSD": parsed.remainingUSD?.description ?? "nil",
+                    "usageWindows": parsed.usageWindows.map {
+                        [
+                            "title": $0.title,
+                            "usedPercent": $0.usedPercent.description,
+                            "resetsAt": $0.resetsAt.map(ISO8601DateFormatter().string) ?? "nil"
+                        ]
+                    },
+                    "notes": parsed.notes
+                ] as [String: Any]
+            }
+        } catch {
+            report["error"] = error.localizedDescription
+        }
+
+        if JSONSerialization.isValidJSONObject(report),
+           let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]),
+           let string = String(data: data, encoding: .utf8) {
+            print(string)
+        } else {
+            print(report)
+        }
     }
 
     @MainActor
@@ -46,6 +182,7 @@ enum DebugCommandRunner {
                     "spentUSD": snapshot.spentUSD.description,
                     "remainingUSD": snapshot.remainingUSD?.description ?? "nil",
                     "spentTodayUSD": snapshot.spentTodayUSD?.description ?? "nil",
+                    "lastPromptCostUSD": snapshot.lastPromptCostUSD?.description ?? "nil",
                     "notes": snapshot.notes
                 ]
             } catch {
@@ -72,7 +209,6 @@ enum DebugCommandRunner {
                 from: page.resourceURLs,
                 sessionController: sessionController
             )
-
             let parsed = try CursorPersonalUsageParser.parse(
                 page: page,
                 now: Date(),
@@ -159,4 +295,6 @@ private func apiProbeResults(
 
 enum DebugCommand {
     case debugCursorPersonal(pageURLOverride: String?)
+    case debugClaudePersonal(pageURLOverride: String?)
+    case debugCalendar
 }

@@ -61,6 +61,8 @@ extension ProviderKind {
             return "sparkles.rectangle.stack"
         case .cursorAdmin:
             return "person.2.crop.square.stack"
+        case .claudePersonal:
+            return "brain.filled.head.profile"
         case .anthropicAdmin:
             return "brain.head.profile"
         case .manual:
@@ -76,6 +78,8 @@ extension ProviderKind {
             return [BeaconPalette.teal, BeaconPalette.cyan]
         case .cursorAdmin:
             return [BeaconPalette.coral, BeaconPalette.amber]
+        case .claudePersonal:
+            return [BeaconPalette.rose, BeaconPalette.peach]
         case .anthropicAdmin:
             return [BeaconPalette.rose, BeaconPalette.amber]
         case .manual:
@@ -87,7 +91,15 @@ extension ProviderKind {
 }
 
 extension ProviderSnapshotState {
+    var primaryUsageWindow: UsageWindowSnapshot? {
+        usageWindows.first(where: { $0.kind == .sevenDay }) ?? usageWindows.first
+    }
+
     var utilizationRatio: Double? {
+        if let primaryUsageWindow {
+            return min(max(primaryUsageWindow.usedPercent.doubleValue / 100, 0), 1)
+        }
+
         guard
             let monthlyBudgetUSD,
             monthlyBudgetUSD > 0,
@@ -133,21 +145,21 @@ struct BeaconBackdrop: View {
                 colors: [BeaconPalette.peach, BeaconPalette.coral],
                 size: 340,
                 offset: animate ? CGSize(width: -130, height: -210) : CGSize(width: -190, height: -280),
-                opacity: 0.90
+                opacity: 0.45
             )
 
             GlowOrb(
                 colors: [BeaconPalette.cyan, BeaconPalette.teal],
                 size: 320,
                 offset: animate ? CGSize(width: 200, height: 150) : CGSize(width: 150, height: 230),
-                opacity: 0.78
+                opacity: 0.39
             )
 
             GlowOrb(
                 colors: [BeaconPalette.amber, BeaconPalette.peach],
                 size: 220,
                 offset: animate ? CGSize(width: 150, height: -190) : CGSize(width: 220, height: -130),
-                opacity: 0.58
+                opacity: 0.29
             )
 
             Rectangle()

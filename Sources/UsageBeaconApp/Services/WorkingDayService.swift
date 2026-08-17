@@ -2,6 +2,19 @@ import AppKit
 import EventKit
 import Foundation
 
+enum CalendarAccessState: Equatable {
+    case notDetermined
+    case fullAccess
+    case writeOnly
+    case denied
+    case restricted
+    case unknown
+
+    var canReadEvents: Bool {
+        self == .fullAccess
+    }
+}
+
 @MainActor
 final class WorkingDayService {
     private let eventStore = EKEventStore()
@@ -14,45 +27,48 @@ final class WorkingDayService {
     }
 
     var isAuthorized: Bool {
-        let status = EKEventStore.authorizationStatus(for: .event)
-        if #available(macOS 14.0, *) {
-            return status == .fullAccess
-        } else {
-            return status == .authorized
+        authorizationState.canReadEvents
+    }
+
+    var authorizationState: CalendarAccessState {
+        switch EKEventStore.authorizationStatus(for: .event) {
+        case .notDetermined:
+            return .notDetermined
+        case .fullAccess, .authorized:
+            return .fullAccess
+        case .writeOnly:
+            return .writeOnly
+        case .denied:
+            return .denied
+        case .restricted:
+            return .restricted
+        @unknown default:
+            return .unknown
         }
     }
 
-    func requestAccess() async -> Bool {
-        if #available(macOS 14.0, *) {
-            let status = EKEventStore.authorizationStatus(for: .event)
-            switch status {
-            case .fullAccess:
-                return true
-            case .notDetermined:
-                return await Self.requestFullAccess()
-            case .writeOnly, .denied, .restricted:
-                return false
-            @unknown default:
-                return false
-            }
-        } else {
-            let status = EKEventStore.authorizationStatus(for: .event)
-            switch status {
-            case .authorized, .fullAccess:
-                return true
-            case .notDetermined:
-                return await Self.requestLegacyAccess()
-            case .writeOnly, .denied, .restricted:
-                return false
-            @unknown default:
-                return false
-            }
+    func requestAccess() async -> CalendarAccessState {
+        switch authorizationState {
+        case .fullAccess:
+            eventStore.reset()
+            return .fullAccess
+        case .notDetermined:
+            _ = await Self.requestFullAccess()
+            // EventKit completes permission requests on its XPC queue. Once that
+            // nonisolated callback finishes, refresh the main-actor store's old cache.
+            eventStore.reset()
+            return authorizationState
+        case .writeOnly, .denied, .restricted, .unknown:
+            return authorizationState
         }
     }
 
-    func availableCalendars() -> [CalendarSource] {
+    func availableCalendars(refreshStore: Bool = false) -> [CalendarSource] {
         guard isAuthorized else {
             return []
+        }
+        if refreshStore {
+            eventStore.reset()
         }
 
         return eventStore.calendars(for: .event)
@@ -259,25 +275,32 @@ final class WorkingDayService {
     }
 
     nonisolated private static func requestFullAccess() async -> Bool {
-        let eventStore = EKEventStore()
+        let permissionStore = EKEventStore()
         return await withCheckedContinuation { continuation in
-            let resumer = AccessRequestResumer(continuation)
-            eventStore.requestFullAccessToEvents { granted, _ in
+            let resumer = CalendarAccessRequestResumer(continuation)
+            permissionStore.requestFullAccessToEvents { granted, _ in
                 resumer.resume(with: granted)
             }
         }
     }
 
-    nonisolated private static func requestLegacyAccess() async -> Bool {
-        let eventStore = EKEventStore()
-        return await withCheckedContinuation { continuation in
-            let resumer = AccessRequestResumer(continuation)
-            eventStore.requestFullAccessToEvents { granted, _ in
-                resumer.resume(with: granted)
-            }
-        }
+}
+
+private final class CalendarAccessRequestResumer: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Bool, Never>?
+
+    init(_ continuation: CheckedContinuation<Bool, Never>) {
+        self.continuation = continuation
     }
 
+    func resume(with granted: Bool) {
+        lock.lock()
+        let continuation = continuation
+        self.continuation = nil
+        lock.unlock()
+        continuation?.resume(returning: granted)
+    }
 }
 
 private extension CGColor {
@@ -293,22 +316,5 @@ private extension CGColor {
         let green = Int((components[1] * 255).rounded())
         let blue = Int((components[2] * 255).rounded())
         return String(format: "#%02X%02X%02X", red, green, blue)
-    }
-}
-
-private final class AccessRequestResumer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var continuation: CheckedContinuation<Bool, Never>?
-
-    init(_ continuation: CheckedContinuation<Bool, Never>) {
-        self.continuation = continuation
-    }
-
-    func resume(with granted: Bool) {
-        lock.lock()
-        let continuation = continuation
-        self.continuation = nil
-        lock.unlock()
-        continuation?.resume(returning: granted)
     }
 }

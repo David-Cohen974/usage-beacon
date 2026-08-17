@@ -278,11 +278,11 @@ struct ProviderCardView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text("Remaining")
+                    Text(snapshot.primaryUsageWindow == nil ? "Remaining" : "Usage left")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .foregroundStyle(BeaconPalette.mutedInk)
 
-                    Text(currency(snapshot.remainingUSD))
+                    Text(headlineValue)
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(BeaconPalette.ink)
                         .monospacedDigit()
@@ -298,11 +298,11 @@ struct ProviderCardView: View {
                 if let ratio = snapshot.utilizationRatio {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text("Usage pulse")
+                            Text(snapshot.primaryUsageWindow?.title ?? "Usage pulse")
                                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                                 .foregroundStyle(BeaconPalette.mutedInk)
                             Spacer()
-                            Text("\(Int(ratio * 100))% used")
+                            Text(percentUsed(ratio))
                                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                                 .foregroundStyle(BeaconPalette.ink)
                         }
@@ -310,37 +310,70 @@ struct ProviderCardView: View {
                     }
                 }
 
-                LazyVGrid(
-                    columns: [
-                        GridItem(.flexible(), spacing: 10),
-                        GridItem(.flexible(), spacing: 10),
-                        GridItem(.flexible(), spacing: 10)
-                    ],
-                    spacing: 10
-                ) {
-                    metricPanel(
-                        title: "Per workday",
-                        value: currency(snapshot.perWorkingDayRemainingUSD),
-                        detail: snapshot.workingDaysRemaining.map {
-                            "\($0) day\($0 == 1 ? "" : "s") left"
-                        } ?? "No calendar math"
-                    )
-                    metricPanel(
-                        title: "Today spent",
-                        value: currency(snapshot.spentTodayUSD),
-                        detail: snapshot.lastUpdatedAt.map {
-                            "As of \(DateFormatter.beaconShortTime.string(from: $0))"
-                        } ?? "Current day"
-                    )
-                    metricPanel(
-                        title: "Last prompt",
-                        value: currency(snapshot.lastPromptCostUSD),
-                        detail: snapshot.spentUSD.map { "Spent \(currency($0))" } ?? "No spend yet"
-                    )
+                if snapshot.usageWindows.isEmpty == false {
+                    LazyVGrid(
+                        columns: [GridItem(.adaptive(minimum: 140), spacing: 10)],
+                        spacing: 10
+                    ) {
+                        ForEach(snapshot.usageWindows) { window in
+                            metricPanel(
+                                title: window.title,
+                                value: formatPercent(window.usedPercent),
+                                detail: window.resetsAt.map {
+                                    "Resets \(DateFormatter.shortDate.string(from: $0)) at \(DateFormatter.beaconShortTime.string(from: $0))"
+                                } ?? "Rolling quota"
+                            )
+                        }
+
+                        if snapshot.monthlyBudgetUSD != nil {
+                            metricPanel(
+                                title: "Monthly remaining",
+                                value: currency(snapshot.remainingUSD),
+                                detail: snapshot.spentUSD.map { "Spent \(currency($0))" } ?? "Member analytics"
+                            )
+                        }
+                    }
+                } else {
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible(), spacing: 10),
+                            GridItem(.flexible(), spacing: 10),
+                            GridItem(.flexible(), spacing: 10)
+                        ],
+                        spacing: 10
+                    ) {
+                        metricPanel(
+                            title: "Per workday",
+                            value: currency(snapshot.perWorkingDayRemainingUSD),
+                            detail: snapshot.workingDaysRemaining.map {
+                                "\($0) day\($0 == 1 ? "" : "s") left"
+                            } ?? "No calendar math"
+                        )
+                        metricPanel(
+                            title: "Today spent",
+                            value: snapshot.providerKind.supportsTodaySpend
+                                ? currency(snapshot.spentTodayUSD)
+                                : "Not provided",
+                            detail: snapshot.providerKind.supportsTodaySpend
+                                ? (snapshot.lastUpdatedAt.map {
+                                    "As of \(DateFormatter.beaconShortTime.string(from: $0))"
+                                } ?? "Current day")
+                                : "No daily cost in this personal API"
+                        )
+                        metricPanel(
+                            title: "Last prompt",
+                            value: snapshot.providerKind.supportsLastPromptCost
+                                ? currency(snapshot.lastPromptCostUSD)
+                                : "Not provided",
+                            detail: snapshot.providerKind.supportsLastPromptCost
+                                ? (snapshot.spentUSD.map { "Spent \(currency($0))" } ?? "No spend yet")
+                                : "No per-prompt cost in this API"
+                        )
+                    }
                 }
 
                 HStack {
-                    if let cycleEnd = snapshot.billingCycleEnd {
+                    if let cycleEnd = snapshot.primaryUsageWindow?.resetsAt ?? snapshot.billingCycleEnd {
                         BeaconPill(
                             title: "Resets \(DateFormatter.shortDate.string(from: cycleEnd))",
                             symbol: "calendar.badge.clock",
@@ -408,6 +441,25 @@ struct ProviderCardView: View {
         )
     }
 
+    private var headlineValue: String {
+        if let window = snapshot.primaryUsageWindow {
+            return formatPercent(max(100 - window.usedPercent, 0))
+        }
+        return currency(snapshot.remainingUSD)
+    }
+
+    private func percentUsed(_ ratio: Double) -> String {
+        "\(Int((ratio * 100).rounded()))% used"
+    }
+
+    private func formatPercent(_ value: Decimal) -> String {
+        let number = value.doubleValue
+        if number.rounded() == number {
+            return "\(Int(number))%"
+        }
+        return String(format: "%.1f%%", number)
+    }
+
     private func errorBanner(_ error: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -439,73 +491,120 @@ struct ProviderCardView: View {
 
 struct FloatingHUDView: View {
     let snapshots: [ProviderSnapshotState]
+    let onExpansionChange: (Bool) -> Void
+    @State private var isExpanded = false
+    @State private var selectedProviderID: UUID?
+
+    private var primary: ProviderSnapshotState? {
+        snapshots.first(where: { $0.id == selectedProviderID }) ?? snapshots.first
+    }
+
+    private var collapsedWidth: CGFloat { 220 }
+    private var utilization: Double {
+        primary?.utilizationRatio ?? 0
+    }
 
     var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(BeaconPalette.cardStrong.opacity(0.88))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .stroke(BeaconPalette.glareStrong, lineWidth: 1)
-                )
-                .shadow(color: BeaconPalette.shadow, radius: 22, x: 0, y: 12)
+        VStack(alignment: .leading, spacing: 0) {
+            collapsedRow
+            if isExpanded, let primary {
+                expandedDetails(primary)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .padding(isExpanded ? 12 : 8)
+        .background(
+            RoundedRectangle(cornerRadius: isExpanded ? 16 : 12, style: .continuous)
+                .fill(BeaconPalette.cardStrong.opacity(0.94))
+                .overlay(RoundedRectangle(cornerRadius: isExpanded ? 16 : 12, style: .continuous).stroke(BeaconPalette.outline, lineWidth: 1))
+        )
+        .shadow(color: BeaconPalette.shadow.opacity(0.55), radius: 8, x: 0, y: 4)
+        .frame(width: isExpanded ? 250 : collapsedWidth, alignment: .leading)
+    }
 
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("UsageBeacon")
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
-                            .foregroundStyle(BeaconPalette.ink)
-                        Text("Live monthly runway")
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
-                            .foregroundStyle(BeaconPalette.mutedInk)
-                    }
-                    Spacer()
-                    BeaconPill(title: "Live", symbol: "bolt.fill", colors: [BeaconPalette.cyan, BeaconPalette.teal])
+    private var collapsedRow: some View {
+        VStack(spacing: 2) {
+            ForEach(Array(snapshots.prefix(2))) { snapshot in
+                Button {
+                    select(snapshot)
+                } label: {
+                    compactProvider(snapshot)
                 }
+                .buttonStyle(.plain)
 
-                ForEach(snapshots) { snapshot in
-                    HStack(spacing: 10) {
-                        ProviderKindOrb(kind: snapshot.providerKind)
-                            .scaleEffect(0.72)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(snapshot.providerName)
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                                .foregroundStyle(BeaconPalette.ink)
-                            Text(snapshot.providerKind.title)
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
-                                .foregroundStyle(BeaconPalette.mutedInk)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 1) {
-                            Text(currency(snapshot.remainingUSD))
-                                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundStyle(BeaconPalette.ink)
-                                .monospacedDigit()
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                            Text("Today \(currency(snapshot.spentTodayUSD))")
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
-                                .foregroundStyle(BeaconPalette.mutedInk)
-                                .monospacedDigit()
-                            if let perDay = snapshot.perWorkingDayRemainingUSD {
-                                Text("\(currency(perDay))/day")
-                                    .font(.system(size: 10, weight: .medium, design: .rounded))
-                                    .foregroundStyle(BeaconPalette.mutedInk)
-                                    .monospacedDigit()
-                            }
-                        }
-                    }
-                    .padding(10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(BeaconPalette.surfaceSoft)
-                    )
+                if snapshot.id != snapshots.prefix(2).last?.id {
+                    Divider()
+                        .overlay(BeaconPalette.outline)
                 }
             }
-            .padding(14)
         }
-        .frame(width: 312)
+    }
+
+    private func compactProvider(_ snapshot: ProviderSnapshotState) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "bolt.fill")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(colors(for: snapshot).first ?? BeaconPalette.cyan)
+            Text(snapshot.providerName)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(BeaconPalette.ink)
+                .lineLimit(1)
+            Spacer(minLength: 2)
+            Text(hudPrimaryValue(snapshot))
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(BeaconPalette.ink)
+            Text(percent(snapshot))
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(BeaconPalette.mutedInk)
+        }
+        .frame(maxWidth: .infinity, minHeight: 26, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    private func expandedDetails(_ snapshot: ProviderSnapshotState) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider().overlay(BeaconPalette.outline)
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(snapshot.providerName)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Text(snapshot.providerKind.title)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                }
+                Spacer()
+                Text(hudPrimaryValue(snapshot))
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(BeaconPalette.ink)
+            }
+            BeaconGaugeBar(value: utilization, colors: hudColors, height: 6)
+            HStack {
+                Text(snapshot.perWorkingDayRemainingUSD.map { "\(currency($0))/day" } ?? hudSecondaryValue(snapshot))
+                Spacer()
+                Text(statusText)
+            }
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .foregroundStyle(BeaconPalette.mutedInk)
+            if snapshots.count > 1 {
+                Text("+ \(snapshots.count - 1) more connected source\(snapshots.count == 2 ? "" : "s")")
+                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+            }
+        }
+        .padding(.top, 8)
+    }
+
+    private var hudColors: [Color] {
+        guard let primary else { return [BeaconPalette.cyan, BeaconPalette.teal] }
+        return colors(for: primary)
+    }
+
+    private var statusText: String {
+        utilization >= 0.85 ? "Needs attention" : utilization >= 0.65 ? "Watch usage" : "On track"
     }
 
     private func currency(_ value: Decimal?) -> String {
@@ -513,5 +612,43 @@ struct FloatingHUDView: View {
             return "n/a"
         }
         return value.formatted(.currency(code: "USD"))
+    }
+
+    private func hudPrimaryValue(_ snapshot: ProviderSnapshotState) -> String {
+        if let window = snapshot.primaryUsageWindow {
+            return "\(Int(max(100 - window.usedPercent.doubleValue, 0).rounded()))% left"
+        }
+        return currency(snapshot.remainingUSD)
+    }
+
+    private func hudSecondaryValue(_ snapshot: ProviderSnapshotState) -> String {
+        if let window = snapshot.primaryUsageWindow {
+            return "\(window.title): \(Int(window.usedPercent.doubleValue.rounded()))% used"
+        }
+        if snapshot.providerKind.supportsTodaySpend == false {
+            return "Cycle spent \(currency(snapshot.spentUSD))"
+        }
+        return "Today \(currency(snapshot.spentTodayUSD))"
+    }
+
+    private func percent(_ snapshot: ProviderSnapshotState) -> String {
+        guard let ratio = snapshot.utilizationRatio else { return "—" }
+        return "\(Int((ratio * 100).rounded()))%"
+    }
+
+    private func colors(for snapshot: ProviderSnapshotState) -> [Color] {
+        guard let ratio = snapshot.utilizationRatio else { return snapshot.accentColors }
+        if ratio >= 0.85 { return [BeaconPalette.danger, BeaconPalette.coral] }
+        if ratio >= 0.65 { return [BeaconPalette.amber, BeaconPalette.coral] }
+        return snapshot.accentColors
+    }
+
+    private func select(_ snapshot: ProviderSnapshotState) {
+        let shouldCollapse = isExpanded && selectedProviderID == snapshot.id
+        withAnimation(.easeInOut(duration: 0.18)) {
+            selectedProviderID = snapshot.id
+            isExpanded = !shouldCollapse
+        }
+        onExpansionChange(isExpanded)
     }
 }

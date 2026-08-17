@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import SwiftUI
 
@@ -6,7 +7,10 @@ final class AppModel: ObservableObject {
     @Published var configuration: AppConfiguration
     @Published private(set) var snapshotStates: [UUID: ProviderSnapshotState]
     @Published private(set) var availableCalendars: [CalendarSource] = []
+    @Published private(set) var calendarAccessState: CalendarAccessState
+    @Published private(set) var isRequestingCalendarAccess = false
     @Published private(set) var cursorPersonalSessionState: CursorDashboardSessionState
+    @Published private(set) var claudePersonalSessionState: ClaudeDashboardSessionState
 
     private let configurationStore: ConfigurationStore
     private let secretStore: SecretStoring
@@ -14,8 +18,10 @@ final class AppModel: ObservableObject {
     private let workingDayService: WorkingDayService
     private let floatingPanelController: FloatingPanelController
     private let cursorDashboardSessionController: CursorDashboardSessionController
+    private let claudeDashboardSessionController: ClaudeDashboardSessionController
     private var refreshTimer: Timer?
     private var dayBoundaryTimer: Timer?
+    private var applicationActivationObserver: NSObjectProtocol?
     private var inFlightProviderRefreshes: Set<UUID> = []
     private var lastProviderRefreshAttemptAt: [UUID: Date] = [:]
 
@@ -29,6 +35,7 @@ final class AppModel: ObservableObject {
         workingDayService: WorkingDayService = WorkingDayService(),
         floatingPanelController: FloatingPanelController = FloatingPanelController(),
         cursorDashboardSessionController: CursorDashboardSessionController = .shared,
+        claudeDashboardSessionController: ClaudeDashboardSessionController = .shared,
         autoStart: Bool = true
     ) {
         self.configurationStore = configurationStore
@@ -37,6 +44,8 @@ final class AppModel: ObservableObject {
         self.workingDayService = workingDayService
         self.floatingPanelController = floatingPanelController
         self.cursorDashboardSessionController = cursorDashboardSessionController
+        self.claudeDashboardSessionController = claudeDashboardSessionController
+        self.calendarAccessState = workingDayService.authorizationState
 
         let configuration = configurationStore.load()
         self.configuration = configuration
@@ -46,6 +55,7 @@ final class AppModel: ObservableObject {
             }
         )
         self.cursorPersonalSessionState = cursorDashboardSessionController.state
+        self.claudePersonalSessionState = claudeDashboardSessionController.state
 
         cursorDashboardSessionController.onStateChange = { [weak self] state in
             guard let self else {
@@ -57,11 +67,22 @@ final class AppModel: ObservableObject {
             }
         }
 
+        claudeDashboardSessionController.onStateChange = { [weak self] state in
+            guard let self else {
+                return
+            }
+            self.claudePersonalSessionState = state
+            if state == .connected {
+                self.refreshAll()
+            }
+        }
+
         workingDayService.startObservingCalendarChanges { [weak self] in
             guard let self else {
                 return
             }
 
+            self.calendarAccessState = self.workingDayService.authorizationState
             self.availableCalendars = self.workingDayService.availableCalendars()
             guard
                 self.configuration.settings.useCalendarAdjustments,
@@ -75,12 +96,23 @@ final class AppModel: ObservableObject {
             }
         }
 
+        applicationActivationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.reloadCalendars(refreshStore: true)
+            }
+        }
+
         if autoStart {
             scheduleRefreshTimer()
             scheduleDayBoundaryTimer()
             Task {
-                await reloadCalendars()
+                await reloadCalendars(refreshStore: true)
                 await refreshCursorPersonalSessionStateIfNeeded()
+                await refreshClaudePersonalSessionStateIfNeeded()
                 await performRefreshAll(force: false)
             }
         }
@@ -172,6 +204,15 @@ final class AppModel: ObservableObject {
         refreshAll()
     }
 
+    func setCustomWorkingWeekdays(_ weekdays: Set<Int>) {
+        let normalized = GlobalSettings.normalizedCustomWorkingWeekdays(Array(weekdays))
+        configuration.settings.workingWeekSchedule = .custom
+        configuration.settings.customWorkingWeekdays = normalized
+        configuration.settings.workingDaysPerWeek = normalized.count
+        saveConfiguration()
+        refreshAll()
+    }
+
     func setCalendarAdjustmentsEnabled(_ enabled: Bool) {
         configuration.settings.useCalendarAdjustments = enabled
         saveConfiguration()
@@ -191,11 +232,31 @@ final class AppModel: ObservableObject {
     }
 
     func requestCalendarAccess() {
+        guard isRequestingCalendarAccess == false else {
+            return
+        }
         Task {
-            _ = await workingDayService.requestAccess()
-            await reloadCalendars()
+            isRequestingCalendarAccess = true
+            defer { isRequestingCalendarAccess = false }
+            calendarAccessState = await workingDayService.requestAccess()
+            await reloadCalendars(refreshStore: true)
             await performRefreshAll(force: true)
         }
+    }
+
+    func refreshCalendarAccess() {
+        Task {
+            await reloadCalendars(refreshStore: true)
+        }
+    }
+
+    func openCalendarPrivacySettings() {
+        guard let url = URL(
+            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
+        ) else {
+            return
+        }
+        NSWorkspace.shared.open(url)
     }
 
     func connectCursorPersonal(using pageURL: String) {
@@ -213,6 +274,24 @@ final class AppModel: ObservableObject {
     func refreshCursorPersonalSessionState(using pageURL: String) {
         Task {
             _ = await cursorDashboardSessionController.refreshSessionState(pageURL: pageURL)
+        }
+    }
+
+    func connectClaudePersonal(using pageURL: String) {
+        claudeDashboardSessionController.openConnectionWindow(pageURL: pageURL)
+    }
+
+    func disconnectClaudePersonal(using pageURL: String) {
+        Task {
+            await claudeDashboardSessionController.disconnect()
+            _ = await claudeDashboardSessionController.refreshSessionState(pageURL: pageURL)
+            await performRefreshAll(force: true)
+        }
+    }
+
+    func refreshClaudePersonalSessionState(using pageURL: String) {
+        Task {
+            _ = await claudeDashboardSessionController.refreshSessionState(pageURL: pageURL)
         }
     }
 
@@ -246,8 +325,9 @@ final class AppModel: ObservableObject {
         )
     }
 
-    private func reloadCalendars() async {
-        availableCalendars = workingDayService.availableCalendars()
+    private func reloadCalendars(refreshStore: Bool = false) async {
+        calendarAccessState = workingDayService.authorizationState
+        availableCalendars = workingDayService.availableCalendars(refreshStore: refreshStore)
     }
 
     private func refreshCursorPersonalSessionStateIfNeeded() async {
@@ -256,6 +336,14 @@ final class AppModel: ObservableObject {
             return
         }
         _ = await cursorDashboardSessionController.refreshSessionState(pageURL: pageURL)
+    }
+
+    private func refreshClaudePersonalSessionStateIfNeeded() async {
+        guard let pageURL = configuration.providers.compactMap(\.claudePersonal?.usagePageURL).first else {
+            claudePersonalSessionState = .unknown
+            return
+        }
+        _ = await claudeDashboardSessionController.refreshSessionState(pageURL: pageURL)
     }
 
     private func performRefreshAll(force: Bool) async {
@@ -360,7 +448,8 @@ final class AppModel: ObservableObject {
             lastPromptCostUSD: rawSnapshot.lastPromptCostUSD,
             lastUpdatedAt: Date(),
             notes: rawSnapshot.notes,
-            errorMessage: nil
+            errorMessage: nil,
+            usageWindows: rawSnapshot.usageWindows
         )
     }
 
@@ -428,6 +517,11 @@ final class AppModel: ObservableObject {
             return true
         }
 
+        if provider.kind == .claudePersonal,
+           message.contains("claude usage page did not finish loading") {
+            return true
+        }
+
         return false
     }
 
@@ -468,7 +562,7 @@ final class AppModel: ObservableObject {
                 guard let self else {
                     return
                 }
-                await self.reloadCalendars()
+                await self.reloadCalendars(refreshStore: true)
                 await self.performRefreshAll(force: false)
                 self.scheduleDayBoundaryTimer()
             }
@@ -499,6 +593,14 @@ final class AppModel: ObservableObject {
                    || message.localizedCaseInsensitiveContains("session expired")
            ) {
             return "Cursor personal needs you to sign in again. Click Connect and enter your Cursor credentials."
+        }
+
+        if provider.kind == .claudePersonal,
+           (
+               message.localizedCaseInsensitiveContains("sign in")
+                   || message.localizedCaseInsensitiveContains("session expired")
+           ) {
+            return "Claude Personal needs you to sign in again. Click Connect and enter your Claude credentials."
         }
 
         if let attemptsUsed,

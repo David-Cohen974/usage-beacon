@@ -272,12 +272,16 @@ struct UsageBeaconAppTests {
         let parsed = try CursorPersonalProvider.mapUsageSummary(
             summary,
             budgetOverrideUSD: nil,
-            now: Date(timeIntervalSince1970: 1_786_233_600)
+            now: Date(timeIntervalSince1970: 1_786_233_600),
+            todaySpentUSD: 0,
+            lastPromptCostUSD: decimal("4.491684265136719")
         )
 
         #expect(parsed.monthlyBudgetUSD == decimal("700"))
         #expect(parsed.spentUSD == decimal("348.65"))
         #expect(parsed.remainingUSD == decimal("351.35"))
+        #expect(parsed.spentTodayUSD == 0)
+        #expect(parsed.lastPromptCostUSD == decimal("4.491684265136719"))
     }
 
     @Test
@@ -410,6 +414,50 @@ struct UsageBeaconAppTests {
     }
 
     @Test
+    func cursorPersonalUsageEventPageRecognizesEmptyProtobufJSON() {
+        let pageInfo = CursorPersonalProvider.usageEventPageInfo(Data("{}".utf8))
+
+        #expect(pageInfo?.eventCount == 0)
+        #expect(pageInfo?.totalEventCount == 0)
+    }
+
+    @Test
+    func cursorPersonalParsesUsageEventScope() {
+        let userData = Data(#"{"id":192583298,"sub":"user_example"}"#.utf8)
+        let organizationData = Data(
+            #"{"organizations":[{"defaultTeamId":6256494,"teams":[{"teamId":6256494}]}]}"#.utf8
+        )
+
+        #expect(CursorPersonalProvider.authenticatedUserID(from: userData) == 192_583_298)
+        #expect(CursorPersonalProvider.defaultTeamID(from: organizationData) == 6_256_494)
+    }
+
+    @Test
+    func cursorPersonalLastPromptParserUsesNewestEventCost() {
+        let data = Data(
+            """
+            {
+              "usageEventsDisplay": [
+                {
+                  "timestamp": "1786838400000",
+                  "chargedCents": 125.5
+                },
+                {
+                  "timestamp": "1786842000000",
+                  "tokenUsage": { "totalCents": 70 },
+                  "cursorTokenFee": 4.5
+                }
+              ]
+            }
+            """.utf8
+        )
+
+        let parsed = CursorPersonalProvider.parseLastPromptCostResponse(data)
+
+        #expect(parsed == decimal("0.745"))
+    }
+
+    @Test
     func cursorPersonalUsageParserSupportsCurrentUsageLimitCard() throws {
         let page = CursorDashboardPageSnapshot(
             title: "Usage",
@@ -435,6 +483,222 @@ struct UsageBeaconAppTests {
         #expect(parsed.monthlyBudgetUSD == decimal("50"))
         #expect(parsed.spentUSD == decimal("12.40"))
         #expect(parsed.remainingUSD == decimal("37.60"))
+    }
+
+    @Test
+    func claudePersonalUsageParserReadsRollingWindowsAndMemberSpend() throws {
+        let now = utcDate(year: 2026, month: 8, day: 17)
+        let page = ClaudeDashboardPageSnapshot(
+            title: "Usage - Claude",
+            urlString: "https://claude.ai/settings/usage",
+            bodyText: """
+            Usage
+            Current session
+            27% used
+            Resets in 2 hrs 30 mins
+            Current week
+            All models
+            63% used
+            Resets on Aug 22, 2026 at 12:00 AM
+            Extra usage
+            $12.50 of $100 monthly spend limit
+            """,
+            anchorHrefs: [],
+            resourceURLs: [],
+            nextDataSample: nil
+        )
+
+        let parsed = try ClaudePersonalUsageParser.parse(
+            page: page,
+            now: now,
+            budgetOverrideUSD: nil
+        )
+
+        #expect(parsed.usageWindows.count == 2)
+        #expect(parsed.usageWindows[0].kind == .fiveHour)
+        #expect(parsed.usageWindows[0].usedPercent == decimal("27"))
+        #expect(parsed.usageWindows[0].resetsAt == now.addingTimeInterval(9_000))
+        #expect(parsed.usageWindows[1].kind == .sevenDay)
+        #expect(parsed.usageWindows[1].usedPercent == decimal("63"))
+        #expect(parsed.monthlyBudgetUSD == decimal("100"))
+        #expect(parsed.spentUSD == decimal("12.50"))
+        #expect(parsed.remainingUSD == decimal("87.50"))
+    }
+
+    @Test
+    func claudePersonalUsageParserSupportsRateWindowsWithoutDollarSpend() throws {
+        let page = ClaudeDashboardPageSnapshot(
+            title: "Usage - Claude",
+            urlString: "https://claude.ai/settings/usage",
+            bodyText: """
+            Usage
+            5-hour window
+            Utilization: 18.5%
+            Resets in 45 minutes
+            7-day window
+            41% utilized
+            Resets in 4 days
+            """,
+            anchorHrefs: [],
+            resourceURLs: [],
+            nextDataSample: nil
+        )
+
+        let parsed = try ClaudePersonalUsageParser.parse(
+            page: page,
+            now: utcDate(year: 2026, month: 8, day: 17),
+            budgetOverrideUSD: nil
+        )
+
+        #expect(parsed.monthlyBudgetUSD == nil)
+        #expect(parsed.remainingUSD == nil)
+        #expect(parsed.usageWindows.map(\.usedPercent) == [decimal("18.5"), decimal("41")])
+    }
+
+    @Test
+    func claudePersonalUsageParserExplainsDisabledMemberAnalytics() {
+        let page = ClaudeDashboardPageSnapshot(
+            title: "Usage - Claude",
+            urlString: "https://claude.ai/settings/usage",
+            bodyText: "Member analytics is not enabled. Ask your admin for access.",
+            anchorHrefs: [],
+            resourceURLs: [],
+            nextDataSample: nil
+        )
+
+        #expect(throws: ProviderFailure.self) {
+            try ClaudePersonalUsageParser.parse(
+                page: page,
+                now: utcDate(year: 2026, month: 8, day: 17),
+                budgetOverrideUSD: nil
+            )
+        }
+    }
+
+    @Test
+    func claudePersonalFindsPrivateUsageEndpoint() {
+        let page = ClaudeDashboardPageSnapshot(
+            title: "New chat - Claude",
+            urlString: "https://claude.ai/new#settings/usage",
+            bodyText: "Settings",
+            anchorHrefs: [],
+            resourceURLs: [
+                "https://claude.ai/api/organizations/org-test/overage_spend_limit",
+                "https://claude.ai/api/organizations/org-test/usage"
+            ],
+            nextDataSample: nil
+        )
+
+        #expect(ClaudePersonalProvider.usageEndpoint(from: page) ==
+            "https://claude.ai/api/organizations/org-test/usage")
+        #expect(page.looksUsageLike)
+    }
+
+    @Test
+    func claudePersonalUsageSummaryMapsRollingWindowsAndSpend() throws {
+        let data = Data(
+            """
+            {
+              "five_hour": {
+                "utilization": 27.5,
+                "resets_at": "2026-08-17T13:00:00.123Z"
+              },
+              "seven_day": {
+                "utilization": 63,
+                "resets_at": "2026-08-22T00:00:00Z"
+              },
+              "spend": {
+                "used": { "amount_minor": 1250, "currency": "USD", "exponent": 2 },
+                "limit": { "amount_minor": 10000, "currency": "USD", "exponent": 2 },
+                "enabled": true
+              },
+              "member_dashboard_available": true
+            }
+            """.utf8
+        )
+        let summary = try JSONDecoder().decode(ClaudePersonalUsageSummaryResponse.self, from: data)
+
+        let parsed = try ClaudePersonalProvider.mapUsageSummary(
+            summary,
+            budgetOverrideUSD: nil,
+            budgetResetDay: 1,
+            now: utcDate(year: 2026, month: 8, day: 17)
+        )
+
+        #expect(parsed.usageWindows.map(\.usedPercent) == [decimal("27.5"), decimal("63")])
+        #expect(parsed.usageWindows[0].resetsAt != nil)
+        #expect(parsed.monthlyBudgetUSD == decimal("100"))
+        #expect(parsed.spentUSD == decimal("12.50"))
+        #expect(parsed.remainingUSD == decimal("87.50"))
+    }
+
+    @Test
+    func claudePersonalUsageSummarySupportsPureUsageBasedAccount() throws {
+        let data = Data(
+            """
+            {
+              "five_hour": null,
+              "seven_day": null,
+              "extra_usage": {
+                "is_enabled": true,
+                "monthly_limit": 50000,
+                "used_credits": 10638,
+                "utilization": 21.276,
+                "currency": "USD",
+                "decimal_places": 2
+              },
+              "spend": {
+                "used": { "amount_minor": 10638, "currency": "USD", "exponent": 2 },
+                "limit": { "amount_minor": 50000, "currency": "USD", "exponent": 2 },
+                "percent": 21,
+                "enabled": true
+              },
+              "member_dashboard_available": true
+            }
+            """.utf8
+        )
+        let summary = try JSONDecoder().decode(ClaudePersonalUsageSummaryResponse.self, from: data)
+
+        let parsed = try ClaudePersonalProvider.mapUsageSummary(
+            summary,
+            budgetOverrideUSD: nil,
+            budgetResetDay: 1,
+            now: utcDate(year: 2026, month: 8, day: 17)
+        )
+
+        #expect(parsed.usageWindows.isEmpty)
+        #expect(parsed.monthlyBudgetUSD == decimal("500"))
+        #expect(parsed.spentUSD == decimal("106.38"))
+        #expect(parsed.remainingUSD == decimal("393.62"))
+    }
+
+    @Test
+    @MainActor
+    func claudePersonalProviderReadsUsageFromLocalHTML() async throws {
+        let html = """
+        <html>
+        <head><title>Claude Usage</title></head>
+        <body>
+          <h1>Usage</h1>
+          <div>Current session</div><div>22% used</div><div>Resets in 1 hour</div>
+          <div>Current week</div><div>All models</div><div>48% used</div><div>Resets in 3 days</div>
+        </body>
+        </html>
+        """
+        let htmlURL = try writeTemporaryHTML(html)
+
+        var provider = StoredProvider(kind: .claudePersonal, displayName: "Claude Personal")
+        provider.claudePersonal = ClaudePersonalSettings(usagePageURL: htmlURL.absoluteString)
+
+        let snapshot = try await ClaudePersonalProvider.fetch(
+            provider: provider,
+            now: utcDate(year: 2026, month: 8, day: 17)
+        )
+
+        #expect(snapshot.usageWindows.count == 2)
+        #expect(snapshot.usageWindows[0].usedPercent == decimal("22"))
+        #expect(snapshot.usageWindows[1].usedPercent == decimal("48"))
+        #expect(snapshot.monthlyBudgetUSD == nil)
     }
 
     @Test

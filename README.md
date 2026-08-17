@@ -30,8 +30,9 @@ Before publishing the repository publicly, choose the license you want to ship w
 
 | Provider | Auth model | Admin required | Supported metrics |
 | --- | --- | --- | --- |
-| `Cursor Personal` | Signed-in web session | No | Monthly spend, remaining, per-workday runway, best-effort today spend |
+| `Cursor Personal` | Signed-in web session | No | Monthly spend, remaining, per-workday runway, today spend, last prompt cost |
 | `Cursor Admin` | Team admin API key | Yes | Monthly spend, remaining, today spend, last prompt cost |
+| `Claude Personal` | Signed-in web session | No | 5-hour and 7-day utilization/reset times; personal monthly spend when Member analytics exposes it |
 | `Anthropic Admin` | Admin API key | Yes | Monthly spend, remaining, today spend |
 | `Manual Budget` | None | No | Monthly spend, remaining, today spend, last prompt cost |
 | `Custom REST` | Configurable HTTP endpoint | Depends on your endpoint | Any mapped fields the endpoint exposes |
@@ -76,9 +77,19 @@ The built app runs as a menu bar app instead of appearing in the Dock.
 
 If Cursor does not expose a reliable dollar cap, set `Budget Override USD` so UsageBeacon can still calculate remaining runway.
 
-### Anthropic
+### Claude Personal
 
-The current built-in Anthropic connector is `Anthropic Admin`, which uses Anthropic's organization admin cost-report API. A normal Console API key is not enough for this adapter.
+1. Add a `Claude Personal` provider.
+2. Click `Connect`.
+3. Sign in to Claude in the session window UsageBeacon opens.
+4. Leave that window on `Settings → Usage`.
+5. Return to UsageBeacon and refresh.
+
+For Team and Enterprise accounts, an organization owner may need to enable `Organization settings → Usage → Member analytics`. UsageBeacon can only read the information Claude shows to the signed-in member. A budget override is optional and does not affect the rolling 5-hour or 7-day utilization values.
+
+### Anthropic Admin
+
+`Anthropic Admin` uses Anthropic's organization admin cost-report API. A normal Console API key is not enough for this adapter. Use `Claude Personal` when you are an organization member without an Admin API key.
 
 ## Development
 
@@ -109,8 +120,11 @@ See [SECURITY.md](SECURITY.md) for disclosure guidance.
 
 ## Known Limitations
 
-- `Cursor Personal` depends on Cursor's signed-in web UI staying recognizable enough to parse.
-- The current Anthropic adapter is admin-only; there is no non-admin Anthropic session connector yet.
+- `Cursor Personal` depends on Cursor's signed-in private usage-summary and usage-event endpoints, which may change without notice.
+- `Claude Personal` depends on Claude's private signed-in usage endpoint, which may change without notice.
+- Claude Personal does not expose daily spend or per-prompt cost; the app marks those metrics as not provided instead of treating them as connection failures.
+- Organization owners can disable Member analytics, in which case Claude may expose rolling quota utilization without exposing personal spend.
+- Claude subscription limits are rolling percentages rather than published token caps, so UsageBeacon shows the percentages Claude reports instead of inventing token totals.
 - Anthropic's admin cost report is daily, so last-prompt cost is not available through the built-in adapter.
 
 ## Contributing

@@ -13,6 +13,11 @@ enum ProviderResolver {
                 provider: provider,
                 now: now
             )
+        case .claudePersonal:
+            return try await ClaudePersonalProvider.fetch(
+                provider: provider,
+                now: now
+            )
         case .manual:
             return try ManualBudgetProvider.fetch(provider: provider, now: now)
         case .cursorAdmin:

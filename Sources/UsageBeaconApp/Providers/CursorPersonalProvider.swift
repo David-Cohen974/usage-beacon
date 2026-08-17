@@ -55,22 +55,24 @@ enum CursorPersonalProvider {
             )
         }
 
-        let todaySpentUSD = await fetchTodaySpendIfAvailable(
-            sessionController: sessionController,
-            now: now
-        )
-
         do {
             let (data, _) = try await sessionController.authenticatedGET(
                 urlString: "https://cursor.com/api/usage-summary"
             )
             let summary = try JSONDecoder().decode(CursorUsageSummaryResponse.self, from: data)
+            let eventMetrics = await fetchUsageEventMetricsIfAvailable(
+                sessionController: sessionController,
+                billingCycleStart: summary.billingCycleStart,
+                requiresTeamScope: summary.limitType?.lowercased() == "team",
+                now: now
+            )
             return try mapUsageSummary(
                 summary,
                 budgetOverrideUSD: budgetOverrideUSD,
                 budgetResetDay: budgetResetDay,
                 now: now,
-                todaySpentUSD: todaySpentUSD
+                todaySpentUSD: eventMetrics.spentTodayUSD,
+                lastPromptCostUSD: eventMetrics.lastPromptCostUSD
             )
         } catch {
             if error.localizedDescription.localizedCaseInsensitiveContains("401") {
@@ -85,9 +87,17 @@ enum CursorPersonalProvider {
             budgetOverrideUSD: budgetOverrideUSD,
             budgetResetDay: budgetResetDay
         )
-        parsed.spentTodayUSD = todaySpentUSD
-        if todaySpentUSD != nil {
-            parsed.notes.append("Today's spend is calculated from Cursor's signed-in usage events.")
+        let eventMetrics = await fetchUsageEventMetricsIfAvailable(
+            sessionController: sessionController,
+            billingCycleStart: nil,
+            requiresTeamScope: false,
+            now: now
+        )
+        parsed.spentTodayUSD = eventMetrics.spentTodayUSD
+        parsed.lastPromptCostUSD = eventMetrics.lastPromptCostUSD
+        if eventMetrics.spentTodayUSD != nil || eventMetrics.lastPromptCostUSD != nil {
+            parsed.notes.removeAll { $0.hasPrefix("Last prompt cost") }
+            parsed.notes.append("Today's spend and last prompt cost are calculated from Cursor's signed-in usage events.")
         }
         return parsed
     }
@@ -97,7 +107,8 @@ enum CursorPersonalProvider {
         budgetOverrideUSD: Decimal?,
         budgetResetDay: Int = 1,
         now: Date,
-        todaySpentUSD: Decimal? = nil
+        todaySpentUSD: Decimal? = nil,
+        lastPromptCostUSD: Decimal? = nil
     ) throws -> CursorPersonalParsedUsage {
         let overall = summary.individualUsage?.overall
         let onDemand = summary.teamUsage?.onDemand
@@ -142,10 +153,12 @@ enum CursorPersonalProvider {
         if budgetOverrideUSD != nil {
             notes.append("Daily runway follows your budget reset day (\(budgetResetDay)), not Cursor's subscription renewal date.")
         }
-        if todaySpentUSD != nil {
-            notes.append("Today's spend is calculated from Cursor's signed-in usage events.")
+        if todaySpentUSD != nil || lastPromptCostUSD != nil {
+            notes.append("Today's spend and last prompt cost are calculated from Cursor's signed-in usage events.")
         }
-        notes.append("Last prompt cost is not exposed reliably on Cursor's personal session endpoints.")
+        if lastPromptCostUSD == nil {
+            notes.append("Cursor did not return a recent prompt event for this billing cycle.")
+        }
 
         return CursorPersonalParsedUsage(
             monthlyBudgetUSD: monthlyBudget,
@@ -153,13 +166,99 @@ enum CursorPersonalProvider {
             remainingUSD: remaining,
             billingCycleEnd: billingCycleEnd,
             spentTodayUSD: todaySpentUSD,
-            lastPromptCostUSD: nil,
+            lastPromptCostUSD: lastPromptCostUSD,
             notes: notes
         )
     }
 
+    private static func fetchUsageEventMetricsIfAvailable(
+        sessionController: CursorDashboardSessionController,
+        billingCycleStart: Date?,
+        requiresTeamScope: Bool,
+        now: Date
+    ) async -> CursorPersonalEventMetrics {
+        let scope = await fetchUsageEventScope(sessionController: sessionController)
+        if requiresTeamScope, scope.teamID == nil || scope.userID == nil {
+            return CursorPersonalEventMetrics()
+        }
+
+        let spentTodayUSD = await fetchTodaySpendIfAvailable(
+            sessionController: sessionController,
+            scope: scope,
+            now: now
+        )
+        let lastPromptCostUSD = await fetchLastPromptCostIfAvailable(
+            sessionController: sessionController,
+            scope: scope,
+            billingCycleStart: billingCycleStart ?? BudgetMath.calendarMonthCycle(now: now).start,
+            now: now
+        )
+        return CursorPersonalEventMetrics(
+            spentTodayUSD: spentTodayUSD,
+            lastPromptCostUSD: lastPromptCostUSD
+        )
+    }
+
+    private static func fetchUsageEventScope(
+        sessionController: CursorDashboardSessionController
+    ) async -> CursorUsageEventScope {
+        let userID: Int?
+        if let (data, _) = try? await sessionController.authenticatedGET(
+            urlString: "https://cursor.com/api/auth/me"
+        ) {
+            userID = authenticatedUserID(from: data)
+        } else {
+            userID = nil
+        }
+
+        let emptyObject = Data("{}".utf8)
+        let teamID: Int?
+        if let (data, _) = try? await sessionController.authenticatedPOST(
+            urlString: "https://cursor.com/api/dashboard/get-user-organizations",
+            jsonData: emptyObject
+        ) {
+            teamID = defaultTeamID(from: data)
+        } else {
+            teamID = nil
+        }
+
+        return CursorUsageEventScope(userID: userID, teamID: teamID)
+    }
+
+    static func authenticatedUserID(from data: Data) -> Int? {
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data),
+            let dictionary = json as? [String: Any]
+        else {
+            return nil
+        }
+        return integer(from: dictionary["id"])
+    }
+
+    static func defaultTeamID(from data: Data) -> Int? {
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data),
+            let dictionary = json as? [String: Any],
+            let organizations = dictionary["organizations"] as? [[String: Any]]
+        else {
+            return nil
+        }
+
+        for organization in organizations {
+            if let defaultTeamID = integer(from: organization["defaultTeamId"]) {
+                return defaultTeamID
+            }
+            if let teams = organization["teams"] as? [[String: Any]],
+               let firstTeamID = teams.lazy.compactMap({ integer(from: $0["teamId"]) }).first {
+                return firstTeamID
+            }
+        }
+        return nil
+    }
+
     private static func fetchTodaySpendIfAvailable(
         sessionController: CursorDashboardSessionController,
+        scope: CursorUsageEventScope,
         now: Date
     ) async -> Decimal? {
         let endpoint = "https://cursor.com/api/dashboard/get-filtered-usage-events"
@@ -175,13 +274,12 @@ enum CursorPersonalProvider {
         var receivedEvents = 0
 
         for page in 1 ... maximumPages {
-            guard let jsonData = try? JSONSerialization.data(
-                withJSONObject: [
-                    "startDate": String(startMilliseconds),
-                    "endDate": String(endMilliseconds),
-                    "page": page,
-                    "pageSize": pageSize
-                ]
+            guard let jsonData = usageEventRequestData(
+                startMilliseconds: startMilliseconds,
+                endMilliseconds: endMilliseconds,
+                page: page,
+                pageSize: pageSize,
+                scope: scope
             ) else {
                 return nil
             }
@@ -221,6 +319,54 @@ enum CursorPersonalProvider {
         return nil
     }
 
+    private static func fetchLastPromptCostIfAvailable(
+        sessionController: CursorDashboardSessionController,
+        scope: CursorUsageEventScope,
+        billingCycleStart: Date,
+        now: Date
+    ) async -> Decimal? {
+        var calendar = Calendar.current
+        calendar.timeZone = .current
+        let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
+        guard let jsonData = usageEventRequestData(
+            startMilliseconds: Int64(billingCycleStart.timeIntervalSince1970 * 1_000),
+            endMilliseconds: Int64(end.timeIntervalSince1970 * 1_000) - 1,
+            page: 1,
+            pageSize: 1,
+            scope: scope
+        ) else {
+            return nil
+        }
+
+        guard let (data, _) = try? await sessionController.authenticatedPOST(
+            urlString: "https://cursor.com/api/dashboard/get-filtered-usage-events",
+            jsonData: jsonData
+        ) else {
+            return nil
+        }
+        return parseLastPromptCostResponse(data)
+    }
+
+    private static func usageEventRequestData(
+        startMilliseconds: Int64,
+        endMilliseconds: Int64,
+        page: Int,
+        pageSize: Int,
+        scope: CursorUsageEventScope
+    ) -> Data? {
+        var requestBody: [String: Any] = [
+            "startDate": String(startMilliseconds),
+            "endDate": String(endMilliseconds),
+            "page": page,
+            "pageSize": pageSize
+        ]
+        if let teamID = scope.teamID, let userID = scope.userID {
+            requestBody["teamId"] = teamID
+            requestBody["userId"] = userID
+        }
+        return try? JSONSerialization.data(withJSONObject: requestBody)
+    }
+
     static func usageEventPageInfo(
         _ data: Data
     ) -> (eventCount: Int, totalEventCount: Int?)? {
@@ -233,6 +379,10 @@ enum CursorPersonalProvider {
 
         let events = dictionary["usageEventsDisplay"] as? [Any]
             ?? dictionary["usageEvents"] as? [Any]
+        if dictionary.isEmpty {
+            // Cursor's protobuf JSON omits zero-valued fields and serializes an empty page as `{}`.
+            return (0, 0)
+        }
         guard let events else {
             return nil
         }
@@ -249,6 +399,30 @@ enum CursorPersonalProvider {
 
         return directTodaySpend(in: json)
             ?? nestedTodaySpend(in: json, now: now)
+    }
+
+    static func parseLastPromptCostResponse(_ data: Data) -> Decimal? {
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data),
+            let dictionary = json as? [String: Any],
+            let events = dictionary["usageEventsDisplay"] as? [Any]
+                ?? dictionary["usageEvents"] as? [Any]
+        else {
+            return nil
+        }
+
+        return events.compactMap { event -> (date: Date, cost: Decimal)? in
+            guard
+                let dictionary = event as? [String: Any],
+                let date = dateValue(in: dictionary),
+                let cost = spendValue(in: dictionary)
+            else {
+                return nil
+            }
+            return (date, cost)
+        }
+        .max { $0.date < $1.date }?
+        .cost
     }
 
     private static func directTodaySpend(in json: Any) -> Decimal? {
@@ -443,6 +617,17 @@ enum CursorPersonalProvider {
         }
     }
 
+    private static func integer(from value: Any?) -> Int? {
+        switch value {
+        case let number as NSNumber:
+            return number.intValue
+        case let text as String:
+            return Int(text.trimmingCharacters(in: .whitespacesAndNewlines))
+        default:
+            return nil
+        }
+    }
+
     private static func parseDate(_ value: Any) -> Date? {
         if let date = value as? Date {
             return date
@@ -482,6 +667,24 @@ enum CursorPersonalProvider {
         }
 
         return nil
+    }
+}
+
+private struct CursorUsageEventScope {
+    var userID: Int?
+    var teamID: Int?
+}
+
+private struct CursorPersonalEventMetrics {
+    var spentTodayUSD: Decimal?
+    var lastPromptCostUSD: Decimal?
+
+    init(
+        spentTodayUSD: Decimal? = nil,
+        lastPromptCostUSD: Decimal? = nil
+    ) {
+        self.spentTodayUSD = spentTodayUSD
+        self.lastPromptCostUSD = lastPromptCostUSD
     }
 }
 
@@ -532,7 +735,7 @@ enum CursorPersonalUsageParser {
         if budgetOverrideUSD != nil {
             notes.append("Daily runway follows your budget reset day (\(budgetResetDay)), not Cursor's subscription renewal date.")
         }
-        notes.append("Last prompt cost is not exposed reliably on Cursor's personal dashboard.")
+        notes.append("Last prompt cost is not present in Cursor's dashboard page text.")
 
         return CursorPersonalParsedUsage(
             monthlyBudgetUSD: monthlyBudget,
