@@ -3,16 +3,13 @@ import SwiftUI
 @main
 struct UsageBeaconApp: App {
     private let debugCommand = DebugCommandRunner.command(from: CommandLine.arguments)
-    private let shouldPresentSettingsOnLaunch: Bool
     @StateObject private var model: AppModel
 
     init() {
         if debugCommand == nil {
             _model = StateObject(wrappedValue: AppModel())
-            shouldPresentSettingsOnLaunch = true
         } else {
             _model = StateObject(wrappedValue: AppModel(autoStart: false))
-            shouldPresentSettingsOnLaunch = false
             let command = debugCommand
             DispatchQueue.main.async {
                 guard let command else {
@@ -23,20 +20,15 @@ struct UsageBeaconApp: App {
                 }
             }
         }
-
     }
 
     var body: some Scene {
-        MenuBarExtra {
+        MenuBarExtra("UsageBeacon", systemImage: "chart.line.uptrend.xyaxis") {
             if let debugCommand {
                 DebugCommandView(command: debugCommand)
             } else {
                 MenuBarRootView(model: model)
             }
-        } label: {
-            UsageBeaconMenuBarLabel(
-                shouldPresentSettingsOnLaunch: shouldPresentSettingsOnLaunch
-            )
         }
         .menuBarExtraStyle(.window)
 
@@ -47,26 +39,6 @@ struct UsageBeaconApp: App {
                 SettingsView(model: model)
             }
         }
-    }
-}
-
-private struct UsageBeaconMenuBarLabel: View {
-    let shouldPresentSettingsOnLaunch: Bool
-
-    @Environment(\.openSettings) private var openSettings
-    @State private var didPresentSettings = false
-
-    var body: some View {
-        Label("UsageBeacon", systemImage: "chart.line.uptrend.xyaxis")
-            .task {
-                guard shouldPresentSettingsOnLaunch, !didPresentSettings else {
-                    return
-                }
-
-                didPresentSettings = true
-                NSApp.activate(ignoringOtherApps: true)
-                openSettings()
-            }
     }
 }
 
