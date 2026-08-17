@@ -24,21 +24,19 @@ struct UsageBeaconApp: App {
             }
         }
 
-        if shouldPresentSettingsOnLaunch {
-            DispatchQueue.main.async {
-                NSApp.activate(ignoringOtherApps: true)
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            }
-        }
     }
 
     var body: some Scene {
-        MenuBarExtra("UsageBeacon", systemImage: "chart.line.uptrend.xyaxis") {
+        MenuBarExtra {
             if let debugCommand {
                 DebugCommandView(command: debugCommand)
             } else {
                 MenuBarRootView(model: model)
             }
+        } label: {
+            UsageBeaconMenuBarLabel(
+                shouldPresentSettingsOnLaunch: shouldPresentSettingsOnLaunch
+            )
         }
         .menuBarExtraStyle(.window)
 
@@ -49,6 +47,26 @@ struct UsageBeaconApp: App {
                 SettingsView(model: model)
             }
         }
+    }
+}
+
+private struct UsageBeaconMenuBarLabel: View {
+    let shouldPresentSettingsOnLaunch: Bool
+
+    @Environment(\.openSettings) private var openSettings
+    @State private var didPresentSettings = false
+
+    var body: some View {
+        Label("UsageBeacon", systemImage: "chart.line.uptrend.xyaxis")
+            .task {
+                guard shouldPresentSettingsOnLaunch, !didPresentSettings else {
+                    return
+                }
+
+                didPresentSettings = true
+                NSApp.activate(ignoringOtherApps: true)
+                openSettings()
+            }
     }
 }
 
