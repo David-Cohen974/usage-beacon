@@ -7,6 +7,8 @@ ROOT_DIR="$PWD"
 CONFIGURATION="${1:-release}"
 APP_NAME="UsageBeacon"
 PRODUCT_NAME="UsageBeaconApp"
+BUNDLE_IDENTIFIER="${USAGEBEACON_BUNDLE_IDENTIFIER:-com.rekindle.usagebeacon}"
+APP_ICON_SOURCE="$ROOT_DIR/Resources/AppIcon.icns"
 DIST_DIR="$ROOT_DIR/dist"
 APP_DIR="$DIST_DIR/$APP_NAME.app"
 BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/usagebeacon-build.XXXXXX")"
@@ -26,8 +28,9 @@ BIN_PATH="$BIN_DIR/$PRODUCT_NAME"
 
 mkdir -p "$MACOS_DIR" "$RESOURCES_DIR"
 cp "$BIN_PATH" "$MACOS_DIR/$APP_NAME"
+cp "$APP_ICON_SOURCE" "$RESOURCES_DIR/AppIcon.icns"
 
-cat > "$CONTENTS_DIR/Info.plist" <<'EOF'
+cat > "$CONTENTS_DIR/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -37,7 +40,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'EOF'
     <key>CFBundleExecutable</key>
     <string>UsageBeacon</string>
     <key>CFBundleIdentifier</key>
-    <string>io.github.usagebeacon.app</string>
+    <string>$BUNDLE_IDENTIFIER</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>

@@ -107,6 +107,7 @@ swift test --jobs 1
 - `Sources/UsageBeaconApp/UI`: SwiftUI views and design system
 - `Tests/UsageBeaconAppTests`: provider, parser, and configuration tests
 - `Scripts`: local build and relaunch helpers
+- `Resources`: release artwork and macOS app-bundle resources
 - `docs`: contributor documentation and architecture notes
 
 ## Security and Privacy
