@@ -9,6 +9,7 @@ APP_NAME="UsageBeacon"
 PRODUCT_NAME="UsageBeaconApp"
 BUNDLE_IDENTIFIER="${USAGEBEACON_BUNDLE_IDENTIFIER:-com.rekindle.usagebeacon}"
 APP_ICON_SOURCE="$ROOT_DIR/Resources/AppIcon.icns"
+SIGNING_IDENTITY="${USAGEBEACON_SIGNING_IDENTITY:--}"
 DIST_DIR="$ROOT_DIR/dist"
 APP_DIR="$DIST_DIR/$APP_NAME.app"
 BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/usagebeacon-build.XXXXXX")"
@@ -64,8 +65,17 @@ cat > "$CONTENTS_DIR/Info.plist" <<EOF
 EOF
 
 xattr -cr "$TEMP_APP_DIR" 2>/dev/null || true
-codesign --force --deep --sign - "$TEMP_APP_DIR" >/dev/null
-codesign --verify --deep --strict "$TEMP_APP_DIR"
+if [[ "$SIGNING_IDENTITY" == "-" ]]; then
+  codesign --force --sign - "$TEMP_APP_DIR" >/dev/null
+else
+  codesign \
+    --force \
+    --options runtime \
+    --timestamp \
+    --sign "$SIGNING_IDENTITY" \
+    "$TEMP_APP_DIR" >/dev/null
+fi
+codesign --verify --strict "$TEMP_APP_DIR"
 
 rm -rf "$APP_DIR"
 mkdir -p "$DIST_DIR"

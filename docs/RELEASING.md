@@ -18,6 +18,20 @@ swift test --jobs 1
 open dist/UsageBeacon.app
 ```
 
+## Developer ID build
+
+Set `USAGEBEACON_SIGNING_IDENTITY` to an installed Developer ID Application
+identity to enable Hardened Runtime signing with a secure timestamp:
+
+```bash
+USAGEBEACON_SIGNING_IDENTITY="Developer ID Application: David Cohen (Y3XM9Q3AZT)" \
+  ./Scripts/build-app.sh release
+```
+
+Developer ID signing does not replace notarization. Before sharing the app,
+submit the signed distribution to Apple's notary service, staple the accepted
+ticket to the app, and verify it with Gatekeeper.
+
 ## Recommended first public release checklist
 
 1. Confirm all provider names and feature descriptions are accurate.
