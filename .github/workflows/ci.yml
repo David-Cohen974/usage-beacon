@@ -23,5 +23,32 @@ jobs:
       - name: Run tests
         run: swift test --jobs 1
 
+      - name: Validate release sources
+        run: |
+          plutil -lint Resources/UsageBeacon-Info.plist Resources/UsageBeaconWidget-Info.plist
+          bash -n Scripts/*.sh
+          python3 -m py_compile Scripts/generate-site-data.py
+          ./Scripts/verify-version.sh "$(sed -n 's/^MARKETING_VERSION *= *//p' Config/Version.xcconfig)"
+
       - name: Build app bundle
+        env:
+          SOURCE_PACKAGES_DIR_PATH: ${{ runner.temp }}/SourcePackages
         run: ./Scripts/build-app.sh debug
+
+      - name: Verify Sparkle configuration
+        run: |
+          check_dir="${RUNNER_TEMP}/UsageBeacon-CI-check"
+          mkdir -p "$check_dir"
+          ditto -x -k dist/UsageBeacon.zip "$check_dir"
+          app="$check_dir/UsageBeacon.app"
+          codesign --verify --deep --strict "$app"
+          test -d "$app/Contents/Frameworks/Sparkle.framework"
+          test "$(plutil -extract SURequireSignedFeed raw "$app/Contents/Info.plist")" = "true"
+          test "$(plutil -extract SUFeedURL raw "$app/Contents/Info.plist")" = "https://david-cohen974.github.io/usage-beacon/appcast.xml"
+
+      - name: Upload app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: UsageBeacon-debug-${{ github.sha }}
+          path: dist/UsageBeacon.zip
+          if-no-files-found: error

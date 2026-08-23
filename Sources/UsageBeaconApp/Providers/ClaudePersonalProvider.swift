@@ -123,6 +123,14 @@ enum ClaudePersonalProvider {
             )
         }
 
+        let reportedCurrencies = [summary.spend?.used?.currency, summary.spend?.limit?.currency]
+            .compactMap { $0?.uppercased() }
+        if let unsupportedCurrency = reportedCurrencies.first(where: { $0 != "USD" }) {
+            throw ProviderFailure.misconfigured(
+                "Claude returned \(unsupportedCurrency) spend, but UsageBeacon's personal budget fields are in USD. The app will not display that amount as dollars."
+            )
+        }
+
         let reportedSpend = summary.spend?.enabled == true
             ? summary.spend.flatMap { spend in
                 spend.used.map { $0.dollars }
@@ -259,10 +267,12 @@ struct ClaudePersonalSpend: Decodable {
 
 struct ClaudeMoneyAmount: Decodable {
     var amountMinor: Decimal
+    var currency: String?
     var exponent: Int
 
     enum CodingKeys: String, CodingKey {
         case amountMinor = "amount_minor"
+        case currency
         case exponent
     }
 

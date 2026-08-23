@@ -84,10 +84,19 @@ final class CursorDashboardSessionController: NSObject, NSWindowDelegate {
     }
 
     private let dataStore = WKWebsiteDataStore.default()
+    private let authenticatedSession: URLSession
     private var connectionWindow: NSWindow?
     private var connectionWebView: WKWebView?
     private var connectionMonitorTask: Task<Void, Never>?
     private var lastConnectionPageURL: String?
+
+    override init() {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.httpCookieStorage = nil
+        configuration.httpShouldSetCookies = false
+        authenticatedSession = URLSession(configuration: configuration)
+        super.init()
+    }
 
     func openConnectionWindow(pageURL: String) {
         guard let url = URL(string: pageURL) else {
@@ -128,6 +137,7 @@ final class CursorDashboardSessionController: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
+        window.isReleasedWhenClosed = false
         window.title = "Connect Cursor Personal"
         window.contentView = container
         window.delegate = self
@@ -212,6 +222,7 @@ final class CursorDashboardSessionController: NSObject, NSWindowDelegate {
         let cookies = await cookies(for: url)
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.httpShouldHandleCookies = false
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let jsonData {
             request.httpBody = jsonData
@@ -223,19 +234,23 @@ final class CursorDashboardSessionController: NSObject, NSWindowDelegate {
             request.setValue(value, forHTTPHeaderField: header)
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await authenticatedSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ProviderFailure.network("Cursor endpoint response was invalid.")
         }
 
         if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
             state = .disconnected
-            throw ProviderFailure.misconfigured("Cursor personal session expired. Click Connect and sign in again.")
+            throw ProviderFailure.authentication("Cursor personal session expired. Click Connect and sign in again.")
         }
 
         guard (200 ..< 300).contains(httpResponse.statusCode) else {
-            let body = String(data: data, encoding: .utf8) ?? ""
-            throw ProviderFailure.network("Cursor endpoint failed with HTTP \(httpResponse.statusCode): \(body)")
+            let statusDescription = HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
+            throw ProviderFailure.httpStatus(
+                code: httpResponse.statusCode,
+                message: "Cursor endpoint failed with HTTP \(httpResponse.statusCode) (\(statusDescription)).",
+                retryAfterSeconds: nil
+            )
         }
 
         return (data, httpResponse)

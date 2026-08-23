@@ -2,8 +2,16 @@ import AppKit
 import SwiftUI
 
 @MainActor
+final class FloatingHUDState: ObservableObject {
+    @Published var isExpanded = false
+    @Published var selectedProviderID: UUID?
+}
+
+@MainActor
 final class FloatingPanelController {
     private var panel: NSPanel?
+    private var hostingView: NSHostingView<FloatingHUDView>?
+    private let hudState = FloatingHUDState()
     private var hasPositionedPanel = false
     private var collapsedSize = NSSize(width: 220, height: 44)
 
@@ -13,15 +21,25 @@ final class FloatingPanelController {
             return
         }
 
-        let content = FloatingHUDView(snapshots: snapshots) { [weak self] isExpanded in
+        if let selectedProviderID = hudState.selectedProviderID,
+           snapshots.contains(where: { $0.id == selectedProviderID }) == false {
+            hudState.selectedProviderID = nil
+        }
+
+        let content = FloatingHUDView(snapshots: snapshots, state: hudState) { [weak self] isExpanded in
             self?.resizePanel(isExpanded: isExpanded)
         }
-        let hostingView = NSHostingView(rootView: content)
         let panel = panel ?? makePanel()
-        panel.contentView = hostingView
+        if let hostingView {
+            hostingView.rootView = content
+        } else {
+            let hostingView = NSHostingView(rootView: content)
+            self.hostingView = hostingView
+            panel.contentView = hostingView
+        }
 
         collapsedSize = NSSize(width: 220, height: snapshots.count > 1 ? 76 : 44)
-        panel.setContentSize(collapsedSize)
+        resizePanel(isExpanded: hudState.isExpanded)
         if !hasPositionedPanel {
             position(panel)
             hasPositionedPanel = true

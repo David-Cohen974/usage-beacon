@@ -1,0 +1,64 @@
+name: Publish Website
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "site/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: usagebeacon-publishing
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare gh-pages worktree
+        id: pages
+        shell: bash
+        run: |
+          set -euo pipefail
+          pages_dir="${RUNNER_TEMP}/usagebeacon-pages"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            git worktree add --detach "$pages_dir" refs/remotes/origin/gh-pages
+          else
+            git worktree add --detach "$pages_dir" HEAD
+            git -C "$pages_dir" checkout --orphan gh-pages
+            git -C "$pages_dir" rm -rf .
+          fi
+
+          rsync -a --delete \
+            --exclude .git \
+            --exclude appcast.xml \
+            --exclude latest.json \
+            --exclude releases.json \
+            site/ "$pages_dir/"
+          test -f "$pages_dir/appcast.xml" || cp site/appcast.xml "$pages_dir/appcast.xml"
+          test -f "$pages_dir/latest.json" || cp site/latest.json "$pages_dir/latest.json"
+          test -f "$pages_dir/releases.json" || cp site/releases.json "$pages_dir/releases.json"
+          echo "pages_dir=$pages_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Publish gh-pages branch
+        run: |
+          pages_dir="${{ steps.pages.outputs.pages_dir }}"
+          git -C "$pages_dir" config user.name "github-actions[bot]"
+          git -C "$pages_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$pages_dir" add -A
+          if git -C "$pages_dir" diff --cached --quiet; then
+            echo "Website is already current."
+          else
+            git -C "$pages_dir" commit -m "Publish UsageBeacon website"
+            git -C "$pages_dir" push origin HEAD:gh-pages
+          fi

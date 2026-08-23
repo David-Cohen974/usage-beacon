@@ -7,8 +7,12 @@ struct MenuBarRootView: View {
         model.orderedSnapshots.filter(\.isEnabled)
     }
 
+    private var connectedSnapshots: [ProviderSnapshotState] {
+        activeSnapshots.filter { setupStatus(for: $0) == .connected }
+    }
+
     private var totalRemaining: Decimal? {
-        let values = activeSnapshots.compactMap(\.remainingUSD)
+        let values = connectedSnapshots.compactMap(\.remainingUSD)
         guard values.isEmpty == false else {
             return nil
         }
@@ -16,7 +20,7 @@ struct MenuBarRootView: View {
     }
 
     private var totalSpent: Decimal? {
-        let values = activeSnapshots.compactMap(\.spentUSD)
+        let values = connectedSnapshots.compactMap(\.spentUSD)
         guard values.isEmpty == false else {
             return nil
         }
@@ -24,7 +28,7 @@ struct MenuBarRootView: View {
     }
 
     private var totalSpentToday: Decimal? {
-        let values = activeSnapshots.compactMap(\.spentTodayUSD)
+        let values = connectedSnapshots.compactMap(\.spentTodayUSD)
         guard values.isEmpty == false else {
             return nil
         }
@@ -32,7 +36,7 @@ struct MenuBarRootView: View {
     }
 
     private var earliestReset: Date? {
-        activeSnapshots.compactMap(\.billingCycleEnd).min()
+        connectedSnapshots.compactMap(\.billingCycleEnd).min()
     }
 
     var body: some View {
@@ -86,9 +90,9 @@ struct MenuBarRootView: View {
 
             HStack(spacing: 8) {
                 BeaconPill(
-                    title: "\(activeSnapshots.count) live source\(activeSnapshots.count == 1 ? "" : "s")",
-                    symbol: "waveform.path.ecg",
-                    colors: [BeaconPalette.cyan, BeaconPalette.teal]
+                    title: "\(connectedSnapshots.count) connected source\(connectedSnapshots.count == 1 ? "" : "s")",
+                    symbol: connectedSnapshots.isEmpty ? "exclamationmark.circle.fill" : "waveform.path.ecg",
+                    colors: connectedSnapshots.isEmpty ? [BeaconPalette.amber, BeaconPalette.coral] : [BeaconPalette.cyan, BeaconPalette.teal]
                 )
                 if let earliestReset {
                     BeaconPill(
@@ -103,7 +107,7 @@ struct MenuBarRootView: View {
                 BeaconMetricTile(
                     title: "Remaining",
                     value: currency(totalRemaining),
-                    detail: activeSnapshots.isEmpty ? "Connect a source" : "Across active providers",
+                    detail: connectedSnapshots.isEmpty ? "Finish connector setup" : "Across connected providers",
                     colors: [BeaconPalette.cyan, BeaconPalette.teal]
                 )
                 BeaconMetricTile(
@@ -137,10 +141,10 @@ struct MenuBarRootView: View {
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
 
-                SettingsLink {
+                ForegroundSettingsButton {
                     HStack(spacing: 8) {
                         Image(systemName: "plus.circle.fill")
-                        Text("Open Settings")
+                        Text("Add First Connector")
                     }
                 }
                 .buttonStyle(
@@ -156,7 +160,7 @@ struct MenuBarRootView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     ForEach(model.orderedSnapshots) { snapshot in
-                        ProviderCardView(snapshot: snapshot)
+                        ProviderCardView(snapshot: snapshot, setupStatus: setupStatus(for: snapshot))
                     }
                 }
                 .padding(.trailing, 2)
@@ -182,14 +186,19 @@ struct MenuBarRootView: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
 
-                Text("Floating HUD")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(BeaconPalette.ink)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Floating HUD")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Text(GlobalHotKeyController.displayName)
+                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                }
             }
 
             Spacer()
 
-            SettingsLink {
+            ForegroundSettingsButton {
                 Label("Settings", systemImage: "slider.horizontal.3")
             }
             .buttonStyle(
@@ -230,11 +239,28 @@ struct MenuBarRootView: View {
             return "Wire your budgets into one place and keep the month visually under control."
         }
 
+        if connectedSnapshots.isEmpty {
+            return "Your connector is added but not connected yet. Open Settings and finish sign-in."
+        }
+
         if let totalRemaining, totalRemaining > 0 {
             return "You still have \(currency(totalRemaining)) left to spend before the cycle flips."
         }
 
         return "Every connected budget is out of visible remaining runway. Time to triage."
+    }
+
+    private func setupStatus(for snapshot: ProviderSnapshotState) -> ProviderSetupStatus {
+        guard let provider = model.configuration.providers.first(where: { $0.id == snapshot.id }) else {
+            return .needsAttention
+        }
+        return ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: model.cursorPersonalSessionState,
+            claudeSession: model.claudePersonalSessionState,
+            hasSecret: snapshot.lastUpdatedAt != nil
+        )
     }
 
     private func currency(_ value: Decimal?) -> String {
@@ -247,6 +273,7 @@ struct MenuBarRootView: View {
 
 struct ProviderCardView: View {
     let snapshot: ProviderSnapshotState
+    let setupStatus: ProviderSetupStatus
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -263,6 +290,12 @@ struct ProviderCardView: View {
                             title: snapshot.providerKind.title,
                             symbol: snapshot.providerKind.symbolName,
                             colors: snapshot.accentColors
+                        )
+
+                        BeaconPill(
+                            title: setupStatus.title,
+                            symbol: setupStatus.symbol,
+                            colors: setupStatus.colors
                         )
 
                         if snapshot.isLoading {
@@ -292,7 +325,9 @@ struct ProviderCardView: View {
                 }
             }
 
-            if let errorMessage = snapshot.errorMessage {
+            if setupStatus == .setupRequired || setupStatus == .signInRequired || setupStatus == .waitingForSignIn {
+                setupBanner
+            } else if let errorMessage = snapshot.errorMessage {
                 errorBanner(errorMessage)
             } else {
                 if let ratio = snapshot.utilizationRatio {
@@ -413,6 +448,31 @@ struct ProviderCardView: View {
         .animation(.spring(response: 0.45, dampingFraction: 0.82), value: snapshot)
     }
 
+    private var setupBanner: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: setupStatus.symbol)
+                .foregroundStyle(setupStatus.colors.first ?? BeaconPalette.amber)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(setupStatus.title)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(BeaconPalette.ink)
+                Text(setupStatus == .waitingForSignIn
+                    ? "Finish the browser sign-in. UsageBeacon will update this status automatically."
+                    : "This source is added, but it is not connected. Open Settings to finish sign-in.")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            ForegroundSettingsButton {
+                Text("Finish Setup")
+            }
+            .buttonStyle(BeaconActionButtonStyle(colors: setupStatus.colors, filled: true))
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(BeaconPalette.surfaceSoft))
+    }
+
     private func metricPanel(title: String, value: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title.uppercased())
@@ -491,12 +551,11 @@ struct ProviderCardView: View {
 
 struct FloatingHUDView: View {
     let snapshots: [ProviderSnapshotState]
+    @ObservedObject var state: FloatingHUDState
     let onExpansionChange: (Bool) -> Void
-    @State private var isExpanded = false
-    @State private var selectedProviderID: UUID?
 
     private var primary: ProviderSnapshotState? {
-        snapshots.first(where: { $0.id == selectedProviderID }) ?? snapshots.first
+        snapshots.first(where: { $0.id == state.selectedProviderID }) ?? snapshots.first
     }
 
     private var collapsedWidth: CGFloat { 220 }
@@ -507,19 +566,19 @@ struct FloatingHUDView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             collapsedRow
-            if isExpanded, let primary {
+            if state.isExpanded, let primary {
                 expandedDetails(primary)
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .padding(isExpanded ? 12 : 8)
+        .padding(state.isExpanded ? 12 : 8)
         .background(
-            RoundedRectangle(cornerRadius: isExpanded ? 16 : 12, style: .continuous)
+            RoundedRectangle(cornerRadius: state.isExpanded ? 16 : 12, style: .continuous)
                 .fill(BeaconPalette.cardStrong.opacity(0.94))
-                .overlay(RoundedRectangle(cornerRadius: isExpanded ? 16 : 12, style: .continuous).stroke(BeaconPalette.outline, lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: state.isExpanded ? 16 : 12, style: .continuous).stroke(BeaconPalette.outline, lineWidth: 1))
         )
         .shadow(color: BeaconPalette.shadow.opacity(0.55), radius: 8, x: 0, y: 4)
-        .frame(width: isExpanded ? 250 : collapsedWidth, alignment: .leading)
+        .frame(width: state.isExpanded ? 250 : collapsedWidth, alignment: .leading)
     }
 
     private var collapsedRow: some View {
@@ -531,6 +590,8 @@ struct FloatingHUDView: View {
                     compactProvider(snapshot)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("\(snapshot.providerName), \(hudPrimaryValue(snapshot)), \(percent(snapshot))")
+                .accessibilityHint(state.isExpanded && state.selectedProviderID == snapshot.id ? "Collapses details" : "Shows details")
 
                 if snapshot.id != snapshots.prefix(2).last?.id {
                     Divider()
@@ -581,14 +642,22 @@ struct FloatingHUDView: View {
                     .monospacedDigit()
                     .foregroundStyle(BeaconPalette.ink)
             }
-            BeaconGaugeBar(value: utilization, colors: hudColors, height: 6)
-            HStack {
-                Text(snapshot.perWorkingDayRemainingUSD.map { "\(currency($0))/day" } ?? hudSecondaryValue(snapshot))
-                Spacer()
-                Text(statusText)
+            if let errorMessage = snapshot.errorMessage {
+                Text(errorMessage)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.danger)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                BeaconGaugeBar(value: utilization, colors: hudColors, height: 6)
+                HStack {
+                    Text(snapshot.perWorkingDayRemainingUSD.map { "\(currency($0))/day" } ?? hudSecondaryValue(snapshot))
+                    Spacer()
+                    Text(statusText)
+                }
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(BeaconPalette.mutedInk)
             }
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
-            .foregroundStyle(BeaconPalette.mutedInk)
             if snapshots.count > 1 {
                 Text("+ \(snapshots.count - 1) more connected source\(snapshots.count == 2 ? "" : "s")")
                     .font(.system(size: 10, weight: .medium, design: .rounded))
@@ -604,7 +673,8 @@ struct FloatingHUDView: View {
     }
 
     private var statusText: String {
-        utilization >= 0.85 ? "Needs attention" : utilization >= 0.65 ? "Watch usage" : "On track"
+        if primary?.errorMessage != nil { return "Connection error" }
+        return utilization >= 0.85 ? "Needs attention" : utilization >= 0.65 ? "Watch usage" : "On track"
     }
 
     private func currency(_ value: Decimal?) -> String {
@@ -615,6 +685,9 @@ struct FloatingHUDView: View {
     }
 
     private func hudPrimaryValue(_ snapshot: ProviderSnapshotState) -> String {
+        if snapshot.errorMessage != nil {
+            return "Error"
+        }
         if let window = snapshot.primaryUsageWindow {
             return "\(Int(max(100 - window.usedPercent.doubleValue, 0).rounded()))% left"
         }
@@ -632,6 +705,7 @@ struct FloatingHUDView: View {
     }
 
     private func percent(_ snapshot: ProviderSnapshotState) -> String {
+        if snapshot.errorMessage != nil { return "!" }
         guard let ratio = snapshot.utilizationRatio else { return "—" }
         return "\(Int((ratio * 100).rounded()))%"
     }
@@ -644,11 +718,11 @@ struct FloatingHUDView: View {
     }
 
     private func select(_ snapshot: ProviderSnapshotState) {
-        let shouldCollapse = isExpanded && selectedProviderID == snapshot.id
+        let shouldCollapse = state.isExpanded && state.selectedProviderID == snapshot.id
         withAnimation(.easeInOut(duration: 0.18)) {
-            selectedProviderID = snapshot.id
-            isExpanded = !shouldCollapse
+            state.selectedProviderID = snapshot.id
+            state.isExpanded = !shouldCollapse
         }
-        onExpansionChange(isExpanded)
+        onExpansionChange(state.isExpanded)
     }
 }

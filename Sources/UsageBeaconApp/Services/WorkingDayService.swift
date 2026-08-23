@@ -47,15 +47,13 @@ final class WorkingDayService {
         }
     }
 
-    func requestAccess() async -> CalendarAccessState {
+    func requestAccess() async throws -> CalendarAccessState {
         switch authorizationState {
         case .fullAccess:
             eventStore.reset()
             return .fullAccess
         case .notDetermined:
-            _ = await Self.requestFullAccess()
-            // EventKit completes permission requests on its XPC queue. Once that
-            // nonisolated callback finishes, refresh the main-actor store's old cache.
+            _ = try await Self.requestFullAccess()
             eventStore.reset()
             return authorizationState
         case .writeOnly, .denied, .restricted, .unknown:
@@ -274,12 +272,15 @@ final class WorkingDayService {
         return blocked
     }
 
-    nonisolated private static func requestFullAccess() async -> Bool {
+    nonisolated private static func requestFullAccess() async throws -> Bool {
         let permissionStore = EKEventStore()
-        return await withCheckedContinuation { continuation in
-            let resumer = CalendarAccessRequestResumer(continuation)
-            permissionStore.requestFullAccessToEvents { granted, _ in
-                resumer.resume(with: granted)
+        return try await withCheckedThrowingContinuation { continuation in
+            let resumer = CalendarAccessRequestResumer(
+                continuation: continuation,
+                eventStore: permissionStore
+            )
+            permissionStore.requestFullAccessToEvents { granted, error in
+                resumer.resume(granted: granted, error: error)
             }
         }
     }
@@ -288,18 +289,29 @@ final class WorkingDayService {
 
 private final class CalendarAccessRequestResumer: @unchecked Sendable {
     private let lock = NSLock()
-    private var continuation: CheckedContinuation<Bool, Never>?
+    private var continuation: CheckedContinuation<Bool, any Error>?
+    private var eventStore: EKEventStore?
 
-    init(_ continuation: CheckedContinuation<Bool, Never>) {
+    init(
+        continuation: CheckedContinuation<Bool, any Error>,
+        eventStore: EKEventStore
+    ) {
         self.continuation = continuation
+        self.eventStore = eventStore
     }
 
-    func resume(with granted: Bool) {
+    func resume(granted: Bool, error: (any Error)?) {
         lock.lock()
         let continuation = continuation
         self.continuation = nil
+        eventStore = nil
         lock.unlock()
-        continuation?.resume(returning: granted)
+
+        if let error {
+            continuation?.resume(throwing: error)
+        } else {
+            continuation?.resume(returning: granted)
+        }
     }
 }
 

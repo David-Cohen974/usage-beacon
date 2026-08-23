@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject var model: AppModel
+    @ObservedObject var updater: UpdaterController
 
     private var activeProviders: [StoredProvider] {
         model.configuration.providers.filter(\.isEnabled)
@@ -35,10 +36,17 @@ struct SettingsView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 34) {
+                    if let recovery = model.configurationRecovery {
+                        configurationRecoveryBanner(recovery)
+                    }
+                    if let message = model.persistenceErrorMessage {
+                        persistenceErrorBanner(message)
+                    }
                     overviewHero
                     providersSection
                     budgetSchedule
                     displaySection
+                    updatesSection
                 }
                 .padding(30)
             }
@@ -87,7 +95,9 @@ struct SettingsView: View {
                             .monospacedDigit()
                             .foregroundStyle(BeaconPalette.ink)
                     }
-                    BeaconGaugeBar(value: dailyUsageRatio, colors: [BeaconPalette.cyan, BeaconPalette.teal], height: 8)
+                    if let dailyUsageRatio {
+                        BeaconGaugeBar(value: dailyUsageRatio, colors: [BeaconPalette.cyan, BeaconPalette.teal], height: 8)
+                    }
                     Text(dailyUsageDetail)
                         .font(.system(size: 12, weight: .medium, design: .rounded))
                         .foregroundStyle(BeaconPalette.mutedInk)
@@ -96,7 +106,7 @@ struct SettingsView: View {
                 .beaconCard(colors: [BeaconPalette.cyan, BeaconPalette.teal], cornerRadius: 22)
             } else {
                 HStack(spacing: 8) {
-                    Text("\(activeProviders.count) active provider\(activeProviders.count == 1 ? "" : "s")")
+                    Text("\(activeProviders.count) enabled connector\(activeProviders.count == 1 ? "" : "s")")
                     Text("·")
                     Text(workingDaysDescription)
                     Text("·")
@@ -173,6 +183,19 @@ struct SettingsView: View {
                         .labelsHidden()
                         .toggleStyle(.switch)
                 }
+            }
+            if let calendarErrorMessage = model.calendarErrorMessage {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(BeaconPalette.danger)
+                    Text(calendarErrorMessage)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Spacer()
+                    Button("Dismiss") { model.dismissCalendarError() }
+                }
+                .padding(12)
+                .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(BeaconPalette.danger.opacity(0.1)))
             }
             if model.availableCalendars.isEmpty {
                 HStack(spacing: 14) {
@@ -266,11 +289,40 @@ struct SettingsView: View {
 
     private var displaySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Display", subtitle: "Keep the desktop readout useful and unobtrusive.")
+            sectionHeading("Display", subtitle: "Choose the glanceable surface that works best for you.")
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "rectangle.grid.1x2.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(BeaconPalette.cyan)
+                    .frame(width: 28, height: 28)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("Notification Center Widget")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundStyle(BeaconPalette.ink)
+                        BeaconPill(
+                            title: "Ready to add",
+                            symbol: "checkmark.circle.fill",
+                            colors: [BeaconPalette.cyan, BeaconPalette.teal]
+                        )
+                    }
+                    Text("Open Notification Center, choose Edit Widgets, search for UsageBeacon, then pick a small, medium, or large widget.")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+            }
+            Divider().overlay(BeaconPalette.outline)
             HStack {
-                Label("Floating HUD", systemImage: "sparkles.tv")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(BeaconPalette.ink)
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("Floating HUD", systemImage: "sparkles.tv")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Text("Show or hide anytime with \(GlobalHotKeyController.displayName)")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                }
                 Spacer()
                 Toggle("Floating HUD", isOn: Binding(get: { model.configuration.settings.showFloatingHUD }, set: { model.setShowFloatingHUD($0) }))
                     .labelsHidden()
@@ -292,6 +344,116 @@ struct SettingsView: View {
         }
         .padding(18)
         .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+    }
+
+    private var updatesSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionHeading("Updates", subtitle: "Keep UsageBeacon current without downloading it again by hand.")
+
+            VStack(spacing: 0) {
+                settingsRow(
+                    title: "Check automatically",
+                    detail: "Look for a signed update once a day."
+                ) {
+                    Toggle(
+                        "Check automatically",
+                        isOn: Binding(
+                            get: { updater.automaticallyChecksForUpdates },
+                            set: { updater.setAutomaticallyChecksForUpdates($0) }
+                        )
+                    )
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                Divider().overlay(BeaconPalette.outline)
+
+                settingsRow(
+                    title: "Download automatically",
+                    detail: "Prepare verified updates in the background and install them at a safe time."
+                ) {
+                    Toggle(
+                        "Download automatically",
+                        isOn: Binding(
+                            get: { updater.automaticallyDownloadsUpdates },
+                            set: { updater.setAutomaticallyDownloadsUpdates($0) }
+                        )
+                    )
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                Divider().overlay(BeaconPalette.outline)
+
+                settingsRow(
+                    title: "Beta updates",
+                    detail: "Receive prereleases for testing before they reach everyone."
+                ) {
+                    Toggle(
+                        "Beta updates",
+                        isOn: Binding(
+                            get: { updater.receivesBetaUpdates },
+                            set: { updater.setReceivesBetaUpdates($0) }
+                        )
+                    )
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                Divider().overlay(BeaconPalette.outline)
+
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("UsageBeacon \(appVersionDescription)")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundStyle(BeaconPalette.ink)
+                        Text("Every update is verified with Sparkle Ed25519 signing and Apple code signing.")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(BeaconPalette.mutedInk)
+                    }
+                    Spacer()
+                    Button("Check for Updates…") {
+                        updater.checkForUpdates()
+                    }
+                    .disabled(!updater.canCheckForUpdates)
+                    .buttonStyle(
+                        BeaconActionButtonStyle(
+                            colors: [BeaconPalette.cyan, BeaconPalette.teal],
+                            filled: false
+                        )
+                    )
+                }
+                .padding(.vertical, 14)
+            }
+            .padding(.horizontal, 18)
+            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+        }
+    }
+
+    private func settingsRow<Accessory: View>(
+        title: String,
+        detail: String,
+        @ViewBuilder accessory: () -> Accessory
+    ) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(BeaconPalette.ink)
+                Text(detail)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+            }
+            Spacer()
+            accessory()
+        }
+        .padding(.vertical, 14)
+    }
+
+    private var appVersionDescription: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+        return build.isEmpty ? version : "\(version) (\(build))"
     }
 
     private var providersSection: some View {
@@ -333,21 +495,47 @@ struct SettingsView: View {
             }
 
             if model.configuration.providers.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("No connectors yet")
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("Let’s connect your first usage source")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
                         .foregroundStyle(BeaconPalette.ink)
 
-                    Text("Start with Cursor Personal if you just want the web UI numbers, or Manual Budget if you want to demo the experience instantly.")
+                    Text("UsageBeacon starts empty. Choose a service below, sign in, and wait for the status to say Connected before expecting usage data.")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(BeaconPalette.mutedInk)
 
-                    HStack(spacing: 10) {
-                        BeaconPill(title: "Cursor Personal", symbol: ProviderKind.cursorPersonal.symbolName, colors: ProviderKind.cursorPersonal.accentColors)
-                        BeaconPill(title: "Claude Personal", symbol: ProviderKind.claudePersonal.symbolName, colors: ProviderKind.claudePersonal.accentColors)
-                        BeaconPill(title: "Manual Budget", symbol: ProviderKind.manual.symbolName, colors: ProviderKind.manual.accentColors)
-                        BeaconPill(title: "Custom REST", symbol: ProviderKind.customREST.symbolName, colors: ProviderKind.customREST.accentColors)
+                    HStack(alignment: .top, spacing: 12) {
+                        onboardingStep(number: 1, title: "Choose", detail: "Select Cursor, Claude, or a manual budget.")
+                        onboardingStep(number: 2, title: "Sign in", detail: "Complete sign-in in the secure browser window.")
+                        onboardingStep(number: 3, title: "Verify", detail: "Wait for the connector to show Connected.")
                     }
+
+                    HStack(spacing: 12) {
+                        Button {
+                            model.addProviderAndBeginSetup(kind: .cursorPersonal)
+                        } label: {
+                            Label("Sign in to Cursor", systemImage: ProviderKind.cursorPersonal.symbolName)
+                        }
+                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.cursorPersonal.accentColors, filled: true))
+
+                        Button {
+                            model.addProviderAndBeginSetup(kind: .claudePersonal)
+                        } label: {
+                            Label("Sign in to Claude", systemImage: ProviderKind.claudePersonal.symbolName)
+                        }
+                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.claudePersonal.accentColors, filled: false))
+
+                        Button {
+                            model.addProvider(kind: .manual)
+                        } label: {
+                            Label("Add Manual Budget", systemImage: ProviderKind.manual.symbolName)
+                        }
+                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.manual.accentColors, filled: false))
+                    }
+
+                    Label("Your password stays in the service’s own sign-in page. UsageBeacon reuses only the local browser session on this Mac.", systemImage: "lock.shield")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
                 }
                 .padding(24)
                 .beaconCard(colors: [BeaconPalette.peach, BeaconPalette.coral], cornerRadius: 30)
@@ -367,18 +555,100 @@ struct SettingsView: View {
         }
     }
 
-    private var dailyUsageRatio: Double {
-        let budgets = activeSnapshots.compactMap(\.perWorkingDayRemainingUSD)
-        let remaining = budgets.reduce(Decimal.zero, +)
-        guard remaining > 0 else { return 0.35 }
-        let spent = totalSpentToday ?? 0
-        return min(max((spent / (spent + remaining)).doubleValue, 0), 1)
+    private func onboardingStep(number: Int, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(number)")
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(BeaconPalette.ink))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(BeaconPalette.ink)
+                Text(detail)
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(BeaconPalette.surfaceSoft))
+    }
+
+    private var dailyBudgetTotals: (spent: Decimal, remaining: Decimal)? {
+        let values = activeSnapshots.compactMap { snapshot -> (Decimal, Decimal)? in
+            guard let spent = snapshot.spentTodayUSD,
+                  let remaining = snapshot.perWorkingDayRemainingUSD else {
+                return nil
+            }
+            return (spent, remaining)
+        }
+        guard values.isEmpty == false else {
+            return nil
+        }
+        return values.reduce(into: (spent: Decimal.zero, remaining: Decimal.zero)) { totals, value in
+            totals.spent += value.0
+            totals.remaining += value.1
+        }
+    }
+
+    private var dailyUsageRatio: Double? {
+        guard let totals = dailyBudgetTotals else {
+            return nil
+        }
+        guard totals.remaining > 0 else {
+            return 1
+        }
+        let allowance = totals.spent + totals.remaining
+        guard allowance > 0 else {
+            return nil
+        }
+        return min(max((totals.spent / allowance).doubleValue, 0), 1)
     }
 
     private var dailyUsageDetail: String {
-        let remaining = activeSnapshots.compactMap(\.perWorkingDayRemainingUSD).reduce(Decimal.zero, +)
-        guard remaining > 0 else { return "Today’s live usage is up to date." }
-        return "\(currency(remaining)) remaining · On track"
+        guard let totals = dailyBudgetTotals, let ratio = dailyUsageRatio else {
+            return "Today’s spend is available, but a daily budget target is not."
+        }
+        guard totals.remaining > 0 else {
+            return "No daily budget remaining · Needs attention"
+        }
+        let status = ratio >= 0.85 ? "Needs attention" : ratio >= 0.65 ? "Watch usage" : "On track"
+        return "\(currency(totals.remaining)) remaining · \(status)"
+    }
+
+    private func configurationRecoveryBanner(_ recovery: ConfigurationRecovery) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "externaldrive.badge.exclamationmark")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(BeaconPalette.danger)
+            Text(recovery.message)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(BeaconPalette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button("Reveal Backup") { model.revealConfigurationRecovery() }
+            Button("Dismiss") { model.dismissConfigurationRecovery() }
+        }
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(BeaconPalette.danger.opacity(0.1)))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).stroke(BeaconPalette.danger.opacity(0.35)))
+    }
+
+    private func persistenceErrorBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(BeaconPalette.danger)
+            Text(message)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(BeaconPalette.ink)
+            Spacer()
+            Button("Dismiss") { model.dismissPersistenceError() }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(BeaconPalette.danger.opacity(0.1)))
     }
 
     private var workingDaysDescription: String {
@@ -429,8 +699,13 @@ private struct ProviderEditorView: View {
                                     .beaconInputChrome()
                             }
 
-                            Toggle("Enabled", isOn: $provider.isEnabled)
+                            Toggle("Include in tracking", isOn: $provider.isEnabled)
                                 .toggleStyle(.switch)
+
+                            Text("This controls whether UsageBeacon refreshes this connector. It does not mean the account is connected.")
+                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .foregroundStyle(BeaconPalette.mutedInk)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
                         .frame(maxWidth: .infinity, alignment: .top)
 
@@ -466,9 +741,10 @@ private struct ProviderEditorView: View {
         .animation(.spring(response: 0.42, dampingFraction: 0.82), value: isExpanded)
         .task(id: provider.id) {
             secret = model.loadSecret(for: provider.id)
-        }
-        .onChange(of: provider) { _, updatedProvider in
-            model.updateProvider(updatedProvider)
+            if provider.kind == .cursorPersonal || provider.kind == .claudePersonal,
+               setupStatus != .connected {
+                isExpanded = true
+            }
         }
         .onChange(of: secret) { _, updatedSecret in
             model.saveSecret(updatedSecret, for: provider.id)
@@ -484,9 +760,9 @@ private struct ProviderEditorView: View {
                     Text(provider.displayName)
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                     BeaconPill(
-                        title: provider.isEnabled ? "Active" : "Paused",
-                        symbol: provider.isEnabled ? "checkmark.circle.fill" : "pause.circle.fill",
-                        colors: provider.isEnabled ? [BeaconPalette.cyan, BeaconPalette.teal] : [BeaconPalette.amber, BeaconPalette.coral]
+                        title: setupStatus.title,
+                        symbol: setupStatus.symbol,
+                        colors: setupStatus.colors
                     )
                 }
                     .foregroundStyle(BeaconPalette.ink)
@@ -499,9 +775,8 @@ private struct ProviderEditorView: View {
 
             Spacer()
 
-            Button("Sync") {
-                model.updateProvider(provider)
-                model.refresh(providerID: provider.id)
+            Button(primaryActionTitle) {
+                performPrimaryAction()
             }
             .buttonStyle(
                 BeaconActionButtonStyle(
@@ -520,13 +795,70 @@ private struct ProviderEditorView: View {
                     .foregroundStyle(BeaconPalette.ink)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel(isExpanded ? "Collapse \(provider.displayName) settings" : "Expand \(provider.displayName) settings")
         }
     }
 
     private var providerMetadata: String {
         let source = provider.kind == .manual ? "Manual budget" : provider.kind.title
-        guard let updated = snapshot?.lastUpdatedAt else { return source }
-        return "\(source) · Updated \(DateFormatter.beaconShortTime.string(from: updated))"
+        switch setupStatus {
+        case .paused:
+            return "\(source) · Tracking is paused"
+        case .setupRequired:
+            return "\(source) · Not connected yet — complete setup to start syncing"
+        case .signInRequired:
+            return "\(source) · Not connected — sign in to continue"
+        case .waitingForSignIn:
+            return "\(source) · Finish signing in in the browser window"
+        case .checking:
+            return "\(source) · Checking the saved session"
+        case .syncing:
+            return "\(source) · Reading the latest usage"
+        case .connected:
+            guard let updated = snapshot?.lastUpdatedAt else {
+                return "\(source) · Signed in — waiting for the first sync"
+            }
+            return "\(source) · Connected · Updated \(DateFormatter.beaconShortTime.string(from: updated))"
+        case .ready:
+            return "\(source) · Ready to sync"
+        case .needsAttention:
+            return "\(source) · \(snapshot?.errorMessage ?? "Check this connector’s setup")"
+        }
+    }
+
+    private var setupStatus: ProviderSetupStatus {
+        ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: model.cursorPersonalSessionState,
+            claudeSession: model.claudePersonalSessionState,
+            hasSecret: secret.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        )
+    }
+
+    private var primaryActionTitle: String {
+        switch provider.kind {
+        case .cursorPersonal:
+            return model.cursorPersonalSessionState == .connected ? "Sync Now" : "Sign In"
+        case .claudePersonal:
+            return model.claudePersonalSessionState == .connected ? "Sync Now" : "Sign In"
+        case .cursorAdmin, .anthropicAdmin, .manual, .customREST:
+            return "Sync Now"
+        }
+    }
+
+    private func performPrimaryAction() {
+        model.updateProvider(provider)
+        switch provider.kind {
+        case .cursorPersonal where model.cursorPersonalSessionState != .connected:
+            isExpanded = true
+            model.connectCursorPersonal(using: provider.cursorPersonal?.usagePageURL ?? CursorPersonalSettings().usagePageURL)
+        case .claudePersonal where model.claudePersonalSessionState != .connected:
+            isExpanded = true
+            model.connectClaudePersonal(using: provider.claudePersonal?.usagePageURL ?? ClaudePersonalSettings().usagePageURL)
+        case .cursorPersonal, .cursorAdmin, .claudePersonal, .anthropicAdmin, .manual, .customREST:
+            model.refresh(providerID: provider.id)
+        }
     }
 
     @ViewBuilder
@@ -538,7 +870,8 @@ private struct ProviderEditorView: View {
                     get: { provider.cursorPersonal ?? CursorPersonalSettings() },
                     set: { provider.cursorPersonal = $0 }
                 ),
-                sessionState: model.cursorPersonalSessionState,
+                setupStatus: setupStatus,
+                snapshot: snapshot,
                 onConnect: {
                     model.connectCursorPersonal(
                         using: provider.cursorPersonal?.usagePageURL ?? CursorPersonalSettings().usagePageURL
@@ -569,7 +902,8 @@ private struct ProviderEditorView: View {
                     get: { provider.claudePersonal ?? ClaudePersonalSettings() },
                     set: { provider.claudePersonal = $0 }
                 ),
-                sessionState: model.claudePersonalSessionState,
+                setupStatus: setupStatus,
+                snapshot: snapshot,
                 onConnect: {
                     model.connectClaudePersonal(
                         using: provider.claudePersonal?.usagePageURL ?? ClaudePersonalSettings().usagePageURL
@@ -717,9 +1051,90 @@ private struct ProviderEditorView: View {
     }
 }
 
+private struct PersonalConnectionControls: View {
+    let serviceName: String
+    let status: ProviderSetupStatus
+    let snapshot: ProviderSnapshotState?
+    let colors: [Color]
+    let onConnect: () -> Void
+    let onCheckSession: () -> Void
+    let onDisconnect: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: status.symbol)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(status.colors.first ?? BeaconPalette.ink)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(status.title)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Text(statusDetail)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .foregroundStyle(status == .needsAttention ? BeaconPalette.danger : BeaconPalette.mutedInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(status.colors.first?.opacity(0.10) ?? BeaconPalette.surfaceSoft))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(status.colors.first?.opacity(0.30) ?? BeaconPalette.outline))
+
+            HStack(spacing: 10) {
+                if status != .connected && status != .syncing && status != .paused {
+                    Button(status == .waitingForSignIn ? "Reopen Sign-In" : "Sign in to \(serviceName)") {
+                        onConnect()
+                    }
+                    .buttonStyle(BeaconActionButtonStyle(colors: colors, filled: true))
+                }
+
+                Button("Check Connection") {
+                    onCheckSession()
+                }
+                .buttonStyle(BeaconActionButtonStyle(colors: colors, filled: status == .connected || status == .syncing))
+
+                if status == .connected || status == .syncing || status == .waitingForSignIn {
+                    Button("Disconnect") {
+                        onDisconnect()
+                    }
+                    .buttonStyle(BeaconActionButtonStyle(colors: [BeaconPalette.amber, BeaconPalette.coral], filled: false))
+                }
+            }
+        }
+    }
+
+    private var statusDetail: String {
+        switch status {
+        case .setupRequired, .signInRequired:
+            return "Not connected yet. Click Sign in to \(serviceName), complete the browser sign-in, then return here."
+        case .waitingForSignIn:
+            return "Finish signing in in the \(serviceName) browser window. This status changes to Connected automatically."
+        case .checking:
+            return "Checking whether the saved \(serviceName) browser session is still valid."
+        case .syncing:
+            return "Signed in successfully. UsageBeacon is reading the latest usage now."
+        case .connected:
+            if let updated = snapshot?.lastUpdatedAt {
+                return "Signed in and syncing correctly. Last usage update: \(DateFormatter.beaconShortTime.string(from: updated))."
+            }
+            return "Signed in successfully. The first usage sync will start automatically."
+        case .needsAttention:
+            return snapshot?.errorMessage ?? "UsageBeacon could not verify this connector. Check the connection and try again."
+        case .paused:
+            return "Tracking is paused. Turn on Include in tracking to resume automatic refreshes."
+        case .ready:
+            return "Setup is complete and ready for the first sync."
+        }
+    }
+}
+
 private struct CursorPersonalProviderFields: View {
     @Binding var settings: CursorPersonalSettings
-    let sessionState: CursorDashboardSessionState
+    let setupStatus: ProviderSetupStatus
+    let snapshot: ProviderSnapshotState?
     let onConnect: () -> Void
     let onDisconnect: () -> Void
     let onCheckSession: () -> Void
@@ -729,41 +1144,15 @@ private struct CursorPersonalProviderFields: View {
             title: "Cursor Personal",
             subtitle: "Mirror the same usage page you already see in Cursor’s web UI."
         ) {
-            HStack(spacing: 10) {
-                BeaconPill(
-                    title: sessionState.description,
-                    symbol: sessionState == .connected ? "checkmark.circle.fill" : "person.crop.circle.badge.questionmark",
-                    colors: sessionState == .connected ? [BeaconPalette.cyan, BeaconPalette.teal] : [BeaconPalette.amber, BeaconPalette.coral]
-                )
-                Spacer()
-                Button("Connect") {
-                    onConnect()
-                }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: [BeaconPalette.cyan, BeaconPalette.teal],
-                        filled: true
-                    )
-                )
-                Button("Check Session") {
-                    onCheckSession()
-                }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: [BeaconPalette.cyan, BeaconPalette.teal],
-                        filled: false
-                    )
-                )
-                Button("Disconnect") {
-                    onDisconnect()
-                }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: [BeaconPalette.amber, BeaconPalette.coral],
-                        filled: false
-                    )
-                )
-            }
+            PersonalConnectionControls(
+                serviceName: "Cursor",
+                status: setupStatus,
+                snapshot: snapshot,
+                colors: ProviderKind.cursorPersonal.accentColors,
+                onConnect: onConnect,
+                onCheckSession: onCheckSession,
+                onDisconnect: onDisconnect
+            )
 
             ProviderFieldGroup("Budget override USD") {
                 TextField(
@@ -798,7 +1187,8 @@ private struct CursorPersonalProviderFields: View {
 
 private struct ClaudePersonalProviderFields: View {
     @Binding var settings: ClaudePersonalSettings
-    let sessionState: ClaudeDashboardSessionState
+    let setupStatus: ProviderSetupStatus
+    let snapshot: ProviderSnapshotState?
     let onConnect: () -> Void
     let onDisconnect: () -> Void
     let onCheckSession: () -> Void
@@ -809,41 +1199,15 @@ private struct ClaudePersonalProviderFields: View {
             subtitle: "Read your own Claude usage through a local signed-in web session. No admin API key is needed.",
             colors: ProviderKind.claudePersonal.accentColors
         ) {
-            HStack(spacing: 10) {
-                BeaconPill(
-                    title: sessionState.description,
-                    symbol: sessionState == .connected ? "checkmark.circle.fill" : "person.crop.circle.badge.questionmark",
-                    colors: sessionState == .connected ? [BeaconPalette.cyan, BeaconPalette.teal] : [BeaconPalette.amber, BeaconPalette.coral]
-                )
-                Spacer()
-                Button("Connect") {
-                    onConnect()
-                }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: ProviderKind.claudePersonal.accentColors,
-                        filled: true
-                    )
-                )
-                Button("Check Session") {
-                    onCheckSession()
-                }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: ProviderKind.claudePersonal.accentColors,
-                        filled: false
-                    )
-                )
-                Button("Disconnect") {
-                    onDisconnect()
-                }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: [BeaconPalette.amber, BeaconPalette.coral],
-                        filled: false
-                    )
-                )
-            }
+            PersonalConnectionControls(
+                serviceName: "Claude",
+                status: setupStatus,
+                snapshot: snapshot,
+                colors: ProviderKind.claudePersonal.accentColors,
+                onConnect: onConnect,
+                onCheckSession: onCheckSession,
+                onDisconnect: onDisconnect
+            )
 
             Text("For organization accounts, an owner may need to enable Organization settings → Usage → Member analytics before Claude shows personal spend.")
                 .font(.system(size: 12, weight: .medium, design: .rounded))

@@ -1,0 +1,297 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing version tag to build, for example v1.2.0 or v1.2.0-beta.1
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: usagebeacon-publishing
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 60
+    env:
+      SOURCE_PACKAGES_DIR_PATH: ${{ github.workspace }}/.build/SourcePackages
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Validate tag and version
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            tag="${{ inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          release_version="$(./Scripts/verify-version.sh "$tag")"
+          marketing_version="${release_version%%-*}"
+          build_number="$((100000 + GITHUB_RUN_NUMBER))"
+          channel="stable"
+          prerelease="false"
+          if [[ "$release_version" == *-* ]]; then
+            channel="beta"
+            prerelease="true"
+          fi
+
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "The tagged commit must already be part of main." >&2
+            exit 1
+          fi
+
+          {
+            echo "tag=$tag"
+            echo "release_version=$release_version"
+            echo "marketing_version=$marketing_version"
+            echo "build_number=$build_number"
+            echo "channel=$channel"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate release secrets
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          : "${APPLE_CERTIFICATE_P12_BASE64:?Missing APPLE_CERTIFICATE_P12_BASE64}"
+          : "${APPLE_CERTIFICATE_PASSWORD:?Missing APPLE_CERTIFICATE_PASSWORD}"
+          : "${APPLE_API_KEY_ID:?Missing APPLE_API_KEY_ID}"
+          : "${APPLE_API_ISSUER_ID:?Missing APPLE_API_ISSUER_ID}"
+          : "${APPLE_API_PRIVATE_KEY:?Missing APPLE_API_PRIVATE_KEY}"
+          : "${SPARKLE_PRIVATE_KEY:?Missing SPARKLE_PRIVATE_KEY}"
+
+      - name: Run tests
+        run: swift test --jobs 1
+
+      - name: Import Developer ID certificate
+        id: signing
+        env:
+          APPLE_CERTIFICATE_P12_BASE64: ${{ secrets.APPLE_CERTIFICATE_P12_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          keychain_path="${RUNNER_TEMP}/usagebeacon-signing.keychain-db"
+          keychain_password="$(uuidgen)$(uuidgen)"
+          certificate_path="${RUNNER_TEMP}/developer-id.p12"
+
+          printf '%s' "$APPLE_CERTIFICATE_P12_BASE64" | base64 -D > "$certificate_path"
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" \
+            -k "$keychain_path" \
+            -P "$APPLE_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -T /usr/bin/security
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$keychain_password" \
+            "$keychain_path"
+          security list-keychains -d user -s "$keychain_path"
+
+          identity="$(
+            security find-identity -v -p codesigning "$keychain_path" \
+              | sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p' \
+              | head -1
+          )"
+          test -n "$identity"
+          echo "identity=$identity" >> "$GITHUB_OUTPUT"
+          echo "keychain_path=$keychain_path" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare notarization credentials
+        id: notary
+        env:
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+        run: |
+          api_key_path="${RUNNER_TEMP}/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s' "$APPLE_API_PRIVATE_KEY" > "$api_key_path"
+          chmod 600 "$api_key_path"
+          echo "api_key_path=$api_key_path" >> "$GITHUB_OUTPUT"
+
+      - name: Build, sign, notarize, and package
+        env:
+          CODE_SIGN_IDENTITY: ${{ steps.signing.outputs.identity }}
+          APPLE_API_KEY_PATH: ${{ steps.notary.outputs.api_key_path }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          ./Scripts/build-release.sh \
+            "${{ steps.release.outputs.marketing_version }}" \
+            "${{ steps.release.outputs.build_number }}" \
+            "${{ steps.release.outputs.release_version }}"
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          notes_path="${RUNNER_TEMP}/release-notes.md"
+          if gh api \
+            --method POST \
+            "/repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+            -f tag_name="${{ steps.release.outputs.tag }}" \
+            -f target_commitish="$GITHUB_SHA" \
+            --jq .body > "$notes_path"; then
+            test -s "$notes_path" || printf 'Maintenance and reliability improvements.\n' > "$notes_path"
+          else
+            printf 'Maintenance and reliability improvements.\n' > "$notes_path"
+          fi
+          echo "path=$notes_path" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Pages and appcast history
+        id: pages
+        run: |
+          set -euo pipefail
+          pages_dir="${RUNNER_TEMP}/usagebeacon-pages"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch origin gh-pages:refs/remotes/origin/gh-pages
+            git worktree add --detach "$pages_dir" refs/remotes/origin/gh-pages
+          else
+            git worktree add --detach "$pages_dir" HEAD
+            git -C "$pages_dir" checkout --orphan gh-pages
+            git -C "$pages_dir" rm -rf .
+          fi
+
+          rsync -a --delete \
+            --exclude .git \
+            --exclude appcast.xml \
+            --exclude latest.json \
+            --exclude releases.json \
+            site/ "$pages_dir/"
+          test -f "$pages_dir/appcast.xml" || ditto --norsrc site/appcast.xml "$pages_dir/appcast.xml"
+          test -f "$pages_dir/latest.json" || ditto --norsrc site/latest.json "$pages_dir/latest.json"
+          test -f "$pages_dir/releases.json" || ditto --norsrc site/releases.json "$pages_dir/releases.json"
+
+          archives_dir="${RUNNER_TEMP}/sparkle-archives"
+          mkdir -p "$archives_dir"
+          ditto --norsrc "$pages_dir/appcast.xml" "$archives_dir/appcast.xml"
+
+          gh release list --limit 20 --json tagName,isDraft \
+            --jq '.[] | select(.isDraft == false) | .tagName' \
+            > "${RUNNER_TEMP}/published-tags.txt"
+          while IFS= read -r old_tag; do
+            [[ -n "$old_tag" ]] || continue
+            [[ "$old_tag" == "${{ steps.release.outputs.tag }}" ]] && continue
+            gh release download "$old_tag" \
+              --pattern 'UsageBeacon-*.zip' \
+              --dir "$archives_dir" \
+              --clobber || true
+          done < "${RUNNER_TEMP}/published-tags.txt"
+
+          archive="dist/UsageBeacon-${{ steps.release.outputs.release_version }}.zip"
+          archive_name="$(basename "$archive")"
+          ditto --norsrc "$archive" "$archives_dir/$archive_name"
+          ditto --norsrc "${{ steps.notes.outputs.path }}" "$archives_dir/${archive_name%.zip}.md"
+
+          echo "pages_dir=$pages_dir" >> "$GITHUB_OUTPUT"
+          echo "archives_dir=$archives_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Generate signed Sparkle appcast and deltas
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          ./Scripts/generate-appcast.sh \
+            "${{ steps.pages.outputs.archives_dir }}" \
+            "${{ steps.pages.outputs.pages_dir }}/appcast.xml" \
+            "${{ steps.release.outputs.tag }}" \
+            "${{ steps.release.outputs.build_number }}" \
+            "${{ steps.release.outputs.channel }}" \
+            "$GITHUB_REPOSITORY"
+
+      - name: Create or update GitHub Release
+        run: |
+          set -euo pipefail
+          tag="${{ steps.release.outputs.tag }}"
+          version="${{ steps.release.outputs.release_version }}"
+          assets=(
+            "dist/UsageBeacon-$version.zip"
+            "dist/UsageBeacon-$version.dmg"
+          )
+          while IFS= read -r delta; do
+            assets+=("$delta")
+          done < <(find "${{ steps.pages.outputs.archives_dir }}" -maxdepth 1 -name '*.delta' -type f -print)
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" \
+              --title "UsageBeacon $version" \
+              --notes-file "${{ steps.notes.outputs.path }}"
+            gh release upload "$tag" "${assets[@]}" --clobber
+          else
+            arguments=(
+              "$tag"
+              "${assets[@]}"
+              --verify-tag
+              --title "UsageBeacon $version"
+              --notes-file "${{ steps.notes.outputs.path }}"
+            )
+            if [[ "${{ steps.release.outputs.prerelease }}" == "true" ]]; then
+              arguments+=(--prerelease)
+            else
+              arguments+=(--latest)
+            fi
+            gh release create "${arguments[@]}"
+          fi
+
+      - name: Generate latest version and changelog metadata
+        run: |
+          gh api "/repos/${GITHUB_REPOSITORY}/releases?per_page=100" > "${RUNNER_TEMP}/releases.json"
+          ./Scripts/generate-site-data.py \
+            "${RUNNER_TEMP}/releases.json" \
+            "${{ steps.pages.outputs.pages_dir }}"
+
+      - name: Publish website and appcast to gh-pages
+        run: |
+          pages_dir="${{ steps.pages.outputs.pages_dir }}"
+          git -C "$pages_dir" config user.name "github-actions[bot]"
+          git -C "$pages_dir" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$pages_dir" add -A
+          if git -C "$pages_dir" diff --cached --quiet; then
+            echo "Website and appcast are already current."
+          else
+            git -C "$pages_dir" commit -m "Publish UsageBeacon ${{ steps.release.outputs.release_version }}"
+            git -C "$pages_dir" push origin HEAD:gh-pages
+          fi
+
+      - name: Upload signed release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: UsageBeacon-${{ steps.release.outputs.release_version }}
+          path: |
+            dist/UsageBeacon-${{ steps.release.outputs.release_version }}.dmg
+            dist/UsageBeacon-${{ steps.release.outputs.release_version }}.zip
+            ${{ steps.pages.outputs.pages_dir }}/appcast.xml
+          if-no-files-found: error
+
+      - name: Remove temporary signing keychain
+        if: always() && steps.signing.outputs.keychain_path != ''
+        run: security delete-keychain "${{ steps.signing.outputs.keychain_path }}" || true

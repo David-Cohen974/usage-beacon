@@ -1,6 +1,21 @@
 import AppKit
 import SwiftUI
 
+extension ProviderSetupStatus {
+    var colors: [Color] {
+        switch self {
+        case .connected, .ready:
+            return [BeaconPalette.cyan, BeaconPalette.teal]
+        case .checking, .syncing, .waitingForSignIn:
+            return [BeaconPalette.amber, BeaconPalette.cyan]
+        case .paused, .setupRequired, .signInRequired:
+            return [BeaconPalette.amber, BeaconPalette.coral]
+        case .needsAttention:
+            return [BeaconPalette.danger, BeaconPalette.coral]
+        }
+    }
+}
+
 enum BeaconPalette {
     static let ink = dynamic(light: rgba(0.10, 0.14, 0.24), dark: rgba(0.93, 0.95, 0.99))
     static let mutedInk = dynamic(light: rgba(0.33, 0.38, 0.47), dark: rgba(0.68, 0.74, 0.82))
@@ -131,6 +146,7 @@ extension ProviderSnapshotState {
 }
 
 struct BeaconBackdrop: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var animate = false
 
     var body: some View {
@@ -177,8 +193,17 @@ struct BeaconBackdrop: View {
         }
         .ignoresSafeArea()
         .onAppear {
+            guard reduceMotion == false else {
+                animate = false
+                return
+            }
             withAnimation(.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
                 animate = true
+            }
+        }
+        .onChange(of: reduceMotion) { _, shouldReduceMotion in
+            if shouldReduceMotion {
+                withAnimation(nil) { animate = false }
             }
         }
     }
@@ -402,6 +427,33 @@ struct ProviderKindOrb: View {
                 .foregroundStyle(.white)
         }
         .shadow(color: kind.accentColors.last?.opacity(0.22) ?? .clear, radius: 12, x: 0, y: 8)
+        .accessibilityHidden(true)
+    }
+}
+
+struct ForegroundSettingsButton<Label: View>: View {
+    @Environment(\.openSettings) private var openSettings
+    private let label: () -> Label
+
+    init(@ViewBuilder label: @escaping () -> Label) {
+        self.label = label
+    }
+
+    var body: some View {
+        Button(action: presentSettings, label: label)
+    }
+
+    private func presentSettings() {
+        NSApp.activate(ignoringOtherApps: true)
+        openSettings()
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(150))
+            NSApp.activate(ignoringOtherApps: true)
+            NSApp.windows.first(where: { window in
+                window.isVisible && window.canBecomeKey && !(window is NSPanel)
+            })?.makeKeyAndOrderFront(nil)
+        }
     }
 }
 

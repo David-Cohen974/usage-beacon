@@ -9,17 +9,18 @@ It keeps a live view of:
 - Today's spend when the provider exposes it
 - Last prompt cost when the provider exposes it
 
-The app runs as a menu bar extra, supports an always-on-top floating HUD, and can adjust daily runway using your selected macOS calendars for vacations and holidays.
+The app runs as a menu bar extra, includes macOS Notification Center and desktop widgets, supports an optional always-on-top floating HUD, and can adjust daily runway using your selected macOS calendars for vacations and holidays.
 
 ## Status
 
-UsageBeacon is ready for local use and contributor-friendly development. The codebase is structured, tested, and documented for open-source publication.
-
-Before publishing the repository publicly, choose the license you want to ship with and add a `LICENSE` file. That is an owner decision and is intentionally not assumed in this repository.
+UsageBeacon is ready for local use and contributor-friendly development. Tagged releases are built, Developer ID signed, notarized, and published automatically with a Sparkle 2 update feed.
+It is distributed under the MIT License.
 
 ## Features
 
-- Native SwiftUI macOS interface with menu bar and floating HUD modes
+- Native SwiftUI macOS interface with menu bar, WidgetKit, and floating HUD modes
+- Small, medium, and large widgets for Notification Center or the desktop
+- System-wide ⇧⌘U shortcut to show or hide the floating HUD
 - Calendar-aware per-working-day budget math
 - Dark mode support
 - Retry and backoff protection around provider refreshes
@@ -44,6 +45,10 @@ Before publishing the repository publicly, choose the license you want to ship w
 
 ## Quick Start
 
+### Install a release
+
+Download the latest signed and notarized DMG from the [UsageBeacon website](https://david-cohen974.github.io/usage-beacon/) or [GitHub Releases](https://github.com/David-Cohen974/usage-beacon/releases). Installed releases can update themselves through Sparkle.
+
 ### Run from source
 
 ```bash
@@ -54,7 +59,8 @@ swift run UsageBeaconApp
 
 ```bash
 ./Scripts/build-app.sh debug
-open dist/UsageBeacon.app
+ditto -x -k dist/UsageBeacon.zip /Applications
+open /Applications/UsageBeacon.app
 ```
 
 ### Rebuild and relaunch during development
@@ -64,6 +70,15 @@ open dist/UsageBeacon.app
 ```
 
 The built app runs as a menu bar app instead of appearing in the Dock.
+The script creates only `dist/UsageBeacon.zip`. Keeping a second unpacked `.app` in the source folder can make macOS register the wrong widget extension, so install and run the single copy in `/Applications`.
+
+### Add the widget
+
+1. Open Notification Center and choose `Edit Widgets`, or Control-click the desktop and choose `Edit Widgets`.
+2. Search for `UsageBeacon`.
+3. Add the small, medium, or large widget. The app keeps its data current while it is running.
+
+The floating HUD remains available separately in UsageBeacon's Display settings for people who prefer an always-on-top view.
 
 ## Setup Notes
 
@@ -107,7 +122,7 @@ swift test --jobs 1
 - `Sources/UsageBeaconApp/UI`: SwiftUI views and design system
 - `Tests/UsageBeaconAppTests`: provider, parser, and configuration tests
 - `Scripts`: local build and relaunch helpers
-- `Resources`: release artwork and macOS app-bundle resources
+- `site`: static GitHub Pages product website and release metadata placeholders
 - `docs`: contributor documentation and architecture notes
 
 ## Security and Privacy
@@ -116,13 +131,17 @@ swift test --jobs 1
 - Calendar access is optional and only used for working-day calculations.
 - UsageBeacon does not require a backend service; data is fetched directly from vendor endpoints or signed-in local sessions.
 - Some personal connectors depend on vendor web UI structure and private session endpoints, so they may require maintenance when vendors change their dashboards.
+- The personal connectors automate access to undocumented endpoints using your signed-in session. Before using or redistributing them, review the applicable vendor terms and policies. You are responsible for ensuring your use is permitted.
 
 See [SECURITY.md](SECURITY.md) for disclosure guidance.
+
+Release maintainers should follow [RELEASING.md](RELEASING.md). It documents the one-time GitHub/Apple/Sparkle setup, version tags, beta testing, and recovery procedures.
 
 ## Known Limitations
 
 - `Cursor Personal` depends on Cursor's signed-in private usage-summary and usage-event endpoints, which may change without notice.
 - `Claude Personal` depends on Claude's private signed-in usage endpoint, which may change without notice.
+- Vendor terms or access policies may restrict automated use of private endpoints even when the user can access the same data in the web interface.
 - Claude Personal does not expose daily spend or per-prompt cost; the app marks those metrics as not provided instead of treating them as connection failures.
 - Organization owners can disable Member analytics, in which case Claude may expose rolling quota utilization without exposing personal spend.
 - Claude subscription limits are rolling percentages rather than published token caps, so UsageBeacon shows the percentages Claude reports instead of inventing token totals.

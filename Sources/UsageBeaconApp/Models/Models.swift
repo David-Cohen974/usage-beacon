@@ -377,6 +377,10 @@ struct AppConfiguration: Codable, Equatable {
     var settings: GlobalSettings
     var providers: [StoredProvider]
 
+    static var empty: AppConfiguration {
+        AppConfiguration(settings: GlobalSettings(), providers: [])
+    }
+
     static var example: AppConfiguration {
         AppConfiguration(
             settings: GlobalSettings(),
@@ -457,6 +461,115 @@ struct ProviderSnapshotState: Identifiable, Equatable {
     }
 }
 
+enum ProviderSetupStatus: Equatable {
+    case paused
+    case setupRequired
+    case signInRequired
+    case waitingForSignIn
+    case checking
+    case syncing
+    case connected
+    case ready
+    case needsAttention
+
+    var title: String {
+        switch self {
+        case .paused: return "Paused"
+        case .setupRequired: return "Setup needed"
+        case .signInRequired: return "Sign in required"
+        case .waitingForSignIn: return "Waiting for sign-in"
+        case .checking: return "Checking…"
+        case .syncing: return "Syncing…"
+        case .connected: return "Connected"
+        case .ready: return "Ready"
+        case .needsAttention: return "Needs attention"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .paused: return "pause.circle.fill"
+        case .setupRequired: return "wrench.and.screwdriver.fill"
+        case .signInRequired: return "person.crop.circle.badge.exclamationmark"
+        case .waitingForSignIn: return "person.crop.circle.badge.clock"
+        case .checking, .syncing: return "arrow.triangle.2.circlepath"
+        case .connected: return "checkmark.circle.fill"
+        case .ready: return "checkmark.seal.fill"
+        case .needsAttention: return "exclamationmark.triangle.fill"
+        }
+    }
+
+    static func resolve(
+        provider: StoredProvider,
+        snapshot: ProviderSnapshotState?,
+        cursorSession: CursorDashboardSessionState,
+        claudeSession: ClaudeDashboardSessionState,
+        hasSecret: Bool
+    ) -> ProviderSetupStatus {
+        guard provider.isEnabled else { return .paused }
+
+        switch provider.kind {
+        case .cursorPersonal:
+            let authentication: PersonalAuthenticationState = switch cursorSession {
+            case .unknown: .unknown
+            case .disconnected: .disconnected
+            case .connecting: .connecting
+            case .connected: .connected
+            }
+            return resolvePersonalSession(authentication, snapshot: snapshot)
+        case .claudePersonal:
+            let authentication: PersonalAuthenticationState = switch claudeSession {
+            case .unknown: .unknown
+            case .disconnected: .disconnected
+            case .connecting: .connecting
+            case .connected: .connected
+            }
+            return resolvePersonalSession(authentication, snapshot: snapshot)
+        case .manual:
+            if snapshot?.isLoading == true { return .syncing }
+            if snapshot?.errorMessage != nil { return .needsAttention }
+            return snapshot?.lastUpdatedAt == nil ? .ready : .connected
+        case .cursorAdmin, .anthropicAdmin, .customREST:
+            if snapshot?.isLoading == true { return .syncing }
+            if snapshot?.errorMessage != nil { return .needsAttention }
+            if snapshot?.lastUpdatedAt != nil { return .connected }
+            return hasSecret ? .ready : .setupRequired
+        }
+    }
+
+    private enum PersonalAuthenticationState: Equatable {
+        case unknown
+        case disconnected
+        case connecting
+        case connected
+    }
+
+    private static func resolvePersonalSession(
+        _ session: PersonalAuthenticationState,
+        snapshot: ProviderSnapshotState?
+    ) -> ProviderSetupStatus {
+        if session == .connecting {
+            return .waitingForSignIn
+        }
+        if session == .disconnected {
+            return .signInRequired
+        }
+        if session == .connected {
+            if snapshot?.isLoading == true { return .syncing }
+            if snapshot?.errorMessage != nil { return .needsAttention }
+            return .connected
+        }
+
+        if let message = snapshot?.errorMessage,
+           message.localizedCaseInsensitiveContains("sign in") {
+            return .signInRequired
+        }
+        if snapshot?.isLoading == true { return .checking }
+        if snapshot?.errorMessage != nil { return .needsAttention }
+        return .setupRequired
+    }
+}
+
 struct CalendarSource: Identifiable, Equatable {
     var id: String
     var title: String
@@ -465,18 +578,42 @@ struct CalendarSource: Identifiable, Equatable {
 
 enum ProviderFailure: LocalizedError {
     case misconfigured(String)
+    case authentication(String)
     case network(String)
+    case httpStatus(code: Int, message: String, retryAfterSeconds: TimeInterval?)
     case parsing(String)
 
     var errorDescription: String? {
         switch self {
         case let .misconfigured(message):
             return message
+        case let .authentication(message):
+            return message
         case let .network(message):
+            return message
+        case let .httpStatus(_, message, _):
             return message
         case let .parsing(message):
             return message
         }
+    }
+
+    var isRetryable: Bool {
+        switch self {
+        case .network:
+            return true
+        case let .httpStatus(code, _, _):
+            return code == 408 || code == 425 || code == 429 || (500 ... 599).contains(code)
+        case .misconfigured, .authentication, .parsing:
+            return false
+        }
+    }
+
+    var retryAfterSeconds: TimeInterval? {
+        guard case let .httpStatus(_, _, retryAfterSeconds) = self else {
+            return nil
+        }
+        return retryAfterSeconds
     }
 }
 

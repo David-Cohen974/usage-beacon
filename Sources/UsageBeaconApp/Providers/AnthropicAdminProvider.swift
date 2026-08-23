@@ -108,6 +108,11 @@ enum AnthropicAdminProvider {
             let response = try JSONDecoder().decode(AnthropicCostReportResponse.self, from: data)
             for bucket in response.data {
                 for result in bucket.results {
+                    guard result.currency.uppercased() == "USD" else {
+                        throw ProviderFailure.misconfigured(
+                            "Anthropic returned \(result.currency.uppercased()) costs, but this provider's configured budget is in USD. UsageBeacon will not relabel or combine different currencies."
+                        )
+                    }
                     if let amount = Decimal(string: result.amount) {
                         totalCents += amount
                     }

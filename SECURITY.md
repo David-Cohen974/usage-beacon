@@ -8,7 +8,7 @@ UsageBeacon stores provider secrets locally in the macOS Keychain and may open s
 
 If you find a security issue, do not open a public issue with exploit details.
 
-Report it privately to the repository owner with:
+Report it privately through [GitHub's private vulnerability reporting form](https://github.com/David-Cohen974/usage-beacon/security/advisories/new) with:
 
 - A clear description of the issue
 - Impact

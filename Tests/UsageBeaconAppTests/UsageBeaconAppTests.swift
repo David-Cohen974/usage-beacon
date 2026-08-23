@@ -1,8 +1,153 @@
 import Foundation
 import Testing
 @testable import UsageBeaconApp
+import UsageBeaconShared
 
 struct UsageBeaconAppTests {
+    @Test
+    func widgetSnapshotRoundTripsThroughCodable() throws {
+        let provider = UsageBeaconWidgetProvider(
+            id: UUID(),
+            name: "Cursor",
+            sourceName: "Cursor Personal",
+            primaryValue: "$400 left",
+            secondaryValue: "$12 today",
+            remainingUSD: 400,
+            spentTodayUSD: 12,
+            perWorkingDayUSD: 20,
+            utilization: 0.4,
+            hasError: false
+        )
+        let snapshot = UsageBeaconWidgetSnapshot(
+            updatedAt: Date(timeIntervalSince1970: 1234),
+            providers: [provider]
+        )
+
+        let data = try JSONEncoder().encode(snapshot)
+        let decoded = try JSONDecoder().decode(UsageBeaconWidgetSnapshot.self, from: data)
+
+        #expect(decoded == snapshot)
+    }
+
+    @Test
+    func firstLaunchStartsWithNoExampleProvidersAndOneMinuteRefresh() {
+        let fileManager = FileManager.default
+        let configurationURL = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)")
+            .appending(path: "configuration.json")
+        let store = ConfigurationStore(fileURL: configurationURL, fileManager: fileManager)
+
+        let configuration = store.load()
+
+        #expect(configuration.providers.isEmpty)
+        #expect(configuration.settings.refreshIntervalMinutes == 1)
+        #expect(store.lastRecovery == nil)
+    }
+
+    @Test
+    func legacyExampleProviderIsRemovedDuringUpgrade() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? fileManager.removeItem(at: directory) }
+        let configurationURL = directory.appending(path: "configuration.json")
+        let store = ConfigurationStore(fileURL: configurationURL, fileManager: fileManager)
+        var legacyConfiguration = AppConfiguration.example
+        legacyConfiguration.settings.refreshIntervalMinutes = 5
+
+        try store.save(legacyConfiguration)
+        let migratedConfiguration = store.load()
+
+        #expect(migratedConfiguration.providers.isEmpty)
+        #expect(migratedConfiguration.settings.refreshIntervalMinutes == 1)
+    }
+
+    @Test
+    func personalProviderStatusReflectsAuthenticationInsteadOfEnabledFlag() {
+        let provider = StoredProvider(kind: .cursorPersonal)
+        let snapshot = ProviderSnapshotState.placeholder(from: provider)
+
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .unknown,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .setupRequired)
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .disconnected,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .signInRequired)
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .connecting,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .waitingForSignIn)
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .connected,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .connected)
+    }
+
+    @Test
+    func corruptConfigurationIsPreservedAndNeverReplacedWithDemoData() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? fileManager.removeItem(at: directory) }
+        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        let configurationURL = directory.appending(path: "configuration.json")
+        let corruptData = Data("{ definitely-not-valid-json".utf8)
+        try corruptData.write(to: configurationURL)
+
+        let store = ConfigurationStore(fileURL: configurationURL, fileManager: fileManager)
+        let configuration = store.load()
+
+        #expect(configuration.providers.isEmpty)
+        #expect(configuration != .example)
+        #expect(fileManager.fileExists(atPath: configurationURL.path) == false)
+        let recovery = try #require(store.lastRecovery)
+        #expect(fileManager.fileExists(atPath: recovery.backupURL.path))
+        #expect(try Data(contentsOf: recovery.backupURL) == corruptData)
+    }
+
+    @Test
+    func configurationStoreRoundTripsConfiguration() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? fileManager.removeItem(at: directory) }
+        let configurationURL = directory.appending(path: "configuration.json")
+        let store = ConfigurationStore(fileURL: configurationURL, fileManager: fileManager)
+        var configuration = AppConfiguration.example
+        configuration.providers[0].displayName = "Saved provider"
+
+        try store.save(configuration)
+
+        #expect(store.load() == configuration)
+        #expect(store.lastRecovery == nil)
+    }
+
+    @Test
+    func providerFailureRetriesOnlyTemporaryFailures() {
+        #expect(ProviderFailure.network("offline").isRetryable)
+        #expect(ProviderFailure.httpStatus(code: 408, message: "timeout", retryAfterSeconds: nil).isRetryable)
+        #expect(ProviderFailure.httpStatus(code: 429, message: "rate limited", retryAfterSeconds: 30).isRetryable)
+        #expect(ProviderFailure.httpStatus(code: 503, message: "unavailable", retryAfterSeconds: nil).isRetryable)
+        #expect(ProviderFailure.httpStatus(code: 400, message: "bad request", retryAfterSeconds: nil).isRetryable == false)
+        #expect(ProviderFailure.httpStatus(code: 401, message: "unauthorized", retryAfterSeconds: nil).isRetryable == false)
+        #expect(ProviderFailure.authentication("expired").isRetryable == false)
+        #expect(ProviderFailure.parsing("invalid JSON").isRetryable == false)
+    }
+
     @Test
     func globalSettingsDecodesLegacyConfigurationWithNewDefaults() throws {
         let data = Data(
@@ -630,6 +775,38 @@ struct UsageBeaconAppTests {
         #expect(parsed.monthlyBudgetUSD == decimal("100"))
         #expect(parsed.spentUSD == decimal("12.50"))
         #expect(parsed.remainingUSD == decimal("87.50"))
+    }
+
+    @Test
+    func claudePersonalDoesNotRelabelNonUSDCostsAsDollars() throws {
+        let data = Data(
+            """
+            {
+              "five_hour": null,
+              "seven_day": null,
+              "spend": {
+                "used": { "amount_minor": 1250, "currency": "EUR", "exponent": 2 },
+                "limit": { "amount_minor": 10000, "currency": "EUR", "exponent": 2 },
+                "enabled": true
+              },
+              "member_dashboard_available": true
+            }
+            """.utf8
+        )
+        let summary = try JSONDecoder().decode(ClaudePersonalUsageSummaryResponse.self, from: data)
+
+        do {
+            _ = try ClaudePersonalProvider.mapUsageSummary(
+                summary,
+                budgetOverrideUSD: nil,
+                budgetResetDay: 1,
+                now: utcDate(year: 2026, month: 8, day: 17)
+            )
+            Issue.record("Expected a non-USD currency failure")
+        } catch {
+            #expect(error.localizedDescription.contains("EUR"))
+            #expect(error.localizedDescription.contains("will not display"))
+        }
     }
 
     @Test

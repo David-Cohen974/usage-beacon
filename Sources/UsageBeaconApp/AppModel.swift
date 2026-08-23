@@ -1,6 +1,8 @@
 import AppKit
 import Foundation
 import SwiftUI
+import UsageBeaconShared
+import WidgetKit
 
 @MainActor
 final class AppModel: ObservableObject {
@@ -9,8 +11,11 @@ final class AppModel: ObservableObject {
     @Published private(set) var availableCalendars: [CalendarSource] = []
     @Published private(set) var calendarAccessState: CalendarAccessState
     @Published private(set) var isRequestingCalendarAccess = false
+    @Published private(set) var calendarErrorMessage: String?
     @Published private(set) var cursorPersonalSessionState: CursorDashboardSessionState
     @Published private(set) var claudePersonalSessionState: ClaudeDashboardSessionState
+    @Published private(set) var configurationRecovery: ConfigurationRecovery?
+    @Published private(set) var persistenceErrorMessage: String?
 
     private let configurationStore: ConfigurationStore
     private let secretStore: SecretStoring
@@ -19,11 +24,13 @@ final class AppModel: ObservableObject {
     private let floatingPanelController: FloatingPanelController
     private let cursorDashboardSessionController: CursorDashboardSessionController
     private let claudeDashboardSessionController: ClaudeDashboardSessionController
+    private var globalHotKeyController: GlobalHotKeyController?
     private var refreshTimer: Timer?
     private var dayBoundaryTimer: Timer?
     private var applicationActivationObserver: NSObjectProtocol?
     private var inFlightProviderRefreshes: Set<UUID> = []
     private var lastProviderRefreshAttemptAt: [UUID: Date] = [:]
+    private var pendingConfigurationSaveTask: Task<Void, Never>?
 
     private let maximumAutomaticRetryAttempts = 3
     private let minimumRefreshSpacingSeconds: TimeInterval = 30
@@ -46,9 +53,12 @@ final class AppModel: ObservableObject {
         self.cursorDashboardSessionController = cursorDashboardSessionController
         self.claudeDashboardSessionController = claudeDashboardSessionController
         self.calendarAccessState = workingDayService.authorizationState
+        self.calendarErrorMessage = nil
 
         let configuration = configurationStore.load()
         self.configuration = configuration
+        self.configurationRecovery = configurationStore.lastRecovery
+        self.persistenceErrorMessage = nil
         self.snapshotStates = Dictionary(
             uniqueKeysWithValues: configuration.providers.map {
                 ($0.id, ProviderSnapshotState.placeholder(from: $0))
@@ -106,7 +116,14 @@ final class AppModel: ObservableObject {
             }
         }
 
+        if configuration.providers.isEmpty {
+            publishWidgetSnapshot()
+        }
+
         if autoStart {
+            globalHotKeyController = GlobalHotKeyController { [weak self] in
+                self?.toggleFloatingHUD()
+            }
             scheduleRefreshTimer()
             scheduleDayBoundaryTimer()
             Task {
@@ -124,10 +141,26 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func addProvider(kind: ProviderKind) {
-        configuration.providers.append(StoredProvider(kind: kind))
+    @discardableResult
+    func addProvider(kind: ProviderKind) -> UUID {
+        let provider = StoredProvider(kind: kind)
+        configuration.providers.append(provider)
         reconcileSnapshotPlaceholders()
         saveConfiguration()
+        updateFloatingHUD()
+        return provider.id
+    }
+
+    func addProviderAndBeginSetup(kind: ProviderKind) {
+        addProvider(kind: kind)
+        switch kind {
+        case .cursorPersonal:
+            connectCursorPersonal(using: CursorPersonalSettings().usagePageURL)
+        case .claudePersonal:
+            connectClaudePersonal(using: ClaudePersonalSettings().usagePageURL)
+        case .cursorAdmin, .anthropicAdmin, .manual, .customREST:
+            break
+        }
     }
 
     func updateProvider(_ provider: StoredProvider) {
@@ -138,35 +171,70 @@ final class AppModel: ObservableObject {
         snapshotStates[provider.id]?.providerName = provider.displayName
         snapshotStates[provider.id]?.providerKind = provider.kind
         snapshotStates[provider.id]?.isEnabled = provider.isEnabled
-        saveConfiguration()
+        saveConfiguration(debounced: true)
         updateFloatingHUD()
     }
 
     func removeProvider(id: UUID) {
+        let secretAccount = configuration.providers.first(where: { $0.id == id })?.secretAccount
         configuration.providers.removeAll { $0.id == id }
         snapshotStates.removeValue(forKey: id)
-        try? secretStore.deleteSecret(account: "usage-beacon-\(id.uuidString)")
+        if let secretAccount {
+            do {
+                try secretStore.deleteSecret(account: secretAccount)
+            } catch {
+                persistenceErrorMessage = "The provider was removed, but its Keychain secret could not be deleted: \(error.localizedDescription)"
+            }
+        }
         saveConfiguration()
         updateFloatingHUD()
     }
 
     func loadSecret(for providerID: UUID) -> String {
-        secretStore.loadSecret(account: "usage-beacon-\(providerID.uuidString)") ?? ""
+        guard let provider = configuration.providers.first(where: { $0.id == providerID }) else {
+            return ""
+        }
+        return secretStore.loadSecret(account: provider.secretAccount) ?? ""
     }
 
     func saveSecret(_ secret: String, for providerID: UUID) {
-        let account = "usage-beacon-\(providerID.uuidString)"
-        if secret.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            try? secretStore.deleteSecret(account: account)
+        guard let provider = configuration.providers.first(where: { $0.id == providerID }) else {
             return
         }
-        try? secretStore.saveSecret(secret, account: account)
+        do {
+            if secret.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                try secretStore.deleteSecret(account: provider.secretAccount)
+            } else {
+                try secretStore.saveSecret(secret, account: provider.secretAccount)
+            }
+        } catch {
+            persistenceErrorMessage = "The Keychain change could not be saved: \(error.localizedDescription)"
+        }
+    }
+
+    func revealConfigurationRecovery() {
+        guard let backupURL = configurationRecovery?.backupURL else {
+            return
+        }
+        NSWorkspace.shared.activateFileViewerSelecting([backupURL])
+    }
+
+    func dismissConfigurationRecovery() {
+        configurationRecovery = nil
+    }
+
+    func dismissPersistenceError() {
+        persistenceErrorMessage = nil
     }
 
     func setShowFloatingHUD(_ enabled: Bool) {
         configuration.settings.showFloatingHUD = enabled
         saveConfiguration()
         updateFloatingHUD()
+    }
+
+    func toggleFloatingHUD() {
+        setShowFloatingHUD(!configuration.settings.showFloatingHUD)
     }
 
     func setRefreshInterval(minutes: Int) {
@@ -238,25 +306,46 @@ final class AppModel: ObservableObject {
         Task {
             isRequestingCalendarAccess = true
             defer { isRequestingCalendarAccess = false }
-            calendarAccessState = await workingDayService.requestAccess()
-            await reloadCalendars(refreshStore: true)
-            await performRefreshAll(force: true)
+            calendarErrorMessage = nil
+            NSApp.activate(ignoringOtherApps: true)
+            try? await Task.sleep(for: .milliseconds(150))
+            do {
+                calendarAccessState = try await workingDayService.requestAccess()
+                await reloadCalendars(refreshStore: true)
+                await performRefreshAll(force: true)
+            } catch {
+                calendarAccessState = workingDayService.authorizationState
+                calendarErrorMessage = "Calendar access failed: \(error.localizedDescription)"
+            }
         }
     }
 
     func refreshCalendarAccess() {
         Task {
+            calendarErrorMessage = nil
             await reloadCalendars(refreshStore: true)
         }
     }
 
+    func dismissCalendarError() {
+        calendarErrorMessage = nil
+    }
+
     func openCalendarPrivacySettings() {
-        guard let url = URL(
-            string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
-        ) else {
-            return
+        NSApp.activate(ignoringOtherApps: true)
+        let urls = [
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Calendars",
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars"
+        ]
+        for urlString in urls {
+            guard let url = URL(string: urlString) else {
+                continue
+            }
+            if NSWorkspace.shared.open(url) {
+                return
+            }
         }
-        NSWorkspace.shared.open(url)
+        calendarErrorMessage = "System Settings could not be opened. Open Privacy & Security → Calendars manually."
     }
 
     func connectCursorPersonal(using pageURL: String) {
@@ -381,7 +470,9 @@ final class AppModel: ObservableObject {
         }
 
         var finalError: Error?
+        var attemptsUsed = 0
         for attempt in 1 ... maximumAutomaticRetryAttempts {
+            attemptsUsed = attempt
             do {
                 let rawSnapshot = try await ProviderResolver.fetch(
                     provider: provider,
@@ -397,7 +488,7 @@ final class AppModel: ObservableObject {
                 finalError = error
                 if attempt < maximumAutomaticRetryAttempts,
                    shouldRetry(provider: provider, error: error) {
-                    try? await Task.sleep(for: retryDelay(forAttempt: attempt))
+                    try? await Task.sleep(for: retryDelay(forAttempt: attempt, error: error))
                     continue
                 }
                 break
@@ -409,7 +500,7 @@ final class AppModel: ObservableObject {
         failed.errorMessage = userFacingErrorMessage(
             for: provider,
             error: finalError ?? ProviderFailure.network("Unknown refresh failure."),
-            attemptsUsed: maximumAutomaticRetryAttempts
+            attemptsUsed: attemptsUsed
         )
         failed.lastUpdatedAt = Date()
         snapshotStates[provider.id] = failed
@@ -481,9 +572,31 @@ final class AppModel: ObservableObject {
         }
     }
 
-    private func saveConfiguration() {
+    private func saveConfiguration(debounced: Bool = false) {
         reconcileSnapshotPlaceholders()
-        try? configurationStore.save(configuration)
+        if debounced {
+            pendingConfigurationSaveTask?.cancel()
+            pendingConfigurationSaveTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(350))
+                guard Task.isCancelled == false else {
+                    return
+                }
+                self?.persistConfiguration()
+            }
+            return
+        }
+
+        pendingConfigurationSaveTask?.cancel()
+        pendingConfigurationSaveTask = nil
+        persistConfiguration()
+    }
+
+    private func persistConfiguration() {
+        do {
+            try configurationStore.save(configuration)
+        } catch {
+            persistenceErrorMessage = "Your settings could not be saved: \(error.localizedDescription)"
+        }
     }
 
     private func shouldStartRefresh(for providerID: UUID, force: Bool) -> Bool {
@@ -500,8 +613,8 @@ final class AppModel: ObservableObject {
     }
 
     private func shouldRetry(provider: StoredProvider, error: Error) -> Bool {
-        if case ProviderFailure.network = error {
-            return true
+        if let failure = error as? ProviderFailure {
+            return failure.isRetryable
         }
 
         let message = error.localizedDescription.lowercased()
@@ -525,7 +638,10 @@ final class AppModel: ObservableObject {
         return false
     }
 
-    private func retryDelay(forAttempt attempt: Int) -> Duration {
+    private func retryDelay(forAttempt attempt: Int, error: Error) -> Duration {
+        if let retryAfter = (error as? ProviderFailure)?.retryAfterSeconds {
+            return .milliseconds(Int64(min(max(retryAfter, 0), 300) * 1_000))
+        }
         switch attempt {
         case 1:
             return .seconds(5)
@@ -572,11 +688,64 @@ final class AppModel: ObservableObject {
     }
 
     private func updateFloatingHUD() {
-        let snapshots = orderedSnapshots.filter { $0.isEnabled && $0.errorMessage == nil }
+        let snapshots = orderedSnapshots.filter(\.isEnabled)
         floatingPanelController.update(
             with: snapshots,
             visible: configuration.settings.showFloatingHUD
         )
+        publishWidgetSnapshot(from: snapshots)
+    }
+
+    private func publishWidgetSnapshot(from snapshots: [ProviderSnapshotState]? = nil) {
+        let snapshots = snapshots ?? orderedSnapshots.filter(\.isEnabled)
+        let hasLoadedSnapshot = snapshots.contains { $0.lastUpdatedAt != nil }
+        guard snapshots.isEmpty || hasLoadedSnapshot else {
+            return
+        }
+
+        let widgetProviders = snapshots.map { snapshot in
+            let primaryValue: String
+            let secondaryValue: String
+            if snapshot.errorMessage != nil {
+                primaryValue = "Needs attention"
+                secondaryValue = "Open UsageBeacon to reconnect"
+            } else if let window = snapshot.primaryUsageWindow {
+                let remaining = Int(max(100 - window.usedPercent.doubleValue, 0).rounded())
+                primaryValue = "\(remaining)% left"
+                secondaryValue = window.title
+            } else if let remaining = snapshot.remainingUSD {
+                primaryValue = "\(remaining.formatted(.currency(code: "USD"))) left"
+                if let spentToday = snapshot.spentTodayUSD {
+                    secondaryValue = "\(spentToday.formatted(.currency(code: "USD"))) today"
+                } else if let perDay = snapshot.perWorkingDayRemainingUSD {
+                    secondaryValue = "\(perDay.formatted(.currency(code: "USD")))/working day"
+                } else {
+                    secondaryValue = snapshot.providerKind.title
+                }
+            } else {
+                primaryValue = "Sync needed"
+                secondaryValue = snapshot.providerKind.title
+            }
+
+            return UsageBeaconWidgetProvider(
+                id: snapshot.id,
+                name: snapshot.providerName,
+                sourceName: snapshot.providerKind.title,
+                primaryValue: primaryValue,
+                secondaryValue: secondaryValue,
+                remainingUSD: snapshot.remainingUSD?.doubleValue,
+                spentTodayUSD: snapshot.spentTodayUSD?.doubleValue,
+                perWorkingDayUSD: snapshot.perWorkingDayRemainingUSD?.doubleValue,
+                utilization: snapshot.utilizationRatio,
+                hasError: snapshot.errorMessage != nil
+            )
+        }
+
+        let newestUpdate = snapshots.compactMap(\.lastUpdatedAt).max() ?? Date()
+        try? UsageBeaconWidgetSnapshotStore.save(
+            UsageBeaconWidgetSnapshot(updatedAt: newestUpdate, providers: widgetProviders)
+        )
+        WidgetCenter.shared.reloadTimelines(ofKind: UsageBeaconWidgetData.widgetKind)
     }
 
     private func userFacingErrorMessage(for provider: StoredProvider, error: Error, attemptsUsed: Int? = nil) -> String {

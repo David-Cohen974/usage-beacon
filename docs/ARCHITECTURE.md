@@ -8,7 +8,8 @@ UsageBeacon is a native macOS SwiftUI app with a local-first architecture:
 - `ProviderResolver` dispatches to one provider adapter per connector type
 - Provider adapters return normalized `RawBudgetSnapshot` values
 - `AppModel` enriches snapshots with working-day math and publishes `ProviderSnapshotState`
-- SwiftUI views render the menu, HUD, and settings surfaces from those snapshot states
+- `AppModel` publishes a privacy-safe snapshot to the shared app-group store
+- SwiftUI views render the menu, HUD, settings, and WidgetKit surfaces from those snapshot states
 
 ## Main layers
 
@@ -56,6 +57,10 @@ The UI layer is intentionally thin:
 - `FloatingHUDView` renders the condensed always-on-top surface
 - `SettingsView` renders provider configuration and app settings
 - `BeaconDesignSystem` centralizes palette and reusable visual components
+
+### Widget extension
+
+`Sources/UsageBeaconWidget` renders small, medium, and large WidgetKit layouts for the desktop and Notification Center. `Sources/UsageBeaconShared` contains the narrow Codable snapshot contract shared by the app and widget. The app and extension use the macOS team-scoped `Y3XM9Q3AZT.com.rekindle.usagebeacon` group container. Secrets and provider credentials never enter the shared snapshot.
 
 ## Extension points
 

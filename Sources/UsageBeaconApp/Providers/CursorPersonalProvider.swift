@@ -74,10 +74,12 @@ enum CursorPersonalProvider {
                 todaySpentUSD: eventMetrics.spentTodayUSD,
                 lastPromptCostUSD: eventMetrics.lastPromptCostUSD
             )
-        } catch {
-            if error.localizedDescription.localizedCaseInsensitiveContains("401") {
-                throw ProviderFailure.misconfigured("Cursor personal is not signed in yet. Click Connect, sign in, and refresh.")
+        } catch let failure as ProviderFailure {
+            if case .authentication = failure {
+                throw failure
             }
+        } catch {
+            // The rendered usage page remains a fallback for transient endpoint or parsing failures.
         }
 
         let pageSnapshot = try await sessionController.loadUsagePage(pageURL: pageURL)
@@ -459,7 +461,10 @@ enum CursorPersonalProvider {
         return nil
     }
 
-    private static func nestedTodaySpend(in json: Any, now: Date) -> Decimal? {
+    private static func nestedTodaySpend(in json: Any, now: Date, depth: Int = 0) -> Decimal? {
+        guard depth <= 8 else {
+            return nil
+        }
         if let array = json as? [Any] {
             return sumTodayEntries(array, now: now)
         }
@@ -480,13 +485,15 @@ enum CursorPersonalProvider {
             "categories"
         ]
         for key in preferredKeys {
-            if let value = dictionary[key], let parsed = nestedTodaySpend(in: value, now: now) {
+            if let value = dictionary[key], let parsed = nestedTodaySpend(in: value, now: now, depth: depth + 1) {
                 return parsed
             }
         }
 
-        for value in dictionary.values {
-            if let parsed = nestedTodaySpend(in: value, now: now) {
+        let remainingKeys = dictionary.keys.filter { preferredKeys.contains($0) == false }.sorted()
+        for key in remainingKeys {
+            if let value = dictionary[key],
+               let parsed = nestedTodaySpend(in: value, now: now, depth: depth + 1) {
                 return parsed
             }
         }

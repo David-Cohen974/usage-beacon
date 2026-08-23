@@ -9,3 +9,8 @@ DerivedData
 *.xcuserstate
 *.xcworkspace/xcuserdata
 *.xcodeproj/xcuserdata
+*.cer
+*.p12
+*.p8
+*sparkle*private*key*
+.env

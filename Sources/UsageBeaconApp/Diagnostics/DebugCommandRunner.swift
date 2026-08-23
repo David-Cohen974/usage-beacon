@@ -3,6 +3,7 @@ import Foundation
 
 enum DebugCommandRunner {
     static func command(from arguments: [String]) -> DebugCommand? {
+#if DEBUG
         if let index = arguments.firstIndex(of: "--debug-cursor-personal") {
             let customURL = arguments.indices.contains(index + 1) ? arguments[index + 1] : nil
             return .debugCursorPersonal(pageURLOverride: customURL)
@@ -14,6 +15,7 @@ enum DebugCommandRunner {
         if arguments.contains("--debug-calendar") {
             return .debugCalendar
         }
+#endif
         return nil
     }
 
