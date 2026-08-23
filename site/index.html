@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f4f1e9">
+    <meta name="description" content="UsageBeacon is a native Mac utility for keeping AI usage and budgets visible from the menu bar, desktop widgets, or a floating HUD.">
+    <meta property="og:title" content="UsageBeacon for Mac">
+    <meta property="og:description" content="Your AI usage budget, always within reach.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://david-cohen974.github.io/usage-beacon/">
+    <meta property="og:image" content="https://david-cohen974.github.io/usage-beacon/assets/app-icon.png">
+    <title>UsageBeacon — AI usage at a glance</title>
+    <link rel="icon" href="assets/app-icon.png">
+    <link rel="stylesheet" href="assets/site.css">
+    <script src="assets/site.js" defer></script>
+  </head>
+  <body data-page="home">
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="UsageBeacon home">
+        <img src="assets/app-icon.png" alt="" width="34" height="34">
+        <span>UsageBeacon</span>
+      </a>
+      <nav aria-label="Main navigation">
+        <a href="#features">Features</a>
+        <a href="changelog/">Changelog</a>
+        <a class="nav-download download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero section-shell">
+        <div class="hero-copy">
+          <img class="hero-icon" src="assets/app-icon.png" alt="UsageBeacon app icon" width="112" height="112">
+          <p class="eyebrow">A native utility for macOS</p>
+          <h1>Your usage budget,<br>always within reach.</h1>
+          <p class="hero-lede">UsageBeacon keeps AI spend and quota signals visible in your menu bar, Notification Center, and an optional floating HUD.</p>
+          <div class="hero-actions">
+            <a class="button primary download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download for Mac</a>
+            <a class="button secondary" href="#preview">See how it works</a>
+          </div>
+          <p class="release-meta"><span data-latest-version>Version 1.0.0</span> · <span data-minimum-macos>macOS 14+</span> · Apple notarized</p>
+        </div>
+
+        <div id="preview" class="product-stage" aria-label="UsageBeacon floating above a Mac desktop">
+          <div class="desktop-window">
+            <div class="window-bar"><span></span><span></span><span></span><b>Project Notes</b></div>
+            <div class="window-lines" aria-hidden="true">
+              <i></i><i></i><i></i><i></i><i></i><i></i>
+            </div>
+          </div>
+          <div class="floating-panel">
+            <div class="panel-head">
+              <div><span class="status-dot"></span><strong>UsageBeacon</strong></div>
+              <span class="synced">Synced now</span>
+            </div>
+            <div class="metric-card">
+              <div class="metric-top"><span>CURSOR MONTHLY</span><b>68% left</b></div>
+              <div class="meter"><span style="width: 68%"></span></div>
+              <div class="metric-detail"><strong>$34.20</strong><span>of $108 remaining</span></div>
+            </div>
+            <div class="panel-row"><span>Today</span><strong>$6.42</strong></div>
+            <div class="panel-row"><span>Daily runway</span><strong>$8.10</strong></div>
+          </div>
+          <p class="stage-caption">Pin the quiet HUD above your work, or leave it hidden until you need it.</p>
+        </div>
+      </section>
+
+      <section id="features" class="features section-shell">
+        <div class="section-intro">
+          <p class="eyebrow">Designed to stay out of the way</p>
+          <h2>One signal, wherever you look.</h2>
+        </div>
+        <div class="feature-grid">
+          <article>
+            <span class="feature-number">01</span>
+            <h3>Glance, don’t dashboard-hop</h3>
+            <p>See remaining budget, today’s spend, and working-day runway without reopening provider dashboards.</p>
+          </article>
+          <article>
+            <span class="feature-number">02</span>
+            <h3>Native Mac surfaces</h3>
+            <p>Use the menu bar, three WidgetKit sizes, or the always-on-top HUD. Each surface shows the same current snapshot.</p>
+          </article>
+          <article>
+            <span class="feature-number">03</span>
+            <h3>Local-first by design</h3>
+            <p>Credentials stay in your Keychain. UsageBeacon talks directly to your configured sources and runs without a UsageBeacon backend.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="installation section-shell">
+        <div>
+          <p class="eyebrow">Install in a minute</p>
+          <h2>A normal Mac app.</h2>
+          <p>Signed with a Developer ID certificate and notarized by Apple, so Gatekeeper can verify the download normally.</p>
+        </div>
+        <ol>
+          <li><span>1</span><div><strong>Download</strong><p>Get the latest DMG.</p></div></li>
+          <li><span>2</span><div><strong>Open</strong><p>Open the disk image.</p></div></li>
+          <li><span>3</span><div><strong>Drag</strong><p>Move UsageBeacon to Applications.</p></div></li>
+          <li><span>4</span><div><strong>Launch</strong><p>Open it and choose your surfaces.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="updates section-shell">
+        <div class="updates-mark" aria-hidden="true">↻</div>
+        <div>
+          <p class="eyebrow">Automatic updates</p>
+          <h2>Install once. Stay current.</h2>
+          <p>UsageBeacon checks a cryptographically signed update feed and can download, verify, install, and relaunch into new versions for you.</p>
+        </div>
+        <a class="text-link" href="changelog/">Read the changelog <span>→</span></a>
+      </section>
+
+      <section class="closing section-shell">
+        <h2>Keep the useful number close.</h2>
+        <a class="button primary download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download for Mac</a>
+        <p class="release-meta"><span data-latest-version>Version 1.0.0</span> · <span data-minimum-macos>macOS 14+</span></p>
+      </section>
+    </main>
+
+    <footer>
+      <span>© 2026 UsageBeacon</span>
+      <nav aria-label="Footer navigation">
+        <a href="https://github.com/David-Cohen974/usage-beacon">GitHub</a>
+        <a href="privacy/">Privacy</a>
+        <a href="changelog/">Changelog</a>
+        <a class="download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download</a>
+      </nav>
+    </footer>
+  </body>
+</html>
