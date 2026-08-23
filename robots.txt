@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://david-cohen974.github.io/usage-beacon/sitemap.xml
