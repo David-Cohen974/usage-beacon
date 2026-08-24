@@ -240,7 +240,7 @@ footer nav { justify-self: end; }
   .site-header, footer, .section-shell { width: min(100% - 40px, 1440px); }
   .hero { grid-template-columns: 1fr; padding-top: 78px; }
   .hero-copy { max-width: 650px; }
-  .product-demo { width: min(900px, 112%); height: 650px; margin: 6px 0 0 -6%; }
+  .product-demo { width: 100%; height: 650px; margin: 6px 0 0; }
   .surfaces { padding-top: 78px; }
   .surface-grid { grid-template-columns: 1fr; }
   .surface-item, .surface-item + .surface-item { min-height: auto; padding: 24px 18px; border-right: 0; border-bottom: 1px solid var(--line); }
