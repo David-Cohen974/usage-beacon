@@ -173,7 +173,7 @@ Do not replace a public archive silently. Browsers, CDNs, and Sparkle may cache 
 - If a workflow fails before publishing the appcast, fix the cause and rerun it.
 - If a beta is broken, leave it as a prerelease and publish a higher beta build/tag.
 - If a stable release is broken, publish a higher patch version immediately. Sparkle updates move forward by `CFBundleVersion`; it does not downgrade users safely.
-- If no users could have downloaded the release, deleting the GitHub Release and its tag is possible, but a new tag/version is still safer and auditable.
+- Release tags matching `v*.*.*` are immutable and cannot be updated or deleted. If a release must be replaced, publish a higher version; never reuse a tag or overwrite a signed archive.
 - To restore only the website after a bad site change, revert that source commit on `main` and run **Publish Website**. Do not hand-edit the signed appcast; any modification invalidates its signature.
 
 ## Sparkle troubleshooting
