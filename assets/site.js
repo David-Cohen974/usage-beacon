@@ -103,5 +103,64 @@ async function loadChangelog() {
   }
 }
 
+function initHomeDemo() {
+  const demo = document.querySelector(".product-demo");
+  if (!demo) return;
+
+  const shortcut = demo.querySelector(".shortcut-control");
+  const surfaces = [...document.querySelectorAll("[data-surface]")];
+  const animatedLayers = [
+    demo.querySelector(".notification-center"),
+    demo.querySelector(".menu-popover"),
+    demo.querySelector(".extracted-widget"),
+    demo.querySelector(".hud-preview"),
+  ].filter(Boolean);
+
+  function setHudVisible(visible) {
+    demo.dataset.demoState = visible ? "open" : "closed";
+    shortcut?.setAttribute("aria-pressed", String(visible));
+  }
+
+  function toggleHud() {
+    setHudVisible(demo.dataset.demoState !== "open");
+  }
+
+  function replayLayerMotion() {
+    animatedLayers.forEach((layer) => {
+      layer.getAnimations().forEach((animation) => {
+        animation.cancel();
+        animation.play();
+      });
+    });
+  }
+
+  shortcut?.addEventListener("click", toggleHud);
+
+  document.addEventListener("keydown", (event) => {
+    const target = event.target;
+    const isEditable = target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+    if (isEditable) return;
+    if (event.shiftKey && event.metaKey && event.key.toLowerCase() === "u") {
+      event.preventDefault();
+      toggleHud();
+    }
+  });
+
+  surfaces.forEach((surface) => {
+    surface.addEventListener("click", () => {
+      surfaces.forEach((item) => {
+        const active = item === surface;
+        item.classList.toggle("is-active", active);
+        item.setAttribute("aria-pressed", String(active));
+      });
+      demo.dataset.activeSurface = surface.dataset.surface;
+      if (surface.dataset.surface === "hud") setHudVisible(true);
+      replayLayerMotion();
+      demo.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  });
+}
+
 loadLatestRelease();
 loadChangelog();
+initHomeDemo();
