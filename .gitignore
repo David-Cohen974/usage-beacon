@@ -11,6 +11,15 @@ DerivedData
 *.xcodeproj/xcuserdata
 *.cer
 *.p12
+*.pfx
 *.p8
+*.pem
+*.key
+*.mobileprovision
+*.provisionprofile
+*.jks
+*.keystore
 *sparkle*private*key*
 .env
+.env.*
+!.env.example
