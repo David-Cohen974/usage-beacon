@@ -4,9 +4,9 @@ UsageBeacon releases are built from version tags. GitHub Actions builds the univ
 
 ## One-time setup
 
-### 1. Make distribution URLs public
+### 1. Confirm the public distribution URLs
 
-The repository is currently private. Public users cannot download private GitHub Release assets, and GitHub Pages availability for private repositories depends on the account plan. Before public distribution, either make `David-Cohen974/usage-beacon` public or move the release assets and Pages site to a dedicated public distribution repository and update the URLs in:
+`David-Cohen974/usage-beacon` is public so users can download GitHub Release assets and GitHub Pages can serve the update feed. If distribution ever moves to another repository or domain, update the URLs in:
 
 - `Resources/UsageBeacon-Info.plist`
 - `Scripts/generate-appcast.sh`
@@ -31,9 +31,9 @@ After this release infrastructure is on `main`:
 
 The placeholder appcast contains no releases. The first version tag replaces it with a feed signed by Sparkle.
 
-### 3. Add the GitHub Actions secrets
+### 3. Protect the release environment and add its secrets
 
-Open **Settings → Secrets and variables → Actions** and add:
+Create a `production-release` environment under **Settings → Environments**. Require `David-Cohen974` to approve deployments, disallow administrator bypass, and allow only tags matching `v*.*.*`. Add these as environment secrets, not repository secrets:
 
 | Secret | Value |
 | --- | --- |
@@ -44,7 +44,7 @@ Open **Settings → Secrets and variables → Actions** and add:
 | `APPLE_API_PRIVATE_KEY` | Complete contents of the matching `AuthKey_<ID>.p8` file. |
 | `SPARKLE_PRIVATE_KEY` | Sparkle Ed25519 private key exported from the login Keychain. |
 
-`GITHUB_TOKEN` is supplied automatically. The workflow requests only `contents: write`, which it needs for Releases and the `gh-pages` branch.
+`GITHUB_TOKEN` is supplied automatically. The workflow requests only `contents: write`, which it needs for Releases and the `gh-pages` branch. Environment secrets become available only after the protected deployment is approved.
 
 Never add `.p12`, `.p8`, or exported Sparkle key files to the repository. The workflow writes credentials only into the ephemeral runner directory and deletes its temporary signing Keychain at the end.
 
@@ -58,10 +58,10 @@ base64 -i DeveloperIDApplication.p12 | pbcopy
 
 Create or use an App Store Connect API key with access sufficient for notarization. Copy the key ID, issuer ID, and the complete `.p8` contents into the three Apple API secrets. Apple lets the `.p8` file be downloaded only once, so keep the original in a secure credential vault.
 
-The existing local `UsageBeaconNotary` Keychain profile still works for local release verification:
+The local `UsageBeaconCI` Keychain profile uses the same team API key for local release verification:
 
 ```bash
-NOTARYTOOL_PROFILE=UsageBeaconNotary \
+NOTARYTOOL_PROFILE=UsageBeaconCI \
   ./Scripts/build-release.sh 1.0.0 7
 ```
 
@@ -80,7 +80,7 @@ private_key_dir="$(mktemp -d "${TMPDIR:-/tmp}/usagebeacon-sparkle-key.XXXXXX")"
 private_key_file="$private_key_dir/private-key"
 sparkle_generate_keys="$(./Scripts/find-sparkle-tool.sh generate_keys)"
 "$sparkle_generate_keys" --account com.rekindle.usagebeacon -x "$private_key_file"
-gh secret set SPARKLE_PRIVATE_KEY < "$private_key_file"
+gh secret set SPARKLE_PRIVATE_KEY --env production-release < "$private_key_file"
 rm -f "$private_key_file"
 rmdir "$private_key_dir"
 ```
@@ -99,16 +99,24 @@ The release workflow refuses a tag whose base semantic version does not exactly 
 
 ## Publish a stable release
 
-1. Set `MARKETING_VERSION` in `Config/Version.xcconfig`.
-2. Commit the release changes on `main`.
-3. Create and push the matching annotated tag.
+Direct pushes to `main` are blocked. Prepare the version on a branch, open a pull request, wait for CI and CodeQL, then merge it. Create the matching annotated tag from the updated `main` branch.
 
 ```bash
+git switch -c release/1.2.0
+# Set MARKETING_VERSION in Config/Version.xcconfig.
 git add .
 git commit -m "Release 1.2.0"
+git push -u origin release/1.2.0
+gh pr create --base main --fill
+
+# After the pull request passes checks and is merged:
+git switch main
+git pull --ff-only
 git tag -a v1.2.0 -m "UsageBeacon 1.2.0"
-git push origin main --tags
+git push origin v1.2.0
 ```
+
+Open the queued **Release** workflow and approve its `production-release` deployment. Signing, notarization, GitHub Release creation, appcast generation, and website publication then complete automatically.
 
 After the **Release** workflow succeeds:
 

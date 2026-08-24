@@ -22,19 +22,22 @@ jobs:
   release:
     runs-on: macos-14
     timeout-minutes: 60
+    environment:
+      name: production-release
+      url: https://david-cohen974.github.io/usage-beacon/
     env:
       SOURCE_PACKAGES_DIR_PATH: ${{ github.workspace }}/.build/SourcePackages
       GH_TOKEN: ${{ github.token }}
 
     steps:
       - name: Checkout release tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
 
       - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: latest-stable
 
@@ -283,7 +286,7 @@ jobs:
           fi
 
       - name: Upload signed release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: UsageBeacon-${{ steps.release.outputs.release_version }}
           path: |
