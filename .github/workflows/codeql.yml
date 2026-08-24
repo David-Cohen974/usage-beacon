@@ -4,21 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "Sources/**/*.swift"
-      - "Tests/**/*.swift"
-      - "Package.swift"
-      - "Package.resolved"
-      - ".github/workflows/codeql.yml"
   pull_request:
     branches:
       - main
-    paths:
-      - "Sources/**/*.swift"
-      - "Tests/**/*.swift"
-      - "Package.swift"
-      - "Package.resolved"
-      - ".github/workflows/codeql.yml"
   schedule:
     - cron: "17 3 * * 1"
 
