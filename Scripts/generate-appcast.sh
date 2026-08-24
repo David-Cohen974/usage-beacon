@@ -54,15 +54,15 @@ if [[ ! -f "$generated_appcast" ]]; then
 fi
 
 xmllint --noout "$generated_appcast"
-if ! rg -q "sparkle:version=\"$build_number\"|<sparkle:version>$build_number</sparkle:version>" "$generated_appcast"; then
+if ! grep -Eq "sparkle:version=\"$build_number\"|<sparkle:version>$build_number</sparkle:version>" "$generated_appcast"; then
   echo "Generated appcast does not contain build $build_number." >&2
   exit 1
 fi
-if ! rg -q 'sparkle:edSignature=' "$generated_appcast"; then
+if ! grep -q 'sparkle:edSignature=' "$generated_appcast"; then
   echo "Generated appcast does not contain an Ed25519 archive signature." >&2
   exit 1
 fi
-if ! rg -q 'sparkle-signatures:' "$generated_appcast"; then
+if ! grep -q 'sparkle-signatures:' "$generated_appcast"; then
   echo "Generated appcast is not signed." >&2
   exit 1
 fi
