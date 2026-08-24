@@ -1,10 +1,25 @@
-<?xml version="1.0" encoding="utf-8"?>
-<rss version="2.0"
-     xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
-  <channel>
-    <title>UsageBeacon updates</title>
-    <link>https://david-cohen974.github.io/usage-beacon/</link>
-    <description>Signed updates for UsageBeacon.</description>
-    <language>en</language>
-  </channel>
-</rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><!-- sparkle-sign-warning:
+IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
+--><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>UsageBeacon updates</title>
+        <link>https://david-cohen974.github.io/usage-beacon/</link>
+        <description>Signed updates for UsageBeacon.</description>
+        <language>en</language>
+        <item>
+            <title>1.0.0</title>
+            <pubDate>Mon, 24 Aug 2026 07:37:39 +0000</pubDate>
+            <link>https://david-cohen974.github.io/usage-beacon/</link>
+            <sparkle:fullReleaseNotesLink>https://david-cohen974.github.io/usage-beacon/changelog/</sparkle:fullReleaseNotesLink>
+            <sparkle:version>100002</sparkle:version>
+            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/commits/v1.0.0
+]]></description>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.0.0/UsageBeacon-1.0.0.zip" length="4824758" type="application/octet-stream" sparkle:edSignature="Ff7xgSH71XVt/QmyBuUAZjTlTlx2xZrALJuHq4bxz68QOZ0aAwf4cDm1UYH1KqCXmJG5MidrmFD8IcWtJ6qQBQ=="></enclosure>
+        </item>
+    </channel>
+</rss><!-- sparkle-signatures:
+edSignature: SmRBw4wYIld2LfFlGXQXNVdNINqtSjxDAGCBIFtVYyZ3/CatAlJFtoM39xs3wuEULqHqUfzOc6f21kR4IxQ/CA==
+length: 1616
+-->

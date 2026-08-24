@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "version": "1.0.0",
+    "tag": "v1.0.0",
+    "name": "UsageBeacon 1.0.0",
+    "releaseDate": "2026-08-24T07:38:13Z",
+    "prerelease": false,
+    "notes": "**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/commits/v1.0.0\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.0.0"
+  }
+]
