@@ -380,7 +380,15 @@ struct UsageBeaconAppTests {
         #expect(snapshot.monthlyBudgetUSD == decimal("200"))
         #expect(snapshot.spentUSD == decimal("9.88"))
         #expect(snapshot.remainingUSD == decimal("190.12"))
-        #expect(DateFormatter.shortDate.string(from: snapshot.billingCycleEnd) == "15 Sep 2026")
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let cycleEndComponents = calendar.dateComponents(
+            [.year, .month, .day],
+            from: snapshot.billingCycleEnd
+        )
+        #expect(cycleEndComponents.year == 2026)
+        #expect(cycleEndComponents.month == 9)
+        #expect(cycleEndComponents.day == 15)
     }
 
     @Test
