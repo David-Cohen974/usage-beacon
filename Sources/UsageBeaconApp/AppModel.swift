@@ -16,6 +16,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var claudePersonalSessionState: ClaudeDashboardSessionState
     @Published private(set) var configurationRecovery: ConfigurationRecovery?
     @Published private(set) var persistenceErrorMessage: String?
+    @Published private(set) var launchAtLoginStatus: LaunchAtLoginStatus
+    @Published private(set) var launchAtLoginErrorMessage: String?
 
     private let configurationStore: ConfigurationStore
     private let secretStore: SecretStoring
@@ -24,10 +26,13 @@ final class AppModel: ObservableObject {
     private let floatingPanelController: FloatingPanelController
     private let cursorDashboardSessionController: CursorDashboardSessionController
     private let claudeDashboardSessionController: ClaudeDashboardSessionController
+    private let launchAtLoginController: LaunchAtLoginControlling
     private var globalHotKeyController: GlobalHotKeyController?
     private var refreshTimer: Timer?
     private var dayBoundaryTimer: Timer?
     private var applicationActivationObserver: NSObjectProtocol?
+    private var workspaceWakeObserver: NSObjectProtocol?
+    private var screenParametersObserver: NSObjectProtocol?
     private var inFlightProviderRefreshes: Set<UUID> = []
     private var lastProviderRefreshAttemptAt: [UUID: Date] = [:]
     private var pendingConfigurationSaveTask: Task<Void, Never>?
@@ -43,6 +48,7 @@ final class AppModel: ObservableObject {
         floatingPanelController: FloatingPanelController = FloatingPanelController(),
         cursorDashboardSessionController: CursorDashboardSessionController = .shared,
         claudeDashboardSessionController: ClaudeDashboardSessionController = .shared,
+        launchAtLoginController: LaunchAtLoginControlling = LaunchAtLoginController(),
         autoStart: Bool = true
     ) {
         self.configurationStore = configurationStore
@@ -52,6 +58,7 @@ final class AppModel: ObservableObject {
         self.floatingPanelController = floatingPanelController
         self.cursorDashboardSessionController = cursorDashboardSessionController
         self.claudeDashboardSessionController = claudeDashboardSessionController
+        self.launchAtLoginController = launchAtLoginController
         self.calendarAccessState = workingDayService.authorizationState
         self.calendarErrorMessage = nil
 
@@ -59,6 +66,8 @@ final class AppModel: ObservableObject {
         self.configuration = configuration
         self.configurationRecovery = configurationStore.lastRecovery
         self.persistenceErrorMessage = nil
+        self.launchAtLoginStatus = launchAtLoginController.status
+        self.launchAtLoginErrorMessage = nil
         self.snapshotStates = Dictionary(
             uniqueKeysWithValues: configuration.providers.map {
                 ($0.id, ProviderSnapshotState.placeholder(from: $0))
@@ -112,7 +121,33 @@ final class AppModel: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
+                self?.restoreFloatingHUDAfterSystemEvent()
+                self?.refreshLaunchAtLoginStatus()
                 await self?.reloadCalendars(refreshStore: true)
+            }
+        }
+
+        workspaceWakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.restoreFloatingHUDAfterSystemEvent()
+                self.scheduleRefreshTimer()
+                self.scheduleDayBoundaryTimer()
+                await self.performRefreshAll(force: false)
+            }
+        }
+
+        screenParametersObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.restoreFloatingHUDAfterSystemEvent()
             }
         }
 
@@ -121,11 +156,13 @@ final class AppModel: ObservableObject {
         }
 
         if autoStart {
+            synchronizeLaunchAtLoginPreference()
             globalHotKeyController = GlobalHotKeyController { [weak self] in
                 self?.toggleFloatingHUD()
             }
             scheduleRefreshTimer()
             scheduleDayBoundaryTimer()
+            updateFloatingHUD()
             Task {
                 await reloadCalendars(refreshStore: true)
                 await refreshCursorPersonalSessionStateIfNeeded()
@@ -235,6 +272,27 @@ final class AppModel: ObservableObject {
 
     func toggleFloatingHUD() {
         setShowFloatingHUD(!configuration.settings.showFloatingHUD)
+    }
+
+    func setLaunchAtLogin(_ enabled: Bool) {
+        configuration.settings.launchAtLogin = enabled
+        saveConfiguration()
+        launchAtLoginErrorMessage = nil
+
+        do {
+            try launchAtLoginController.setEnabled(enabled)
+        } catch {
+            launchAtLoginErrorMessage = "Launch at login could not be changed: \(error.localizedDescription)"
+        }
+        refreshLaunchAtLoginStatus()
+    }
+
+    func openLoginItemsSettings() {
+        launchAtLoginController.openSystemSettings()
+    }
+
+    func dismissLaunchAtLoginError() {
+        launchAtLoginErrorMessage = nil
     }
 
     func setRefreshInterval(minutes: Int) {
@@ -685,6 +743,29 @@ final class AppModel: ObservableObject {
         }
         RunLoop.main.add(timer, forMode: .common)
         dayBoundaryTimer = timer
+    }
+
+    private func synchronizeLaunchAtLoginPreference() {
+        launchAtLoginErrorMessage = nil
+        do {
+            try launchAtLoginController.setEnabled(configuration.settings.launchAtLogin)
+        } catch {
+            launchAtLoginErrorMessage = "UsageBeacon could not configure launch at login: \(error.localizedDescription)"
+        }
+        refreshLaunchAtLoginStatus()
+    }
+
+    private func refreshLaunchAtLoginStatus() {
+        launchAtLoginStatus = launchAtLoginController.status
+    }
+
+    private func restoreFloatingHUDAfterSystemEvent() {
+        updateFloatingHUD()
+
+        // AppKit may finish rebuilding Spaces and display geometry shortly after wake.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) { [weak self] in
+            self?.updateFloatingHUD()
+        }
     }
 
     private func updateFloatingHUD() {

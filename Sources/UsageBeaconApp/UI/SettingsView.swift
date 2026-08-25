@@ -42,6 +42,9 @@ struct SettingsView: View {
                     if let message = model.persistenceErrorMessage {
                         persistenceErrorBanner(message)
                     }
+                    if let message = model.launchAtLoginErrorMessage {
+                        launchAtLoginErrorBanner(message)
+                    }
                     overviewHero
                     providersSection
                     budgetSchedule
@@ -316,6 +319,33 @@ struct SettingsView: View {
             Divider().overlay(BeaconPalette.outline)
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
+                    Label("Launch at login", systemImage: "power")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Text(launchAtLoginDetail)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(model.launchAtLoginStatus == .requiresApproval ? BeaconPalette.amber : BeaconPalette.mutedInk)
+                }
+                Spacer()
+                if model.launchAtLoginStatus == .requiresApproval {
+                    Button("Open Login Items") {
+                        model.openLoginItemsSettings()
+                    }
+                    .buttonStyle(BeaconActionButtonStyle(colors: [BeaconPalette.amber, BeaconPalette.coral], filled: false))
+                }
+                Toggle(
+                    "Launch at login",
+                    isOn: Binding(
+                        get: { model.configuration.settings.launchAtLogin },
+                        set: { model.setLaunchAtLogin($0) }
+                    )
+                )
+                .labelsHidden()
+                .toggleStyle(.switch)
+            }
+            Divider().overlay(BeaconPalette.outline)
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
                     Label("Floating HUD", systemImage: "sparkles.tv")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(BeaconPalette.ink)
@@ -344,6 +374,19 @@ struct SettingsView: View {
         }
         .padding(18)
         .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+    }
+
+    private var launchAtLoginDetail: String {
+        switch model.launchAtLoginStatus {
+        case .enabled:
+            return "Restores the menu bar app and floating HUD after a Mac restart."
+        case .requiresApproval:
+            return "Approval is required in System Settings → General → Login Items."
+        case .disabled:
+            return "Keep UsageBeacon available after you restart your Mac."
+        case .unavailable:
+            return "Launch at login is unavailable for this copy of the app."
+        }
     }
 
     private var updatesSection: some View {
@@ -649,6 +692,21 @@ struct SettingsView: View {
         }
         .padding(14)
         .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(BeaconPalette.danger.opacity(0.1)))
+    }
+
+    private func launchAtLoginErrorBanner(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "power.circle.fill")
+                .foregroundStyle(BeaconPalette.amber)
+            Text(message)
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(BeaconPalette.ink)
+            Spacer()
+            Button("Open Login Items") { model.openLoginItemsSettings() }
+            Button("Dismiss") { model.dismissLaunchAtLoginError() }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(BeaconPalette.amber.opacity(0.1)))
     }
 
     private var workingDaysDescription: String {

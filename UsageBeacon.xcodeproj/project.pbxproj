@@ -40,6 +40,8 @@
 		BC3744226423025AA7A0040E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 24BB5A502B41A3662661A22A /* Cocoa.framework */; };
 		BF16CE8176AE62F82BD34D03 /* BudgetMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD3E584B8800EF94B06AAB1A /* BudgetMath.swift */; };
 		BF53D8678098C83764921840 /* UsageBeaconApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C0E38138C71709D391F8C4D /* UsageBeaconApp.swift */; };
+		C1A000000000000000000001 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C1A000000000000000000002 /* ServiceManagement.framework */; };
+		C1A000000000000000000003 /* LaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A000000000000000000004 /* LaunchAtLoginController.swift */; };
 		CB302F67799E7A0C1491B6CE /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4A5D67FBE856E1E72BEE407D /* EventKit.framework */; };
 		D329D4774FD8F6CD0D208ABA /* FloatingPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC9531C3CE4E10BF8E25F256 /* FloatingPanelController.swift */; };
 		D59290364E2FE870D3D2E7D4 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11F1BDE283407D68105151A5 /* WebKit.framework */; };
@@ -119,6 +121,8 @@
 		AB7D066E3F61A378CEDB3DC0 /* Version.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		B293C0363FD15BEAB71DCF90 /* UsageBeaconWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UsageBeaconWidget.swift; sourceTree = "<group>"; };
 		B7C289E0853C85A80CDA9497 /* SecretStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SecretStore.swift; path = Services/SecretStore.swift; sourceTree = "<group>"; };
+		C1A000000000000000000002 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
+		C1A000000000000000000004 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LaunchAtLoginController.swift; path = Services/LaunchAtLoginController.swift; sourceTree = "<group>"; };
 		C89E0AD684EF024A62C8B59C /* HTTPClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HTTPClient.swift; path = Services/HTTPClient.swift; sourceTree = "<group>"; };
 		CB0A66118D8C737CAA5977CA /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Models/Models.swift; sourceTree = "<group>"; };
 		CD3E584B8800EF94B06AAB1A /* BudgetMath.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetMath.swift; path = Services/BudgetMath.swift; sourceTree = "<group>"; };
@@ -145,6 +149,7 @@
 				207D5DC1278BEB25A8B9A747 /* AppKit.framework in Frameworks */,
 				DA69B10253D28446E1CFAA48 /* Carbon.framework in Frameworks */,
 				CB302F67799E7A0C1491B6CE /* EventKit.framework in Frameworks */,
+				C1A000000000000000000001 /* ServiceManagement.framework in Frameworks */,
 				9657BA814C88131888FD5EF7 /* Security.framework in Frameworks */,
 				B7C2C3ADDFBEB1D9728B658E /* SwiftUI.framework in Frameworks */,
 				D59290364E2FE870D3D2E7D4 /* WebKit.framework in Frameworks */,
@@ -207,6 +212,7 @@
 				FC9531C3CE4E10BF8E25F256 /* FloatingPanelController.swift */,
 				4B3D5E2FA4BEFF5CAB85A704 /* GlobalHotKeyController.swift */,
 				C89E0AD684EF024A62C8B59C /* HTTPClient.swift */,
+				C1A000000000000000000004 /* LaunchAtLoginController.swift */,
 				B7C289E0853C85A80CDA9497 /* SecretStore.swift */,
 				9582BCB0EA908315CE534A3A /* UpdaterController.swift */,
 				5CFA71D651C4DE7BB6BFC9AD /* WorkingDayService.swift */,
@@ -247,6 +253,7 @@
 				05F6EBE3E1140281440FE097 /* AppKit.framework */,
 				AA6A6D9DDFBFD9EBC7611123 /* Carbon.framework */,
 				4A5D67FBE856E1E72BEE407D /* EventKit.framework */,
+				C1A000000000000000000002 /* ServiceManagement.framework */,
 				D8F1D32B3F3C1AE3B2F4A668 /* Security.framework */,
 				18C38F028BEA69C45DFC4A7B /* SwiftUI.framework */,
 				11F1BDE283407D68105151A5 /* WebKit.framework */,
@@ -454,6 +461,7 @@
 				D329D4774FD8F6CD0D208ABA /* FloatingPanelController.swift in Sources */,
 				22AED95298EEE19CF149BF11 /* GlobalHotKeyController.swift in Sources */,
 				E8877691FFC8FBC4EC356DDB /* HTTPClient.swift in Sources */,
+				C1A000000000000000000003 /* LaunchAtLoginController.swift in Sources */,
 				0EF391A3B23A30D4210A1149 /* SecretStore.swift in Sources */,
 				92B2390899BFC58830DF0A95 /* UpdaterController.swift in Sources */,
 				5C09A9B260CA7A85BCA00B1E /* WorkingDayService.swift in Sources */,

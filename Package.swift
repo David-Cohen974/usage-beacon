@@ -37,6 +37,7 @@ let package = Package(
                 .linkedFramework("Carbon"),
                 .linkedFramework("SwiftUI"),
                 .linkedFramework("EventKit"),
+                .linkedFramework("ServiceManagement"),
                 .linkedFramework("Security"),
                 .linkedFramework("WebKit"),
                 .linkedFramework("WidgetKit")
