@@ -64,7 +64,7 @@ embed_extensions.symbol_dst_subfolder_spec = :plug_ins
 embedded_widget = embed_extensions.add_file_reference(widget_target.product_reference)
 embedded_widget.settings = { "ATTRIBUTES" => ["RemoveHeadersOnCopy"] }
 
-%w[AppKit Carbon EventKit Security SwiftUI WebKit WidgetKit].each do |framework|
+%w[AppKit Carbon EventKit ServiceManagement Security SwiftUI WebKit WidgetKit].each do |framework|
   add_framework(project, app_target, framework)
 end
 %w[SwiftUI WidgetKit].each do |framework|

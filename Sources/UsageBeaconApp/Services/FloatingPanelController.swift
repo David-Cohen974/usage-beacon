@@ -43,6 +43,8 @@ final class FloatingPanelController {
         if !hasPositionedPanel {
             position(panel)
             hasPositionedPanel = true
+        } else {
+            moveOnScreenIfNeeded(panel)
         }
 
         panel.orderFrontRegardless()
@@ -65,6 +67,7 @@ final class FloatingPanelController {
         panel.titleVisibility = .hidden
         panel.titlebarAppearsTransparent = true
         panel.isMovableByWindowBackground = true
+        panel.isReleasedWhenClosed = false
         panel.standardWindowButton(.closeButton)?.isHidden = true
         panel.standardWindowButton(.miniaturizeButton)?.isHidden = true
         panel.standardWindowButton(.zoomButton)?.isHidden = true
@@ -83,6 +86,18 @@ final class FloatingPanelController {
             y: visibleFrame.maxY - panel.frame.height - 20
         )
         panel.setFrameOrigin(origin)
+    }
+
+    private func moveOnScreenIfNeeded(_ panel: NSPanel) {
+        let isOnVisibleScreen = NSScreen.screens.contains { screen in
+            panel.frame.intersection(screen.visibleFrame).width >= 44
+                && panel.frame.intersection(screen.visibleFrame).height >= 24
+        }
+        guard isOnVisibleScreen == false else {
+            return
+        }
+
+        position(panel)
     }
 
     private func resizePanel(isExpanded: Bool) {

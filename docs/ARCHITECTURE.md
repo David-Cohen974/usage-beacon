@@ -44,6 +44,7 @@ Service objects handle:
 - Keychain persistence
 - Calendar access and working-day calculations
 - Floating HUD window lifecycle
+- Login-item registration and wake/display lifecycle recovery
 - Cursor signed-in session management
 - HTTP transport
 

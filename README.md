@@ -21,6 +21,7 @@ It is distributed under the MIT License.
 - Native SwiftUI macOS interface with menu bar, WidgetKit, and floating HUD modes
 - Small, medium, and large widgets for Notification Center or the desktop
 - System-wide ⇧⌘U shortcut to show or hide the floating HUD
+- Launch-at-login support plus automatic HUD recovery after sleep and display changes
 - Calendar-aware per-working-day budget math
 - Dark mode support
 - Retry and backoff protection around provider refreshes
@@ -78,7 +79,7 @@ The script creates only `dist/UsageBeacon.zip`. Keeping a second unpacked `.app`
 2. Search for `UsageBeacon`.
 3. Add the small, medium, or large widget. The app keeps its data current while it is running.
 
-The floating HUD remains available separately in UsageBeacon's Display settings for people who prefer an always-on-top view.
+The floating HUD remains available separately in UsageBeacon's Display settings for people who prefer an always-on-top view. Keep `Launch at login` enabled there to restore the menu bar app and HUD after restarting your Mac.
 
 ## Setup Notes
 

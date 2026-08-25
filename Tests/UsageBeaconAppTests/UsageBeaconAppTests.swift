@@ -164,10 +164,38 @@ struct UsageBeaconAppTests {
         let settings = try JSONDecoder().decode(GlobalSettings.self, from: data)
 
         #expect(settings.refreshIntervalMinutes == 15)
+        #expect(settings.launchAtLogin)
         #expect(settings.workingDaysPerWeek == 5)
         #expect(settings.workingWeekSchedule == .systemDefault)
         #expect(settings.customWorkingWeekdays == [2, 3, 4, 5, 6])
         #expect(settings.selectedCalendarIDs == ["cal-1"])
+    }
+
+    @Test
+    @MainActor
+    func launchAtLoginPreferenceUpdatesServiceAndPersists() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? fileManager.removeItem(at: directory) }
+        let configurationURL = directory.appending(path: "configuration.json")
+        let store = ConfigurationStore(fileURL: configurationURL, fileManager: fileManager)
+        var configuration = AppConfiguration.empty
+        configuration.settings.launchAtLogin = false
+        try store.save(configuration)
+
+        let launchController = MockLaunchAtLoginController(status: .disabled)
+        let model = AppModel(
+            configurationStore: store,
+            launchAtLoginController: launchController,
+            autoStart: false
+        )
+
+        model.setLaunchAtLogin(true)
+
+        #expect(launchController.requestedValues == [true])
+        #expect(model.launchAtLoginStatus == .enabled)
+        #expect(store.load().settings.launchAtLogin)
     }
 
     @Test
@@ -1036,6 +1064,23 @@ private struct StubHTTPClient: HTTPClientProtocol, Sendable {
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         try handler(request)
     }
+}
+
+@MainActor
+private final class MockLaunchAtLoginController: LaunchAtLoginControlling {
+    var status: LaunchAtLoginStatus
+    private(set) var requestedValues: [Bool] = []
+
+    init(status: LaunchAtLoginStatus) {
+        self.status = status
+    }
+
+    func setEnabled(_ enabled: Bool) throws {
+        requestedValues.append(enabled)
+        status = enabled ? .enabled : .disabled
+    }
+
+    func openSystemSettings() {}
 }
 
 private func decimal(_ value: String) -> Decimal {

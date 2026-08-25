@@ -82,6 +82,7 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
 
 struct GlobalSettings: Codable, Equatable {
     var showFloatingHUD: Bool = true
+    var launchAtLogin: Bool = true
     var refreshIntervalMinutes: Int = 1
     var useCalendarAdjustments: Bool = true
     var selectedCalendarIDs: [String] = []
@@ -91,6 +92,7 @@ struct GlobalSettings: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case showFloatingHUD
+        case launchAtLogin
         case refreshIntervalMinutes
         case useCalendarAdjustments
         case selectedCalendarIDs
@@ -104,6 +106,7 @@ struct GlobalSettings: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         showFloatingHUD = try container.decodeIfPresent(Bool.self, forKey: .showFloatingHUD) ?? true
+        launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
         refreshIntervalMinutes = max(1, try container.decodeIfPresent(Int.self, forKey: .refreshIntervalMinutes) ?? 1)
         useCalendarAdjustments = try container.decodeIfPresent(Bool.self, forKey: .useCalendarAdjustments) ?? true
         selectedCalendarIDs = try container.decodeIfPresent([String].self, forKey: .selectedCalendarIDs) ?? []
@@ -117,6 +120,7 @@ struct GlobalSettings: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(showFloatingHUD, forKey: .showFloatingHUD)
+        try container.encode(launchAtLogin, forKey: .launchAtLogin)
         try container.encode(refreshIntervalMinutes, forKey: .refreshIntervalMinutes)
         try container.encode(useCalendarAdjustments, forKey: .useCalendarAdjustments)
         try container.encode(selectedCalendarIDs, forKey: .selectedCalendarIDs)

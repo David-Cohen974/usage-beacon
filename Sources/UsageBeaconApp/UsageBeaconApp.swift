@@ -34,8 +34,11 @@ private enum SettingsWindowPresenter {
 
 @MainActor
 private final class UsageBeaconApplicationDelegate: NSObject, NSApplicationDelegate {
+    static var shouldPresentSettingsOnLaunch = true
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        guard DebugCommandRunner.command(from: CommandLine.arguments) == nil else {
+        guard DebugCommandRunner.command(from: CommandLine.arguments) == nil,
+              Self.shouldPresentSettingsOnLaunch else {
             return
         }
 
@@ -67,7 +70,9 @@ struct UsageBeaconApp: App {
 
     init() {
         if debugCommand == nil {
-            _model = StateObject(wrappedValue: AppModel())
+            let model = AppModel()
+            UsageBeaconApplicationDelegate.shouldPresentSettingsOnLaunch = model.configuration.providers.isEmpty
+            _model = StateObject(wrappedValue: model)
             _updater = StateObject(wrappedValue: UpdaterController())
         } else {
             _model = StateObject(wrappedValue: AppModel(autoStart: false))
