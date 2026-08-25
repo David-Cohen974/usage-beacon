@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.1.0",
+    "tag": "v1.1.0",
+    "name": "UsageBeacon 1.1.0",
+    "releaseDate": "2026-08-25T11:54:06Z",
+    "prerelease": false,
+    "notes": "## What's Changed\n* Document immutable release tags by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/1\n* Use native architecture for CodeQL by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/2\n* Redesign UsageBeacon product website by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/3\n* Fix tablet hero overflow by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/4\n* Refresh deployed site assets by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/5\n* Keep required CodeQL checks reportable by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/6\n* Release 1.1.0 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/7\n\n## New Contributors\n* @David-Cohen974 made their first contribution in https://github.com/David-Cohen974/usage-beacon/pull/1\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.0.0...v1.1.0\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.1.0"
+  },
+  {
     "version": "1.0.0",
     "tag": "v1.0.0",
     "name": "UsageBeacon 1.0.0",
