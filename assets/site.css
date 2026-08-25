@@ -206,6 +206,8 @@ footer { min-height: 112px; display: grid; grid-template-columns: 1fr auto 1fr; 
 .footer-brand { justify-self: start; }
 footer > span { text-align: center; }
 footer nav { justify-self: end; }
+footer nav .support-link { display: inline-flex; align-items: center; gap: 5px; color: #b5c1c4; }
+footer nav .support-link:hover, footer nav .support-link:focus-visible { color: var(--teal); }
 
 .content-page { min-height: calc(100vh - 194px); padding-block: 100px; }
 .content-page > h1 { font-size: clamp(48px, 6vw, 78px); }
