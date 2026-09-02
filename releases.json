@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.3",
+    "tag": "v1.2.3",
+    "name": "UsageBeacon 1.2.3",
+    "releaseDate": "2026-09-02T14:33:25Z",
+    "prerelease": false,
+    "notes": "## What's Changed\n* Enable disclosed crash reporting for new installs by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/14\n\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.2...v1.2.3\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.2.3"
+  },
+  {
     "version": "1.2.2",
     "tag": "v1.2.2",
     "name": "UsageBeacon 1.2.2",
