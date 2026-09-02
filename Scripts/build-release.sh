@@ -66,6 +66,7 @@ xcrun stapler staple "$app_path"
 xcrun stapler validate "$app_path"
 codesign --verify --deep --strict --verbose=2 "$app_path"
 spctl --assess --type execute --verbose=2 "$app_path"
+"$ROOT_DIR/Scripts/verify-app-launch.sh" "$app_path"
 
 update_archive="$ROOT_DIR/dist/UsageBeacon-$asset_version.zip"
 rm -f "$update_archive"

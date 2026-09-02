@@ -44,6 +44,7 @@ test -d "$app_path"
 codesign --verify --deep --strict --verbose=2 "$app_path"
 spctl --assess --type execute --verbose=2 "$app_path"
 xcrun stapler validate "$app_path"
+"${BASH_SOURCE[0]%/*}/verify-app-launch.sh" "$app_path"
 
 test "$(plutil -extract CFBundleShortVersionString raw "$app_path/Contents/Info.plist")" = "$version"
 test "$(plutil -extract LSMinimumSystemVersion raw "$app_path/Contents/Info.plist")" = "$minimum_macos"
@@ -52,4 +53,4 @@ test "$(plutil -extract SUPublicEDKey raw "$app_path/Contents/Info.plist")" = "T
 test -d "$app_path/Contents/Frameworks/Sparkle.framework"
 
 echo "Verified UsageBeacon $version from $download_url"
-echo "Developer ID, notarization ticket, Sparkle framework, appcast, and Ed25519 metadata are present."
+echo "Developer ID, notarization ticket, launchability, Sparkle framework, appcast, and Ed25519 metadata are present."
