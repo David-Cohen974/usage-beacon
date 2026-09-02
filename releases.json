@@ -1,12 +1,12 @@
 [
   {
-    "version": "1.2.1",
-    "tag": "v1.2.1",
-    "name": "UsageBeacon 1.2.1",
-    "releaseDate": "2026-09-02T09:50:22Z",
+    "version": "1.2.2",
+    "tag": "v1.2.2",
+    "name": "UsageBeacon 1.2.2",
+    "releaseDate": "2026-09-02T11:54:41Z",
     "prerelease": false,
-    "notes": "## What's Changed\n* Fix UsageBeacon launch regression in 1.2.0 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/12\n\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.0...v1.2.1\n",
-    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.2.1"
+    "notes": "## What's Changed\n* Ship profile-free macOS 26 launch hotfix by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/13\n\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.1...v1.2.2\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.2.2"
   },
   {
     "version": "1.2.0",
