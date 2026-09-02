@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.1",
+    "tag": "v1.2.1",
+    "name": "UsageBeacon 1.2.1",
+    "releaseDate": "2026-09-02T09:50:22Z",
+    "prerelease": false,
+    "notes": "## What's Changed\n* Fix UsageBeacon launch regression in 1.2.0 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/12\n\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.0...v1.2.1\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.2.1"
+  },
+  {
     "version": "1.2.0",
     "tag": "v1.2.0",
     "name": "UsageBeacon 1.2.0",
