@@ -131,7 +131,7 @@ swift test --jobs 1
 - Provider secrets are stored in the macOS Keychain.
 - Calendar access is optional and only used for working-day calculations.
 - UsageBeacon does not require a backend for provider data; usage and budgets are fetched directly from vendor endpoints or signed-in local sessions.
-- Optional Firebase crash reporting and anonymous usage analytics are off by default and controlled by separate settings.
+- Firebase crash reporting is on for new installations with a first-launch disclosure and an easy opt-out. Existing installations retain their saved choice. Anonymous usage analytics remain off by default and use a separate setting.
 - Telemetry never includes API keys, cookies, account identifiers, provider responses, URLs, spending, budgets, limits, or token usage.
 - Some personal connectors depend on vendor web UI structure and private session endpoints, so they may require maintenance when vendors change their dashboards.
 - The personal connectors automate access to undocumented endpoints using your signed-in session. Before using or redistributing them, review the applicable vendor terms and policies. You are responsible for ensuring your use is permitted.

@@ -45,6 +45,9 @@ struct SettingsView: View {
                     if let message = model.launchAtLoginErrorMessage {
                         launchAtLoginErrorBanner(message)
                     }
+                    if model.configuration.settings.telemetryDisclosureAcknowledged == false {
+                        crashReportingDisclosure
+                    }
                     overviewHero
                     providersSection
                     budgetSchedule
@@ -56,6 +59,55 @@ struct SettingsView: View {
             }
         }
         .frame(minWidth: 980, minHeight: 760)
+    }
+
+    private var crashReportingDisclosure: some View {
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: "waveform.path.ecg.rectangle.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(BeaconPalette.teal)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Help improve UsageBeacon")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(BeaconPalette.ink)
+
+                Text("Crash reports are on for new installations. They include stack traces and sanitized diagnostics, never credentials, account identifiers, provider responses, URLs, spending, limits, or token usage.")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Link(
+                    "Read the privacy policy",
+                    destination: URL(string: "https://david-cohen974.github.io/usage-beacon/privacy/")!
+                )
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+            }
+
+            Spacer(minLength: 20)
+
+            HStack(spacing: 10) {
+                Button("Turn Off") {
+                    model.acknowledgeCrashReportingDisclosure(keepEnabled: false)
+                }
+                .buttonStyle(.bordered)
+
+                Button("Keep On") {
+                    model.acknowledgeCrashReportingDisclosure(keepEnabled: true)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(BeaconPalette.teal)
+            }
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(BeaconPalette.surfaceElevated)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(BeaconPalette.teal.opacity(0.32), lineWidth: 1)
+        )
     }
 
     private var overviewHero: some View {
@@ -519,7 +571,7 @@ struct SettingsView: View {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "lock.shield.fill")
                         .foregroundStyle(BeaconPalette.teal)
-                    Text("Off by default. UsageBeacon never includes API keys, cookies, account identifiers, provider responses, URLs, spending, budgets, limits, or token usage in telemetry.")
+                    Text("Crash reports are on for new installations and can be turned off here. Anonymous usage analytics remain off until enabled. Telemetry never includes API keys, cookies, account identifiers, provider responses, URLs, spending, budgets, limits, or token usage.")
                         .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(BeaconPalette.mutedInk)
                         .fixedSize(horizontal: false, vertical: true)

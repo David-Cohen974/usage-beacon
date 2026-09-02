@@ -316,6 +316,16 @@ final class AppModel: ObservableObject {
         telemetry.track(.featureChanged(feature: .crashReporting, enabled: enabled))
     }
 
+    func acknowledgeCrashReportingDisclosure(keepEnabled: Bool) {
+        configuration.settings.crashReportingEnabled = keepEnabled
+        configuration.settings.telemetryDisclosureAcknowledged = true
+        saveConfiguration()
+        telemetry.updateConsent(
+            crashReportsEnabled: keepEnabled,
+            usageAnalyticsEnabled: configuration.settings.usageAnalyticsEnabled
+        )
+    }
+
     func setUsageAnalyticsEnabled(_ enabled: Bool) {
         configuration.settings.usageAnalyticsEnabled = enabled
         saveConfiguration()
