@@ -40,6 +40,7 @@ PRODUCTS_ROOT="$BUILD_ROOT/Build/Products"
 INTERMEDIATES_ROOT="$BUILD_ROOT/Build/Intermediates"
 ARCHIVE_CHECK_DIR="$BUILD_ROOT/ArchiveCheck"
 SOURCE_PACKAGES_DIR_PATH="${SOURCE_PACKAGES_DIR_PATH:-$BUILD_ROOT/SourcePackages}"
+export SOURCE_PACKAGES_DIR_PATH
 
 cleanup() {
   find "$BUILD_ROOT" -depth -delete 2>/dev/null || true

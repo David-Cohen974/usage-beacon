@@ -22,6 +22,12 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
+	<false/>
+	<key>FirebaseCrashlyticsCollectionEnabled</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_IDFV_COLLECTION_ENABLED</key>
+	<false/>
 	<key>LSMinimumSystemVersion</key>
 	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
 	<key>LSUIElement</key>
@@ -30,6 +36,8 @@
 	<string>UsageBeacon reads selected holiday and vacation calendars to calculate working-day budgets.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>UsageBeacon reads selected holiday and vacation calendars to calculate working-day budgets.</string>
+	<key>NSApplicationCrashOnExceptions</key>
+	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 UsageBeacon. All rights reserved.</string>
 	<key>NSPrincipalClass</key>

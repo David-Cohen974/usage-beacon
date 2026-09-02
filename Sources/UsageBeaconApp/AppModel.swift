@@ -27,6 +27,7 @@ final class AppModel: ObservableObject {
     private let cursorDashboardSessionController: CursorDashboardSessionController
     private let claudeDashboardSessionController: ClaudeDashboardSessionController
     private let launchAtLoginController: LaunchAtLoginControlling
+    private let telemetry: TelemetryReporting
     private var globalHotKeyController: GlobalHotKeyController?
     private var refreshTimer: Timer?
     private var dayBoundaryTimer: Timer?
@@ -49,6 +50,7 @@ final class AppModel: ObservableObject {
         cursorDashboardSessionController: CursorDashboardSessionController = .shared,
         claudeDashboardSessionController: ClaudeDashboardSessionController = .shared,
         launchAtLoginController: LaunchAtLoginControlling = LaunchAtLoginController(),
+        telemetry: TelemetryReporting = TelemetryController.shared,
         autoStart: Bool = true
     ) {
         self.configurationStore = configurationStore
@@ -59,11 +61,16 @@ final class AppModel: ObservableObject {
         self.cursorDashboardSessionController = cursorDashboardSessionController
         self.claudeDashboardSessionController = claudeDashboardSessionController
         self.launchAtLoginController = launchAtLoginController
+        self.telemetry = telemetry
         self.calendarAccessState = workingDayService.authorizationState
         self.calendarErrorMessage = nil
 
         let configuration = configurationStore.load()
         self.configuration = configuration
+        telemetry.updateConsent(
+            crashReportsEnabled: configuration.settings.crashReportingEnabled,
+            usageAnalyticsEnabled: configuration.settings.usageAnalyticsEnabled
+        )
         self.configurationRecovery = configurationStore.lastRecovery
         self.persistenceErrorMessage = nil
         self.launchAtLoginStatus = launchAtLoginController.status
@@ -156,6 +163,11 @@ final class AppModel: ObservableObject {
         }
 
         if autoStart {
+            telemetry.track(
+                .appLaunched(
+                    enabledProviderCount: configuration.providers.filter(\.isEnabled).count
+                )
+            )
             synchronizeLaunchAtLoginPreference()
             globalHotKeyController = GlobalHotKeyController { [weak self] in
                 self?.toggleFloatingHUD()
@@ -182,6 +194,7 @@ final class AppModel: ObservableObject {
     func addProvider(kind: ProviderKind) -> UUID {
         let provider = StoredProvider(kind: kind)
         configuration.providers.append(provider)
+        telemetry.track(.providerAdded(kind: kind))
         reconcileSnapshotPlaceholders()
         saveConfiguration()
         updateFloatingHUD()
@@ -213,8 +226,12 @@ final class AppModel: ObservableObject {
     }
 
     func removeProvider(id: UUID) {
-        let secretAccount = configuration.providers.first(where: { $0.id == id })?.secretAccount
+        let removedProvider = configuration.providers.first(where: { $0.id == id })
+        let secretAccount = removedProvider?.secretAccount
         configuration.providers.removeAll { $0.id == id }
+        if let removedProvider {
+            telemetry.track(.providerRemoved(kind: removedProvider.kind))
+        }
         snapshotStates.removeValue(forKey: id)
         if let secretAccount {
             do {
@@ -268,6 +285,7 @@ final class AppModel: ObservableObject {
         configuration.settings.showFloatingHUD = enabled
         saveConfiguration()
         updateFloatingHUD()
+        telemetry.track(.featureChanged(feature: .floatingHUD, enabled: enabled))
     }
 
     func toggleFloatingHUD() {
@@ -277,6 +295,7 @@ final class AppModel: ObservableObject {
     func setLaunchAtLogin(_ enabled: Bool) {
         configuration.settings.launchAtLogin = enabled
         saveConfiguration()
+        telemetry.track(.featureChanged(feature: .launchAtLogin, enabled: enabled))
         launchAtLoginErrorMessage = nil
 
         do {
@@ -285,6 +304,26 @@ final class AppModel: ObservableObject {
             launchAtLoginErrorMessage = "Launch at login could not be changed: \(error.localizedDescription)"
         }
         refreshLaunchAtLoginStatus()
+    }
+
+    func setCrashReportingEnabled(_ enabled: Bool) {
+        configuration.settings.crashReportingEnabled = enabled
+        saveConfiguration()
+        telemetry.updateConsent(
+            crashReportsEnabled: enabled,
+            usageAnalyticsEnabled: configuration.settings.usageAnalyticsEnabled
+        )
+        telemetry.track(.featureChanged(feature: .crashReporting, enabled: enabled))
+    }
+
+    func setUsageAnalyticsEnabled(_ enabled: Bool) {
+        configuration.settings.usageAnalyticsEnabled = enabled
+        saveConfiguration()
+        telemetry.updateConsent(
+            crashReportsEnabled: configuration.settings.crashReportingEnabled,
+            usageAnalyticsEnabled: enabled
+        )
+        telemetry.track(.featureChanged(feature: .usageAnalytics, enabled: enabled))
     }
 
     func openLoginItemsSettings() {
@@ -508,6 +547,7 @@ final class AppModel: ObservableObject {
         }
         inFlightProviderRefreshes.insert(provider.id)
         lastProviderRefreshAttemptAt[provider.id] = Date()
+        let refreshStartedAt = Date()
         defer {
             inFlightProviderRefreshes.remove(provider.id)
         }
@@ -540,6 +580,17 @@ final class AppModel: ObservableObject {
                 )
                 let enriched = enrich(rawSnapshot)
                 snapshotStates[provider.id] = enriched
+                telemetry.track(
+                    .refreshFinished(
+                        providerKind: provider.kind,
+                        outcome: .succeeded,
+                        failureCategory: nil,
+                        attempts: attemptsUsed,
+                        durationBucket: TelemetryDurationBucket(
+                            seconds: Date().timeIntervalSince(refreshStartedAt)
+                        )
+                    )
+                )
                 updateFloatingHUD()
                 return
             } catch {
@@ -562,6 +613,24 @@ final class AppModel: ObservableObject {
         )
         failed.lastUpdatedAt = Date()
         snapshotStates[provider.id] = failed
+        let reportedError = finalError ?? ProviderFailure.network("Unknown refresh failure.")
+        let failureCategory = TelemetryFailureCategory(error: reportedError)
+        telemetry.track(
+            .refreshFinished(
+                providerKind: provider.kind,
+                outcome: .failed,
+                failureCategory: failureCategory,
+                attempts: attemptsUsed,
+                durationBucket: TelemetryDurationBucket(
+                    seconds: Date().timeIntervalSince(refreshStartedAt)
+                )
+            )
+        )
+        telemetry.recordRefreshFailure(
+            providerKind: provider.kind,
+            category: failureCategory,
+            attempts: attemptsUsed
+        )
         updateFloatingHUD()
     }
 

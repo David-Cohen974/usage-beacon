@@ -53,6 +53,10 @@ add_swift_sources(shared_group, shared_target, root.join("Sources", "UsageBeacon
 add_swift_sources(app_group, app_target, root.join("Sources", "UsageBeaconApp"))
 add_swift_sources(widget_group, widget_target, root.join("Sources", "UsageBeaconWidget"))
 
+app_resources_group = app_group.new_group("Resources", "Resources")
+google_service_info = app_resources_group.new_file("GoogleService-Info.plist")
+app_target.resources_build_phase.add_file_reference(google_service_info)
+
 app_target.add_dependency(shared_target)
 app_target.add_dependency(widget_target)
 widget_target.add_dependency(shared_target)
@@ -102,11 +106,47 @@ sparkle_build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
 sparkle_build_file.product_ref = sparkle_product
 app_target.frameworks_build_phase.files << sparkle_build_file
 
+firebase_package = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+firebase_package.repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git"
+firebase_package.requirement = {
+  "kind" => "exactVersion",
+  "version" => "12.12.1"
+}
+project.root_object.package_references << firebase_package
+
+%w[FirebaseAnalytics FirebaseCore FirebaseCrashlytics].each do |product_name|
+  firebase_product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+  firebase_product.package = firebase_package
+  firebase_product.product_name = product_name
+  app_target.package_product_dependencies << firebase_product
+
+  firebase_build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
+  firebase_build_file.product_ref = firebase_product
+  app_target.frameworks_build_phase.files << firebase_build_file
+end
+
+crashlytics_phase = app_target.new_shell_script_build_phase("Upload Crashlytics Symbols")
+crashlytics_phase.always_out_of_date = "1"
+crashlytics_phase.shell_script = <<~'SCRIPT'
+  if [[ "${CONFIGURATION}" == "Release" ]]; then
+    firebase_packages_root="${SOURCE_PACKAGES_DIR_PATH:-${BUILD_DIR%Build/*}SourcePackages}"
+    "${firebase_packages_root}/checkouts/firebase-ios-sdk/Crashlytics/run"
+  fi
+SCRIPT
+crashlytics_phase.input_paths = [
+  "$(DWARF_DSYM_FOLDER_PATH)/$(DWARF_DSYM_FILE_NAME)",
+  "$(DWARF_DSYM_FOLDER_PATH)/$(DWARF_DSYM_FILE_NAME)/Contents/Resources/DWARF/$(TARGET_NAME)",
+  "$(DWARF_DSYM_FOLDER_PATH)/$(DWARF_DSYM_FILE_NAME)/Contents/Info.plist",
+  "$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/GoogleService-Info.plist",
+  "$(TARGET_BUILD_DIR)/$(EXECUTABLE_PATH)"
+]
+
 common_settings = {
   "CLANG_ENABLE_MODULES" => "YES",
   "CODE_SIGN_STYLE" => "Manual",
   "DEVELOPMENT_TEAM" => "Y3XM9Q3AZT",
   "ENABLE_HARDENED_RUNTIME" => "YES",
+  "ENABLE_USER_SCRIPT_SANDBOXING" => "NO",
   "MACOSX_DEPLOYMENT_TARGET" => "14.0",
   "SWIFT_VERSION" => "6.0"
 }

@@ -42,7 +42,7 @@ It is distributed under the MIT License.
 ## Requirements
 
 - macOS 14 or newer
-- Swift 6 toolchain / Xcode 16 or newer
+- Swift 6.2.3 toolchain / Xcode 26.2 or newer
 
 ## Quick Start
 
@@ -130,7 +130,9 @@ swift test --jobs 1
 
 - Provider secrets are stored in the macOS Keychain.
 - Calendar access is optional and only used for working-day calculations.
-- UsageBeacon does not require a backend service; data is fetched directly from vendor endpoints or signed-in local sessions.
+- UsageBeacon does not require a backend for provider data; usage and budgets are fetched directly from vendor endpoints or signed-in local sessions.
+- Optional Firebase crash reporting and anonymous usage analytics are off by default and controlled by separate settings.
+- Telemetry never includes API keys, cookies, account identifiers, provider responses, URLs, spending, budgets, limits, or token usage.
 - Some personal connectors depend on vendor web UI structure and private session endpoints, so they may require maintenance when vendors change their dashboards.
 - The personal connectors automate access to undocumented endpoints using your signed-in session. Before using or redistributing them, review the applicable vendor terms and policies. You are responsible for ensuring your use is permitted.
 
