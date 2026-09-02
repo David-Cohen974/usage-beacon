@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.4",
+    "tag": "v1.2.4",
+    "name": "UsageBeacon 1.2.4",
+    "releaseDate": "2026-09-02T15:18:59Z",
+    "prerelease": false,
+    "notes": "## What's Changed\n* Add Codex usage provider for 1.2.4 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/15\n\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.3...v1.2.4\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.2.4"
+  },
+  {
     "version": "1.2.3",
     "tag": "v1.2.3",
     "name": "UsageBeacon 1.2.3",
