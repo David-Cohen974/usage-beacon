@@ -49,6 +49,7 @@ struct SettingsView: View {
                     providersSection
                     budgetSchedule
                     displaySection
+                    diagnosticsSection
                     updatesSection
                 }
                 .padding(30)
@@ -319,6 +320,21 @@ struct SettingsView: View {
             Divider().overlay(BeaconPalette.outline)
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
+                    Label("Floating HUD", systemImage: "sparkles.tv")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Text("Show or hide anytime with \(GlobalHotKeyController.displayName)")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                }
+                Spacer()
+                Toggle("Floating HUD", isOn: Binding(get: { model.configuration.settings.showFloatingHUD }, set: { model.setShowFloatingHUD($0) }))
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+            }
+            Divider().overlay(BeaconPalette.outline)
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
                     Label("Launch at login", systemImage: "power")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(BeaconPalette.ink)
@@ -342,21 +358,6 @@ struct SettingsView: View {
                 )
                 .labelsHidden()
                 .toggleStyle(.switch)
-            }
-            Divider().overlay(BeaconPalette.outline)
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Label("Floating HUD", systemImage: "sparkles.tv")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundStyle(BeaconPalette.ink)
-                    Text("Show or hide anytime with \(GlobalHotKeyController.displayName)")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(BeaconPalette.mutedInk)
-                }
-                Spacer()
-                Toggle("Floating HUD", isOn: Binding(get: { model.configuration.settings.showFloatingHUD }, set: { model.setShowFloatingHUD($0) }))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
             }
             Divider().overlay(BeaconPalette.outline)
             HStack {
@@ -470,6 +471,67 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 18)
             .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+        }
+    }
+
+    private var diagnosticsSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            sectionHeading(
+                "Privacy & Diagnostics",
+                subtitle: "Choose whether anonymous technical information can help improve UsageBeacon."
+            )
+
+            VStack(spacing: 0) {
+                settingsRow(
+                    title: "Crash reports",
+                    detail: "Send stack traces and sanitized error categories after crashes or unexpected connector failures."
+                ) {
+                    Toggle(
+                        "Crash reports",
+                        isOn: Binding(
+                            get: { model.configuration.settings.crashReportingEnabled },
+                            set: { model.setCrashReportingEnabled($0) }
+                        )
+                    )
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                Divider().overlay(BeaconPalette.outline)
+
+                settingsRow(
+                    title: "Anonymous usage analytics",
+                    detail: "Share feature adoption, connector type, refresh outcome, and coarse timing buckets."
+                ) {
+                    Toggle(
+                        "Anonymous usage analytics",
+                        isOn: Binding(
+                            get: { model.configuration.settings.usageAnalyticsEnabled },
+                            set: { model.setUsageAnalyticsEnabled($0) }
+                        )
+                    )
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                }
+
+                Divider().overlay(BeaconPalette.outline)
+
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "lock.shield.fill")
+                        .foregroundStyle(BeaconPalette.teal)
+                    Text("Off by default. UsageBeacon never includes API keys, cookies, account identifiers, provider responses, URLs, spending, budgets, limits, or token usage in telemetry.")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 8)
+                }
+                .padding(.vertical, 14)
+            }
+            .padding(.horizontal, 18)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(BeaconPalette.surfaceSoft)
+            )
         }
     }
 

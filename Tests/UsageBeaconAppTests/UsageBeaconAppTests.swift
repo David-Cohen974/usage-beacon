@@ -165,10 +165,51 @@ struct UsageBeaconAppTests {
 
         #expect(settings.refreshIntervalMinutes == 15)
         #expect(settings.launchAtLogin)
+        #expect(settings.crashReportingEnabled == false)
+        #expect(settings.usageAnalyticsEnabled == false)
         #expect(settings.workingDaysPerWeek == 5)
         #expect(settings.workingWeekSchedule == .systemDefault)
         #expect(settings.customWorkingWeekdays == [2, 3, 4, 5, 6])
         #expect(settings.selectedCalendarIDs == ["cal-1"])
+    }
+
+    @Test
+    func telemetryUsesOnlyCoarseFailureAndDurationCategories() {
+        #expect(TelemetryFailureCategory(error: ProviderFailure.authentication("secret detail")) == .authentication)
+        #expect(TelemetryFailureCategory(error: ProviderFailure.httpStatus(code: 429, message: "body", retryAfterSeconds: nil)) == .rateLimit)
+        #expect(TelemetryFailureCategory(error: ProviderFailure.httpStatus(code: 503, message: "body", retryAfterSeconds: nil)) == .server)
+        #expect(TelemetryFailureCategory(error: ProviderFailure.parsing("sensitive response")) == .parsing)
+        #expect(TelemetryDurationBucket(seconds: 0.5) == .underOneSecond)
+        #expect(TelemetryDurationBucket(seconds: 9) == .fiveToFifteenSeconds)
+        #expect(TelemetryDurationBucket(seconds: 45) == .overThirtySeconds)
+    }
+
+    @Test
+    @MainActor
+    func telemetryConsentIsOptInAndPersists() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? fileManager.removeItem(at: directory) }
+        let configurationURL = directory.appending(path: "configuration.json")
+        let store = ConfigurationStore(fileURL: configurationURL, fileManager: fileManager)
+        let telemetry = SpyTelemetryReporter()
+        let model = AppModel(
+            configurationStore: store,
+            launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            telemetry: telemetry,
+            autoStart: false
+        )
+
+        #expect(telemetry.consentUpdates == [.init(crashReportsEnabled: false, usageAnalyticsEnabled: false)])
+
+        model.setCrashReportingEnabled(true)
+        model.setUsageAnalyticsEnabled(true)
+
+        let persistedSettings = store.load().settings
+        #expect(persistedSettings.crashReportingEnabled)
+        #expect(persistedSettings.usageAnalyticsEnabled)
+        #expect(telemetry.consentUpdates.last == .init(crashReportsEnabled: true, usageAnalyticsEnabled: true))
     }
 
     @Test
@@ -1081,6 +1122,36 @@ private final class MockLaunchAtLoginController: LaunchAtLoginControlling {
     }
 
     func openSystemSettings() {}
+}
+
+@MainActor
+private final class SpyTelemetryReporter: TelemetryReporting {
+    struct ConsentUpdate: Equatable {
+        let crashReportsEnabled: Bool
+        let usageAnalyticsEnabled: Bool
+    }
+
+    private(set) var consentUpdates: [ConsentUpdate] = []
+    private(set) var events: [TelemetryEvent] = []
+
+    func updateConsent(crashReportsEnabled: Bool, usageAnalyticsEnabled: Bool) {
+        consentUpdates.append(
+            ConsentUpdate(
+                crashReportsEnabled: crashReportsEnabled,
+                usageAnalyticsEnabled: usageAnalyticsEnabled
+            )
+        )
+    }
+
+    func track(_ event: TelemetryEvent) {
+        events.append(event)
+    }
+
+    func recordRefreshFailure(
+        providerKind: ProviderKind,
+        category: TelemetryFailureCategory,
+        attempts: Int
+    ) {}
 }
 
 private func decimal(_ value: String) -> Decimal {

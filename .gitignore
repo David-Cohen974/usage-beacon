@@ -6,6 +6,8 @@ DerivedData
 .idea
 .vscode
 *.swp
+__pycache__/
+*.pyc
 *.xcuserstate
 *.xcworkspace/xcuserdata
 *.xcodeproj/xcuserdata

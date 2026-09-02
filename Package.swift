@@ -18,6 +18,10 @@ let package = Package(
     ],
     dependencies: [
         .package(
+            url: "https://github.com/firebase/firebase-ios-sdk.git",
+            exact: "12.12.1"
+        ),
+        .package(
             url: "https://github.com/sparkle-project/Sparkle",
             exact: "2.9.6"
         )
@@ -30,7 +34,13 @@ let package = Package(
             name: "UsageBeaconApp",
             dependencies: [
                 "UsageBeaconShared",
+                .product(name: "FirebaseAnalytics", package: "firebase-ios-sdk"),
+                .product(name: "FirebaseCore", package: "firebase-ios-sdk"),
+                .product(name: "FirebaseCrashlytics", package: "firebase-ios-sdk"),
                 .product(name: "Sparkle", package: "Sparkle")
+            ],
+            resources: [
+                .copy("Resources/GoogleService-Info.plist")
             ],
             linkerSettings: [
                 .linkedFramework("AppKit"),
