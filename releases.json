@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.0",
+    "tag": "v1.2.0",
+    "name": "UsageBeacon 1.2.0",
+    "releaseDate": "2026-09-02T07:35:04Z",
+    "prerelease": false,
+    "notes": "## What's Changed\n* Add Buy Me a Coffee link to website by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/8\n* Release UsageBeacon 1.2.0 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/11\n\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.1.0...v1.2.0\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.2.0"
+  },
+  {
     "version": "1.1.0",
     "tag": "v1.1.0",
     "name": "UsageBeacon 1.1.0",
