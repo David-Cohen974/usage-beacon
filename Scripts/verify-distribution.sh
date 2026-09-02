@@ -46,6 +46,12 @@ spctl --assess --type execute --verbose=2 "$app_path"
 xcrun stapler validate "$app_path"
 "${BASH_SOURCE[0]%/*}/verify-app-launch.sh" "$app_path"
 
+signed_entitlements="$(codesign -d --entitlements :- "$app_path" 2>/dev/null)"
+if grep -Eq '<key>(com\.apple\.security\.application-groups|keychain-access-groups)</key>' <<<"$signed_entitlements"; then
+  test -f "$app_path/Contents/embedded.provisionprofile"
+fi
+test ! -d "$app_path/Contents/PlugIns/UsageBeaconWidget.appex"
+
 test "$(plutil -extract CFBundleShortVersionString raw "$app_path/Contents/Info.plist")" = "$version"
 test "$(plutil -extract LSMinimumSystemVersion raw "$app_path/Contents/Info.plist")" = "$minimum_macos"
 test "$(plutil -extract SUFeedURL raw "$app_path/Contents/Info.plist")" = "$appcast_url"

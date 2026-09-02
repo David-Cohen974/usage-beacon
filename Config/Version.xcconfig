@@ -1,5 +1,5 @@
 // Release source of truth. Stable and beta tags must use this marketing version.
-MARKETING_VERSION = 1.2.1
+MARKETING_VERSION = 1.2.2
 
 // Local builds use this value. CI replaces it with a monotonically increasing number.
-CURRENT_PROJECT_VERSION = 9
+CURRENT_PROJECT_VERSION = 10
