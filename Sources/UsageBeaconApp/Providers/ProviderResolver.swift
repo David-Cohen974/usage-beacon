@@ -8,6 +8,11 @@ enum ProviderResolver {
         now: Date
     ) async throws -> RawBudgetSnapshot {
         switch provider.kind {
+        case .codex:
+            return try await CodexProvider.fetch(
+                provider: provider,
+                now: now
+            )
         case .cursorPersonal:
             return try await CursorPersonalProvider.fetch(
                 provider: provider,

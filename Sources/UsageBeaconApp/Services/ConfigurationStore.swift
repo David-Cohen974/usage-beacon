@@ -59,6 +59,7 @@ final class ConfigurationStore {
               provider.kind == .manual,
               provider.displayName == "Example Cursor Budget",
               provider.isEnabled,
+              provider.codex == nil,
               provider.cursorPersonal == nil,
               provider.cursor == nil,
               provider.claudePersonal == nil,

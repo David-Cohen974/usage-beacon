@@ -72,6 +72,8 @@ enum BeaconPalette {
 extension ProviderKind {
     var symbolName: String {
         switch self {
+        case .codex:
+            return "terminal.fill"
         case .cursorPersonal:
             return "sparkles.rectangle.stack"
         case .cursorAdmin:
@@ -89,6 +91,8 @@ extension ProviderKind {
 
     var accentColors: [Color] {
         switch self {
+        case .codex:
+            return [BeaconPalette.ink, BeaconPalette.teal]
         case .cursorPersonal:
             return [BeaconPalette.teal, BeaconPalette.cyan]
         case .cursorAdmin:

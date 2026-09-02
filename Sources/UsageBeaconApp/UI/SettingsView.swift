@@ -662,12 +662,19 @@ struct SettingsView: View {
                         .foregroundStyle(BeaconPalette.mutedInk)
 
                     HStack(alignment: .top, spacing: 12) {
-                        onboardingStep(number: 1, title: "Choose", detail: "Select Cursor, Claude, or a manual budget.")
+                        onboardingStep(number: 1, title: "Choose", detail: "Select Codex, Cursor, Claude, or a manual budget.")
                         onboardingStep(number: 2, title: "Sign in", detail: "Complete sign-in in the secure browser window.")
                         onboardingStep(number: 3, title: "Verify", detail: "Wait for the connector to show Connected.")
                     }
 
                     HStack(spacing: 12) {
+                        Button {
+                            model.addProvider(kind: .codex)
+                        } label: {
+                            Label("Track Codex", systemImage: ProviderKind.codex.symbolName)
+                        }
+                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.codex.accentColors, filled: true))
+
                         Button {
                             model.addProviderAndBeginSetup(kind: .cursorPersonal)
                         } label: {
@@ -1010,6 +1017,8 @@ private struct ProviderEditorView: View {
 
     private var primaryActionTitle: String {
         switch provider.kind {
+        case .codex:
+            return "Sync Now"
         case .cursorPersonal:
             return model.cursorPersonalSessionState == .connected ? "Sync Now" : "Sign In"
         case .claudePersonal:
@@ -1022,6 +1031,8 @@ private struct ProviderEditorView: View {
     private func performPrimaryAction() {
         model.updateProvider(provider)
         switch provider.kind {
+        case .codex:
+            model.refresh(providerID: provider.id)
         case .cursorPersonal where model.cursorPersonalSessionState != .connected:
             isExpanded = true
             model.connectCursorPersonal(using: provider.cursorPersonal?.usagePageURL ?? CursorPersonalSettings().usagePageURL)
@@ -1036,6 +1047,13 @@ private struct ProviderEditorView: View {
     @ViewBuilder
     private var providerSpecificFields: some View {
         switch provider.kind {
+        case .codex:
+            CodexProviderFields(
+                settings: Binding(
+                    get: { provider.codex ?? CodexSettings() },
+                    set: { provider.codex = $0 }
+                )
+            )
         case .cursorPersonal:
             CursorPersonalProviderFields(
                 settings: Binding(
@@ -1351,6 +1369,35 @@ private struct CursorPersonalProviderFields: View {
 
             ProviderFieldGroup("Usage page URL", detail: "Only change this if Cursor moves the usage page.") {
                 TextField("https://cursor.com/dashboard/usage", text: $settings.usagePageURL)
+                    .beaconInputChrome()
+            }
+        }
+    }
+}
+
+private struct CodexProviderFields: View {
+    @Binding var settings: CodexSettings
+
+    var body: some View {
+        SettingsPanel(
+            title: "Codex",
+            subtitle: "Read rolling usage limits from your local Codex app or CLI. UsageBeacon reuses the existing Codex sign-in and stores no API key.",
+            colors: ProviderKind.codex.accentColors
+        ) {
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "checkmark.shield.fill")
+                    .foregroundStyle(BeaconPalette.teal)
+                Text("Sync reports each available Codex limit bucket, its utilization percentage, and its reset time. Codex must already be installed and signed in on this Mac.")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            ProviderFieldGroup(
+                "Codex executable path",
+                detail: "Optional. Leave blank to find the ChatGPT/Codex app or a Codex CLI installation automatically."
+            ) {
+                TextField("Auto-detect", text: $settings.executablePath)
                     .beaconInputChrome()
             }
         }
