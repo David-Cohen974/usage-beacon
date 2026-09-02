@@ -1,6 +1,7 @@
 import Foundation
 
 enum ProviderKind: String, Codable, CaseIterable, Identifiable {
+    case codex
     case cursorPersonal
     case cursorAdmin
     case claudePersonal
@@ -12,6 +13,8 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
+        case .codex:
+            return "Codex"
         case .cursorPersonal:
             return "Cursor Personal"
         case .cursorAdmin:
@@ -29,6 +32,8 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
+        case .codex:
+            return "Reads your Codex rolling usage limits from the local Codex app or CLI. No API key required."
         case .cursorPersonal:
             return "Signs into Cursor like the web UI and reads your personal usage page. No admin API key required."
         case .cursorAdmin:
@@ -46,6 +51,8 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
 
     var defaultDisplayName: String {
         switch self {
+        case .codex:
+            return "Codex"
         case .cursorPersonal:
             return "Cursor Personal"
         case .cursorAdmin:
@@ -63,7 +70,7 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
 
     var supportsTodaySpend: Bool {
         switch self {
-        case .claudePersonal:
+        case .codex, .claudePersonal:
             return false
         case .cursorPersonal, .cursorAdmin, .anthropicAdmin, .manual, .customREST:
             return true
@@ -72,7 +79,7 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
 
     var supportsLastPromptCost: Bool {
         switch self {
-        case .claudePersonal, .anthropicAdmin:
+        case .codex, .claudePersonal, .anthropicAdmin:
             return false
         case .cursorPersonal, .cursorAdmin, .manual, .customREST:
             return true
@@ -279,6 +286,10 @@ struct ClaudePersonalSettings: Codable, Equatable {
     }
 }
 
+struct CodexSettings: Codable, Equatable {
+    var executablePath: String = ""
+}
+
 struct AnthropicAdminSettings: Codable, Equatable {
     var apiBaseURL: String = "https://api.anthropic.com"
     var workspaceID: String = ""
@@ -314,6 +325,7 @@ struct StoredProvider: Identifiable, Codable, Equatable {
     var kind: ProviderKind
     var displayName: String
     var isEnabled: Bool
+    var codex: CodexSettings?
     var cursorPersonal: CursorPersonalSettings?
     var cursor: CursorAdminSettings?
     var claudePersonal: ClaudePersonalSettings?
@@ -332,7 +344,16 @@ struct StoredProvider: Identifiable, Codable, Equatable {
         self.displayName = displayName ?? kind.defaultDisplayName
         self.isEnabled = isEnabled
         switch kind {
+        case .codex:
+            codex = CodexSettings()
+            cursorPersonal = nil
+            cursor = nil
+            claudePersonal = nil
+            anthropic = nil
+            manual = nil
+            customREST = nil
         case .cursorPersonal:
+            codex = nil
             cursorPersonal = CursorPersonalSettings()
             cursor = nil
             claudePersonal = nil
@@ -340,6 +361,7 @@ struct StoredProvider: Identifiable, Codable, Equatable {
             manual = nil
             customREST = nil
         case .cursorAdmin:
+            codex = nil
             cursorPersonal = nil
             cursor = CursorAdminSettings()
             claudePersonal = nil
@@ -347,6 +369,7 @@ struct StoredProvider: Identifiable, Codable, Equatable {
             manual = nil
             customREST = nil
         case .claudePersonal:
+            codex = nil
             cursorPersonal = nil
             cursor = nil
             claudePersonal = ClaudePersonalSettings()
@@ -354,6 +377,7 @@ struct StoredProvider: Identifiable, Codable, Equatable {
             manual = nil
             customREST = nil
         case .anthropicAdmin:
+            codex = nil
             cursorPersonal = nil
             cursor = nil
             claudePersonal = nil
@@ -361,6 +385,7 @@ struct StoredProvider: Identifiable, Codable, Equatable {
             manual = nil
             customREST = nil
         case .manual:
+            codex = nil
             cursorPersonal = nil
             cursor = nil
             claudePersonal = nil
@@ -368,6 +393,7 @@ struct StoredProvider: Identifiable, Codable, Equatable {
             manual = ManualBudgetSettings()
             customREST = nil
         case .customREST:
+            codex = nil
             cursorPersonal = nil
             cursor = nil
             claudePersonal = nil
@@ -530,6 +556,10 @@ enum ProviderSetupStatus: Equatable {
         guard provider.isEnabled else { return .paused }
 
         switch provider.kind {
+        case .codex:
+            if snapshot?.isLoading == true { return .syncing }
+            if snapshot?.errorMessage != nil { return .needsAttention }
+            return snapshot?.lastUpdatedAt == nil ? .ready : .connected
         case .cursorPersonal:
             let authentication: PersonalAuthenticationState = switch cursorSession {
             case .unknown: .unknown

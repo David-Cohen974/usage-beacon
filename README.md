@@ -32,6 +32,7 @@ It is distributed under the MIT License.
 
 | Provider | Auth model | Admin required | Supported metrics |
 | --- | --- | --- | --- |
+| `Codex` | Existing local Codex app/CLI sign-in | No | Rolling utilization, reset times, multiple limit buckets, spend-control percentage |
 | `Cursor Personal` | Signed-in web session | No | Monthly spend, remaining, per-workday runway, today spend, last prompt cost |
 | `Cursor Admin` | Team admin API key | Yes | Monthly spend, remaining, today spend, last prompt cost |
 | `Claude Personal` | Signed-in web session | No | 5-hour and 7-day utilization/reset times; personal monthly spend when Member analytics exposes it |
@@ -82,6 +83,14 @@ The script creates only `dist/UsageBeacon.zip`. Keeping a second unpacked `.app`
 The floating HUD remains available separately in UsageBeacon's Display settings for people who prefer an always-on-top view. Keep `Launch at login` enabled there to restore the menu bar app and HUD after restarting your Mac.
 
 ## Setup Notes
+
+### Codex
+
+1. Install and sign in to the Codex app or Codex CLI on this Mac.
+2. Add a `Codex` provider.
+3. Click `Sync Now`.
+
+UsageBeacon auto-detects the Codex executable inside the ChatGPT/Codex app and in common CLI locations. If Codex is installed elsewhere, expand the provider and set its executable path. The connector reads the local Codex app-server rate-limit snapshot and does not store an API key.
 
 ### Cursor Personal
 
@@ -142,6 +151,7 @@ Release maintainers should follow [RELEASING.md](RELEASING.md). It documents the
 
 ## Known Limitations
 
+- `Codex` requires a local Codex version that provides the app-server rate-limit method. It reports the quota percentages and reset times Codex exposes, not invented token caps or per-prompt costs.
 - `Cursor Personal` depends on Cursor's signed-in private usage-summary and usage-event endpoints, which may change without notice.
 - `Claude Personal` depends on Claude's private signed-in usage endpoint, which may change without notice.
 - Vendor terms or access policies may restrict automated use of private endpoints even when the user can access the same data in the web interface.
@@ -160,4 +170,4 @@ UsageBeacon is available under the [MIT License](LICENSE).
 
 ## Disclaimer
 
-UsageBeacon is an independent open-source project and is not affiliated with Cursor or Anthropic.
+UsageBeacon is an independent open-source project and is not affiliated with OpenAI, Cursor, or Anthropic.

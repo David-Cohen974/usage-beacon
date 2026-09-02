@@ -46,6 +46,7 @@
 		BB10493FC8FF79BACC09D8AD /* CustomRESTProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F661E219D8BA881DF85000C /* CustomRESTProvider.swift */; };
 		BCEA36C9D36C4317524A1709 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EC242C7068A745F33EC61069 /* EventKit.framework */; };
 		CD159172000232FFCA7FB48E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FAFD7A9AB021043945D2965 /* Models.swift */; };
+		C0D3A0000000000000000001 /* CodexProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3A0000000000000000002 /* CodexProvider.swift */; };
 		E552971E82A79FA5B4D7D999 /* AnthropicAdminProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD213D813AC1851EC8B1280 /* AnthropicAdminProvider.swift */; };
 		E8D4E0329A987D5AC14A38E0 /* ManualBudgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705C26DA8967A72C93D7BB2E /* ManualBudgetProvider.swift */; };
 		EAB2ECB6EA9DE1CFF8B68976 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8C53FFA53586038DB88F1E24 /* FirebaseCore */; };
@@ -115,6 +116,7 @@
 		BC8B4BE1E91143D133582E73 /* UsageBeaconWidget-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "UsageBeaconWidget-Info.plist"; sourceTree = "<group>"; };
 		BE95160AD3A7A35C834EAD71 /* SecretStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SecretStore.swift; path = Services/SecretStore.swift; sourceTree = "<group>"; };
 		C3EBCCE2F866AE47E30AD337 /* ConfigurationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConfigurationStore.swift; path = Services/ConfigurationStore.swift; sourceTree = "<group>"; };
+		C0D3A0000000000000000002 /* CodexProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CodexProvider.swift; path = Providers/CodexProvider.swift; sourceTree = "<group>"; };
 		D482A2D196D1D3DA10F62EC2 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		D93D8E162C4585A975B2C31A /* ClaudePersonalProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ClaudePersonalProvider.swift; path = Providers/ClaudePersonalProvider.swift; sourceTree = "<group>"; };
@@ -261,6 +263,7 @@
 				3FAFD7A9AB021043945D2965 /* Models.swift */,
 				1CD213D813AC1851EC8B1280 /* AnthropicAdminProvider.swift */,
 				D93D8E162C4585A975B2C31A /* ClaudePersonalProvider.swift */,
+				C0D3A0000000000000000002 /* CodexProvider.swift */,
 				72ABD8BF097C25665FA37EDB /* CursorAdminProvider.swift */,
 				B244DDA79DC7B9A333270225 /* CursorPersonalProvider.swift */,
 				9F661E219D8BA881DF85000C /* CustomRESTProvider.swift */,
@@ -479,6 +482,7 @@
 				CD159172000232FFCA7FB48E /* Models.swift in Sources */,
 				E552971E82A79FA5B4D7D999 /* AnthropicAdminProvider.swift in Sources */,
 				894DA6426617F117DA0F5BCB /* ClaudePersonalProvider.swift in Sources */,
+				C0D3A0000000000000000001 /* CodexProvider.swift in Sources */,
 				F7020012980AD107F8E53ACC /* CursorAdminProvider.swift in Sources */,
 				10F6EF0507996F7DA7FF56C9 /* CursorPersonalProvider.swift in Sources */,
 				BB10493FC8FF79BACC09D8AD /* CustomRESTProvider.swift in Sources */,

@@ -174,6 +174,126 @@ struct UsageBeaconAppTests {
     }
 
     @Test
+    func codexProviderMapsRollingWindowsAcrossLimitBuckets() throws {
+        let data = Data(
+            """
+            {
+              "id": 2,
+              "result": {
+                "rateLimits": {
+                  "limitId": "codex",
+                  "planType": "plus",
+                  "primary": {
+                    "usedPercent": 42,
+                    "windowDurationMins": 300,
+                    "resetsAt": 1786838400
+                  },
+                  "secondary": {
+                    "usedPercent": 73,
+                    "windowDurationMins": 10080,
+                    "resetsAt": 1787443200
+                  }
+                },
+                "rateLimitsByLimitId": {
+                  "codex": {
+                    "limitId": "codex",
+                    "limitName": "Codex",
+                    "planType": "plus",
+                    "primary": {
+                      "usedPercent": 42,
+                      "windowDurationMins": 300,
+                      "resetsAt": 1786838400
+                    },
+                    "secondary": {
+                      "usedPercent": 73,
+                      "windowDurationMins": 10080,
+                      "resetsAt": 1787443200
+                    }
+                  },
+                  "review": {
+                    "limitId": "review",
+                    "limitName": "Code review",
+                    "planType": "plus",
+                    "primary": {
+                      "usedPercent": 12,
+                      "windowDurationMins": 1440,
+                      "resetsAt": 1786924800
+                    },
+                    "individualLimit": {
+                      "limit": "100",
+                      "used": "20",
+                      "remainingPercent": 80,
+                      "resetsAt": 1789516800
+                    }
+                  }
+                },
+                "rateLimitResetCredits": {
+                  "availableCount": 1,
+                  "credits": null
+                }
+              }
+            }
+            """.utf8
+        )
+        let provider = StoredProvider(kind: .codex, displayName: "My Codex")
+
+        let snapshot = try CodexProvider.parseRateLimitsResponse(
+            data,
+            provider: provider,
+            now: utcDate(year: 2026, month: 8, day: 16)
+        )
+
+        #expect(snapshot.providerKind == .codex)
+        #expect(snapshot.monthlyBudgetUSD == nil)
+        #expect(snapshot.spentUSD == 0)
+        #expect(snapshot.usageWindows.count == 4)
+        #expect(snapshot.usageWindows.map(\.title) == [
+            "Codex · 5-hour window",
+            "Codex · 7-day window",
+            "Code review · 1-day window",
+            "Code review · Spend control"
+        ])
+        #expect(snapshot.usageWindows.map(\.usedPercent) == [42, 73, 12, 20])
+        #expect(snapshot.usageWindows[0].kind == .fiveHour)
+        #expect(snapshot.usageWindows[1].kind == .sevenDay)
+        #expect(snapshot.notes.contains(where: { $0.contains("Codex plan: Plus") }))
+        #expect(snapshot.notes.contains(where: { $0.contains("1 available usage reset credit") }))
+    }
+
+    @Test
+    func codexProviderExplainsMissingSignIn() {
+        let data = Data(
+            #"{"id":2,"error":{"code":-32000,"message":"Login required"}}"#.utf8
+        )
+        let provider = StoredProvider(kind: .codex)
+
+        do {
+            _ = try CodexProvider.parseRateLimitsResponse(
+                data,
+                provider: provider,
+                now: Date()
+            )
+            Issue.record("Expected a Codex authentication failure")
+        } catch {
+            #expect(error.localizedDescription.contains("not signed in"))
+        }
+    }
+
+    @Test
+    func codexProviderConfigurationRoundTripsWithoutASecret() throws {
+        var configuration = AppConfiguration.empty
+        var provider = StoredProvider(kind: .codex)
+        provider.codex?.executablePath = "/Applications/ChatGPT.app/Contents/Resources/codex"
+        configuration.providers = [provider]
+
+        let encoded = try JSONEncoder().encode(configuration)
+        let decoded = try JSONDecoder().decode(AppConfiguration.self, from: encoded)
+
+        #expect(decoded == configuration)
+        #expect(decoded.providers.first?.codex?.executablePath == provider.codex?.executablePath)
+    }
+
+    @Test
     func globalSettingsDecodesLegacyConfigurationWithNewDefaults() throws {
         let data = Data(
             """

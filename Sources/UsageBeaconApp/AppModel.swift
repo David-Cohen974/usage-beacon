@@ -204,6 +204,8 @@ final class AppModel: ObservableObject {
     func addProviderAndBeginSetup(kind: ProviderKind) {
         addProvider(kind: kind)
         switch kind {
+        case .codex:
+            break
         case .cursorPersonal:
             connectCursorPersonal(using: CursorPersonalSettings().usagePageURL)
         case .claudePersonal:
