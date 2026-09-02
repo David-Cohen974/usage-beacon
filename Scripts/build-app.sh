@@ -16,7 +16,6 @@ case "$REQUESTED_CONFIGURATION" in
 esac
 
 APP_NAME="UsageBeacon"
-WIDGET_NAME="UsageBeaconWidget"
 VERSION_CONFIGURATION="$ROOT_DIR/Config/Version.xcconfig"
 
 read_version_setting() {
@@ -33,7 +32,6 @@ DIST_DIR="$ROOT_DIR/dist"
 ARCHIVE_PATH="$DIST_DIR/$APP_NAME.zip"
 PROJECT_PATH="$ROOT_DIR/UsageBeacon.xcodeproj"
 APP_ENTITLEMENTS="$ROOT_DIR/Resources/UsageBeacon.entitlements"
-WIDGET_ENTITLEMENTS="$ROOT_DIR/Resources/UsageBeaconWidget.entitlements"
 BUILD_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/usagebeacon-xcode-build.XXXXXX")"
 STAGED_ROOT="$BUILD_ROOT/Source"
 PRODUCTS_ROOT="$BUILD_ROOT/Build/Products"
@@ -89,11 +87,6 @@ xcodebuild \
   build
 
 APP_PATH="$PRODUCTS_ROOT/$XCODE_CONFIGURATION/$APP_NAME.app"
-WIDGET_PATH="$APP_PATH/Contents/PlugIns/$WIDGET_NAME.appex"
-if [[ ! -d "$WIDGET_PATH" ]]; then
-  echo "Xcode did not embed the widget extension at $WIDGET_PATH" >&2
-  exit 1
-fi
 
 CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY:-}"
 if [[ -z "$CODE_SIGN_IDENTITY" ]]; then
@@ -140,21 +133,22 @@ if [[ -d "$APP_PATH/Contents/Frameworks" ]]; then
 fi
 
 if [[ "$CODE_SIGN_IDENTITY" == "-" ]]; then
-  codesign --force --entitlements "$WIDGET_ENTITLEMENTS" --sign - "$WIDGET_PATH"
   codesign --force --entitlements "$APP_ENTITLEMENTS" --sign - "$APP_PATH"
 else
-  codesign --force --options runtime --timestamp \
-    --entitlements "$WIDGET_ENTITLEMENTS" \
-    --sign "$CODE_SIGN_IDENTITY" "$WIDGET_PATH"
   codesign --force --options runtime --timestamp \
     --entitlements "$APP_ENTITLEMENTS" \
     --sign "$CODE_SIGN_IDENTITY" "$APP_PATH"
 fi
 
-codesign --verify --strict "$WIDGET_PATH"
 codesign --verify --deep --strict "$APP_PATH"
-test "$(plutil -extract CFBundleVersion raw "$WIDGET_PATH/Contents/Info.plist")" = "$BUILD_NUMBER"
-test "$(plutil -extract NSExtension.NSExtensionPointIdentifier raw "$WIDGET_PATH/Contents/Info.plist")" = "com.apple.widgetkit-extension"
+signed_entitlements="$(codesign -d --entitlements :- "$APP_PATH" 2>/dev/null)"
+if grep -Eq '<key>(com\.apple\.security\.application-groups|keychain-access-groups)</key>' <<<"$signed_entitlements"; then
+  if [[ ! -f "$APP_PATH/Contents/embedded.provisionprofile" ]]; then
+    echo "Restricted entitlements require an embedded provisioning profile." >&2
+    exit 1
+  fi
+fi
+test ! -d "$APP_PATH/Contents/PlugIns/UsageBeaconWidget.appex"
 test "$(plutil -extract SUPublicEDKey raw "$APP_PATH/Contents/Info.plist")" = "TsvqpRp6P1+qRLzm/ei62YSGnZvsp//bdQITGnVdm8Y="
 test "$(plutil -extract SUFeedURL raw "$APP_PATH/Contents/Info.plist")" = "https://david-cohen974.github.io/usage-beacon/appcast.xml"
 test -d "$APP_PATH/Contents/Frameworks/Sparkle.framework"
