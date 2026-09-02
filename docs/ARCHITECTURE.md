@@ -48,11 +48,11 @@ Service objects handle:
 - Login-item registration and wake/display lifecycle recovery
 - Cursor signed-in session management
 - HTTP transport
-- Opt-in crash reporting and anonymous product analytics
+- Disclosed-by-default crash reporting for new installations, plus opt-in anonymous product analytics
 
 ### Telemetry boundary
 
-`TelemetryController` is the only layer that imports Firebase. Crash reporting and usage analytics have separate, off-by-default preferences. `AppModel` sends typed events containing only connector kinds, feature flags, coarse duration buckets, retry counts, and sanitized failure categories. Only unexpected or parsing failures become Crashlytics non-fatals, avoiding noise from ordinary authentication, network, and rate-limit conditions. Raw errors, URLs, credentials, account identifiers, provider payloads, budgets, spending, limits, and token usage must never cross this boundary. Firebase is linked only to the main app target, not the widget extension.
+`TelemetryController` is the only production layer that imports Firebase. Crash reporting is enabled for genuinely new installations and shown in a first-launch disclosure with an immediate opt-out; decoded legacy configurations retain their saved or prior off state. Usage analytics remain off by default and use a separate preference. `AppModel` sends typed events containing only connector kinds, feature flags, coarse duration buckets, retry counts, and sanitized failure categories. Only unexpected or parsing failures become Crashlytics non-fatals, avoiding noise from ordinary authentication, network, and rate-limit conditions. Raw errors, URLs, credentials, account identifiers, provider payloads, budgets, spending, limits, and token usage must never cross this boundary. Firebase is linked only to the main app target, not the widget extension. A hidden, environment-gated developer command can generate a controlled Crashlytics verification crash for release validation.
 
 ### UI
 

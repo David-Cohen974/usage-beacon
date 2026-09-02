@@ -41,7 +41,32 @@ struct UsageBeaconAppTests {
 
         #expect(configuration.providers.isEmpty)
         #expect(configuration.settings.refreshIntervalMinutes == 1)
+        #expect(configuration.settings.crashReportingEnabled)
+        #expect(configuration.settings.usageAnalyticsEnabled == false)
+        #expect(configuration.settings.telemetryDisclosureAcknowledged == false)
         #expect(store.lastRecovery == nil)
+    }
+
+    @Test
+    func crashlyticsTestCommandRequiresArgumentAndEnvironmentGate() {
+        #expect(
+            DebugCommandRunner.command(
+                from: ["UsageBeacon", "--developer-test-crashlytics"],
+                environment: [:]
+            ) == nil
+        )
+        #expect(
+            DebugCommandRunner.command(
+                from: ["UsageBeacon"],
+                environment: ["USAGEBEACON_ALLOW_TEST_CRASH": "1"]
+            ) == nil
+        )
+        #expect(
+            DebugCommandRunner.command(
+                from: ["UsageBeacon", "--developer-test-crashlytics"],
+                environment: ["USAGEBEACON_ALLOW_TEST_CRASH": "1"]
+            ) == .testCrashlytics
+        )
     }
 
     @Test
@@ -167,6 +192,7 @@ struct UsageBeaconAppTests {
         #expect(settings.launchAtLogin)
         #expect(settings.crashReportingEnabled == false)
         #expect(settings.usageAnalyticsEnabled == false)
+        #expect(settings.telemetryDisclosureAcknowledged)
         #expect(settings.workingDaysPerWeek == 5)
         #expect(settings.workingWeekSchedule == .systemDefault)
         #expect(settings.customWorkingWeekdays == [2, 3, 4, 5, 6])
@@ -186,7 +212,7 @@ struct UsageBeaconAppTests {
 
     @Test
     @MainActor
-    func telemetryConsentIsOptInAndPersists() throws {
+    func crashReportingDefaultsOnForNewInstallsAndDisclosureChoicePersists() throws {
         let fileManager = FileManager.default
         let directory = fileManager.temporaryDirectory
             .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
@@ -201,12 +227,20 @@ struct UsageBeaconAppTests {
             autoStart: false
         )
 
-        #expect(telemetry.consentUpdates == [.init(crashReportsEnabled: false, usageAnalyticsEnabled: false)])
+        #expect(telemetry.consentUpdates == [.init(crashReportsEnabled: true, usageAnalyticsEnabled: false)])
+        #expect(model.configuration.settings.telemetryDisclosureAcknowledged == false)
+
+        model.acknowledgeCrashReportingDisclosure(keepEnabled: false)
+
+        var persistedSettings = store.load().settings
+        #expect(persistedSettings.crashReportingEnabled == false)
+        #expect(persistedSettings.telemetryDisclosureAcknowledged)
+        #expect(telemetry.consentUpdates.last == .init(crashReportsEnabled: false, usageAnalyticsEnabled: false))
 
         model.setCrashReportingEnabled(true)
         model.setUsageAnalyticsEnabled(true)
 
-        let persistedSettings = store.load().settings
+        persistedSettings = store.load().settings
         #expect(persistedSettings.crashReportingEnabled)
         #expect(persistedSettings.usageAnalyticsEnabled)
         #expect(telemetry.consentUpdates.last == .init(crashReportsEnabled: true, usageAnalyticsEnabled: true))

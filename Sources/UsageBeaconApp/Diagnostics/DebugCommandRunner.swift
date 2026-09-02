@@ -1,8 +1,16 @@
 import AppKit
+import FirebaseCrashlytics
 import Foundation
 
 enum DebugCommandRunner {
-    static func command(from arguments: [String]) -> DebugCommand? {
+    static func command(
+        from arguments: [String],
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> DebugCommand? {
+        if arguments.contains("--developer-test-crashlytics"),
+           environment["USAGEBEACON_ALLOW_TEST_CRASH"] == "1" {
+            return .testCrashlytics
+        }
 #if DEBUG
         if let index = arguments.firstIndex(of: "--debug-cursor-personal") {
             let customURL = arguments.indices.contains(index + 1) ? arguments[index + 1] : nil
@@ -28,6 +36,25 @@ enum DebugCommandRunner {
             await runClaudePersonalDiagnostic(pageURLOverride: pageURLOverride)
         case .debugCalendar:
             runCalendarDiagnostic()
+        case .testCrashlytics:
+            let store = ConfigurationStore()
+            var configuration = store.load()
+            configuration.settings.crashReportingEnabled = true
+            configuration.settings.telemetryDisclosureAcknowledged = true
+            do {
+                try store.save(configuration)
+            } catch {
+                fputs("Could not enable crash reporting for the Crashlytics test: \(error.localizedDescription)\n", stderr)
+                return
+            }
+            TelemetryController.shared.updateConsent(
+                crashReportsEnabled: true,
+                usageAnalyticsEnabled: configuration.settings.usageAnalyticsEnabled
+            )
+            Crashlytics.crashlytics().setCustomValue(true, forKey: "developer_test_crash")
+            Crashlytics.crashlytics().log("Intentional UsageBeacon Crashlytics verification crash")
+            try? await Task.sleep(for: .seconds(1))
+            fatalError("Intentional UsageBeacon Crashlytics verification crash")
         }
         NSApplication.shared.terminate(nil)
     }
@@ -295,8 +322,9 @@ private func apiProbeResults(
     return reports
 }
 
-enum DebugCommand {
+enum DebugCommand: Equatable {
     case debugCursorPersonal(pageURLOverride: String?)
     case debugClaudePersonal(pageURLOverride: String?)
     case debugCalendar
+    case testCrashlytics
 }

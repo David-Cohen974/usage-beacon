@@ -83,8 +83,9 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
 struct GlobalSettings: Codable, Equatable {
     var showFloatingHUD: Bool = true
     var launchAtLogin: Bool = true
-    var crashReportingEnabled: Bool = false
+    var crashReportingEnabled: Bool = true
     var usageAnalyticsEnabled: Bool = false
+    var telemetryDisclosureAcknowledged: Bool = false
     var refreshIntervalMinutes: Int = 1
     var useCalendarAdjustments: Bool = true
     var selectedCalendarIDs: [String] = []
@@ -97,6 +98,7 @@ struct GlobalSettings: Codable, Equatable {
         case launchAtLogin
         case crashReportingEnabled
         case usageAnalyticsEnabled
+        case telemetryDisclosureAcknowledged
         case refreshIntervalMinutes
         case useCalendarAdjustments
         case selectedCalendarIDs
@@ -111,8 +113,14 @@ struct GlobalSettings: Codable, Equatable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         showFloatingHUD = try container.decodeIfPresent(Bool.self, forKey: .showFloatingHUD) ?? true
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
+        // Missing keys identify a configuration written before telemetry existed. Keep
+        // those users opted out; only a genuinely new configuration uses the defaults above.
         crashReportingEnabled = try container.decodeIfPresent(Bool.self, forKey: .crashReportingEnabled) ?? false
         usageAnalyticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .usageAnalyticsEnabled) ?? false
+        telemetryDisclosureAcknowledged = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .telemetryDisclosureAcknowledged
+        ) ?? true
         refreshIntervalMinutes = max(1, try container.decodeIfPresent(Int.self, forKey: .refreshIntervalMinutes) ?? 1)
         useCalendarAdjustments = try container.decodeIfPresent(Bool.self, forKey: .useCalendarAdjustments) ?? true
         selectedCalendarIDs = try container.decodeIfPresent([String].self, forKey: .selectedCalendarIDs) ?? []
@@ -129,6 +137,7 @@ struct GlobalSettings: Codable, Equatable {
         try container.encode(launchAtLogin, forKey: .launchAtLogin)
         try container.encode(crashReportingEnabled, forKey: .crashReportingEnabled)
         try container.encode(usageAnalyticsEnabled, forKey: .usageAnalyticsEnabled)
+        try container.encode(telemetryDisclosureAcknowledged, forKey: .telemetryDisclosureAcknowledged)
         try container.encode(refreshIntervalMinutes, forKey: .refreshIntervalMinutes)
         try container.encode(useCalendarAdjustments, forKey: .useCalendarAdjustments)
         try container.encode(selectedCalendarIDs, forKey: .selectedCalendarIDs)
