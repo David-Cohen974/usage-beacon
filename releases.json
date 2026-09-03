@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.2.5",
+    "tag": "v1.2.5",
+    "name": "UsageBeacon 1.2.5",
+    "releaseDate": "2026-09-03T13:57:22Z",
+    "prerelease": false,
+    "notes": "## What's Changed\n* Restore widget extension for 1.2.5 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/16\n\n\n**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.4...v1.2.5\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.2.5"
+  },
+  {
     "version": "1.2.4",
     "tag": "v1.2.4",
     "name": "UsageBeacon 1.2.4",
