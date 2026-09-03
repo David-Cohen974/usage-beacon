@@ -7,159 +7,181 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		023640745FBAA0008FC061BD /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D482A2D196D1D3DA10F62EC2 /* ServiceManagement.framework */; };
-		0A6CDEA229BAA22EF3824D3E /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 90EFF0C9E0941D9F9924B763 /* AppKit.framework */; };
-		10F6EF0507996F7DA7FF56C9 /* CursorPersonalProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B244DDA79DC7B9A333270225 /* CursorPersonalProvider.swift */; };
-		151DA0D20D516B393174F6D2 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DADF11EBFE7D61E5DC89ED3F /* Security.framework */; };
-		201A8BC21F629A0DC591E3AE /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACD37AE0D0170BEF4FEE46EE /* SwiftUI.framework */; };
-		27F217753F00436F760D93B1 /* SecretStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE95160AD3A7A35C834EAD71 /* SecretStore.swift */; };
-		36E267EFECBB962D872C3B83 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E687655B92E28C7C706BEC58 /* GoogleService-Info.plist */; };
-		40B1AE0EBF315C2E8F3F645F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100C7788E5DB9E7572F1081 /* WidgetKit.framework */; };
-		43B0DFA477026B9C47642099 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 51CE5FBCFD6F4DBF5CC94FEC /* WebKit.framework */; };
-		4618ACC7DBAF809ED5FE9138 /* libUsageBeaconShared.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B11A306A462D915197AA3D73 /* libUsageBeaconShared.a */; };
-		48A0C25F7CD30AEF29273717 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ACD37AE0D0170BEF4FEE46EE /* SwiftUI.framework */; };
-		5598E9669B19E4499A455E25 /* UsageBeaconApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3577AB970B220B3763B8B912 /* UsageBeaconApp.swift */; };
-		58AAE4DEF71CCF68DCD49770 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 198EDF48AD3BAEEB502E63E5 /* Carbon.framework */; };
-		59674B5BB79EB926B23DE8FA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 311F559467A903A2058A9049 /* Cocoa.framework */; };
-		59C1E36236D76E90263872FE /* ClaudeDashboardSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23128D73E3FBBFB282700E28 /* ClaudeDashboardSessionController.swift */; };
-		5E3128409E07468B0C882465 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6022943AA6F82303EE0A53CD /* AppModel.swift */; };
-		69285E10DB07F0B0792D543A /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 99C26B0AEA35C8A349F38645 /* Sparkle */; };
-		6B5DDEDBA47780770F03FC4B /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A923689CD2875731967686D /* MenuBarRootView.swift */; };
-		6F8E5EBFA2507269B51F643F /* CursorDashboardSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65F39F1224904DC1CE56144 /* CursorDashboardSessionController.swift */; };
-		7268C6E211B2A3BF8D061B6D /* WorkingDayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1D955ED7F6C4CB1436B89E /* WorkingDayService.swift */; };
-		7B5E32FB0F6C9D53C48A04D7 /* DebugCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 739A58941B1BA5AE62A55EF8 /* DebugCommandRunner.swift */; };
-		7BF9FB51591C6908CBC9DD06 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A100C7788E5DB9E7572F1081 /* WidgetKit.framework */; };
-		82058EE9862622DA6567B761 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59CD15CA3BDB1626BAD9A246 /* WidgetSnapshot.swift */; };
-		894DA6426617F117DA0F5BCB /* ClaudePersonalProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D93D8E162C4585A975B2C31A /* ClaudePersonalProvider.swift */; };
-		8985FB3A3E95D98F16111043 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E5A88CA2DE760D5F46AB101 /* SettingsView.swift */; };
-		8A5AF49146F986F46780A3D3 /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3EBCCE2F866AE47E30AD337 /* ConfigurationStore.swift */; };
-		918DE6B375A481E5E3119A55 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 9F073323ADE25FE3FE7AF439 /* AppIcon.icns */; };
-		925261B87C64453571A3E86E /* TelemetryController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41436D712CC6FC9A94ACAE43 /* TelemetryController.swift */; };
-		946BCAC56E1299EF8E13C0EA /* GlobalHotKeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 465273368DC1430B8A4BBA74 /* GlobalHotKeyController.swift */; };
-		97AB865DAC61232B76574047 /* BeaconDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3B5022BC6783CA0586937B /* BeaconDesignSystem.swift */; };
-		9B1B2CA809E63D43ED947F49 /* LaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF2D57D4C13E355044B7724 /* LaunchAtLoginController.swift */; };
-		9C79E3B9B65B8C9D877E6C3A /* FloatingPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99E476F22525100E98C86487 /* FloatingPanelController.swift */; };
-		9D1C48C6FF6F33EE169F1ADC /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E31733059ED5EF26CB8DCFC /* HTTPClient.swift */; };
-		9E54B821C8E5FEE1AB103D6D /* BudgetMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 239CEB450E402FE98D19F936 /* BudgetMath.swift */; };
-		A323C9B96D98DD821151399A /* ProviderResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F97756A15C5BB597098B0CD /* ProviderResolver.swift */; };
-		A68EC504AE0F1EC0819CAB0F /* UsageBeaconWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4378E96FEEF05C405EA31CC5 /* UsageBeaconWidget.swift */; };
-		BB10493FC8FF79BACC09D8AD /* CustomRESTProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F661E219D8BA881DF85000C /* CustomRESTProvider.swift */; };
-		BCEA36C9D36C4317524A1709 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EC242C7068A745F33EC61069 /* EventKit.framework */; };
-		CD159172000232FFCA7FB48E /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FAFD7A9AB021043945D2965 /* Models.swift */; };
-		C0D3A0000000000000000001 /* CodexProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D3A0000000000000000002 /* CodexProvider.swift */; };
-		E552971E82A79FA5B4D7D999 /* AnthropicAdminProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CD213D813AC1851EC8B1280 /* AnthropicAdminProvider.swift */; };
-		E8D4E0329A987D5AC14A38E0 /* ManualBudgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 705C26DA8967A72C93D7BB2E /* ManualBudgetProvider.swift */; };
-		EAB2ECB6EA9DE1CFF8B68976 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8C53FFA53586038DB88F1E24 /* FirebaseCore */; };
-		EE236684E8042BB896CF068C /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = B3A147961946B11D056D60C9 /* FirebaseAnalytics */; };
-		F2807D9172596E43577D56AD /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 311F559467A903A2058A9049 /* Cocoa.framework */; };
-		F579AC38AB7A7CD64D1835CB /* libUsageBeaconShared.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B11A306A462D915197AA3D73 /* libUsageBeaconShared.a */; };
-		F6F626B8123F251E90197A4D /* UpdaterController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 677E6419DD0E3E6CDD2331C9 /* UpdaterController.swift */; };
-		F7020012980AD107F8E53ACC /* CursorAdminProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72ABD8BF097C25665FA37EDB /* CursorAdminProvider.swift */; };
-		FA2E55B0D75B49E0FB3B7ADD /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 8FBF8585F6631D691DA18D70 /* FirebaseCrashlytics */; };
+		03AFB6E56D541801D1A8443B /* GlobalHotKeyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A23AFE1D5E41B4E48920211 /* GlobalHotKeyController.swift */; };
+		09A589BAB42126C656B0B978 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 3A79001075CA0A207EF4867C /* Sparkle */; };
+		0CCF5B9FA817324B5C30FC54 /* UsageBeaconApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = D02E722FA87AE1236548D7BF /* UsageBeaconApp.swift */; };
+		0CEDDFF676DE9ED7B61573A8 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0DB558AC46FBE0176D666FC2 /* GoogleService-Info.plist */; };
+		0E1230841763118045207189 /* CursorDashboardSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCCF301FC24077D8D6D99FBD /* CursorDashboardSessionController.swift */; };
+		120FEA3BB891BAFDBB263641 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0DC646C30EE8F5C74EA501D /* SwiftUI.framework */; };
+		1CBA5B07B6F671629BADF751 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804B3DBF024069796F9F6FB7 /* Models.swift */; };
+		1DA96FA23D02A0224D6729D0 /* BeaconDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82750300F1571CB4C143CEC4 /* BeaconDesignSystem.swift */; };
+		1F3B8E659B291ED29BB8EC3F /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB65BADB21A43B1EFBB9E87 /* HTTPClient.swift */; };
+		2896E5CC1AC8159E60F8882C /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65DF1187F9E3A1A0C097AF18 /* Cocoa.framework */; };
+		2A2ED39E93F1BDCA2317D9C0 /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2C4A2FDCA8BB5B4FFF3ABAB9 /* ServiceManagement.framework */; };
+		31A99BCEB12F6F8D546AD65F /* ManualBudgetProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E67266406F29D16F4CDC6A9B /* ManualBudgetProvider.swift */; };
+		3C9E42BF7A69C6A3EF5CF628 /* WorkingDayService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9D6C31D133DBB15FB6C9DE /* WorkingDayService.swift */; };
+		53D839801DF44A9A166D5D88 /* UpdaterController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C8783AC7E15CC2C4A6B4D60 /* UpdaterController.swift */; };
+		585764ECB24D98BE0958EE94 /* CustomRESTProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E906E02BAF83374E9A3D7AF /* CustomRESTProvider.swift */; };
+		66AAFF4570331380C7E538A5 /* libUsageBeaconShared.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FE0E4DCC92FE085E95920DC7 /* libUsageBeaconShared.a */; };
+		70ED6D5AC044569DA6289D53 /* LaunchAtLoginController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A5528CBCAE637FFD970C1D8 /* LaunchAtLoginController.swift */; };
+		754E4065A4A98C9D0D7CBDC4 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 81595E1D75357E424641EC7B /* Security.framework */; };
+		75C1EBB2367B37FC28EA6D65 /* SecretStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 919829F8C07E296C28D75101 /* SecretStore.swift */; };
+		7736E644C5CBD420AA4330EB /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 238513D5635355763E5BA56D /* AppKit.framework */; };
+		85C29EB076023CD437BC75A1 /* EventKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA23E4535B6103B0005338C8 /* EventKit.framework */; };
+		8B4FD20D8AB51E0BF46733BB /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = A262B4CB92F5F04523A0F3BC /* FirebaseCore */; };
+		8B6E1F009457A88DBFBE8DE7 /* CodexProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B179B33C7CD6FD69D20F69B3 /* CodexProvider.swift */; };
+		97CB78C87BE2FF20184F97B3 /* ClaudeDashboardSessionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8E23EBA8E6CAF33323FCDF6 /* ClaudeDashboardSessionController.swift */; };
+		9BA66F3A3333131259FDA4F0 /* WidgetSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77A019E9333E536DD093210C /* WidgetSnapshot.swift */; };
+		9C7BC3C18B271041E16B966F /* CursorAdminProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB0EB12600080FA2C3EEA8AC /* CursorAdminProvider.swift */; };
+		9CD9D70AAAF22D9A39CA4DAD /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = ED64FB002C50AA34D063BD9F /* WebKit.framework */; };
+		A11BF28594B6CADFE5BA05BE /* ConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C24DCC0AA90F7D48A4CEECDB /* ConfigurationStore.swift */; };
+		A9124B0E213D676E8D88AA7D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABC3616D9F93197141596954 /* AppModel.swift */; };
+		A9B54DFDD4E2F21D40D91A70 /* AnthropicAdminProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD5E782ACB7BB419E90807D /* AnthropicAdminProvider.swift */; };
+		ADAC595A6D6CE7EF87F9FF2D /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F0DC646C30EE8F5C74EA501D /* SwiftUI.framework */; };
+		B3DA93BCB1FC0E27801701E0 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 226DFCE62011F30A74BC4F5E /* SettingsView.swift */; };
+		B54DCB3984693AD443E0EA22 /* UsageBeaconWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C3CD007D3C90A08B5DF8B5 /* UsageBeaconWidget.swift */; };
+		BB4AF5E887F0AA97FDD8A3A2 /* ClaudePersonalProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 189BF27F252224E431471A80 /* ClaudePersonalProvider.swift */; };
+		BB6880820D75889031B1479B /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 793F6A46D3CFBD410F339D38 /* WidgetKit.framework */; };
+		C0EB8B3F3D293F5DA4EEA995 /* UsageBeaconWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 6A2ED6D723473F300597A0FE /* UsageBeaconWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C1D309F6B9063BEC2673FA41 /* FloatingPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22FF6C6526D693F215076D1 /* FloatingPanelController.swift */; };
+		C297B5AB43F7D12ED0B1D4A9 /* TelemetryController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44C5F3EEB097F7FCCCB3300C /* TelemetryController.swift */; };
+		C88BDC8C76EF680C6E385010 /* CursorPersonalProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7082483FBDFA7CDDB40256E /* CursorPersonalProvider.swift */; };
+		D0EF69D0B0FEC2E197B2ABD5 /* BudgetMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCECB14B27BC8486573FE139 /* BudgetMath.swift */; };
+		D86E98B5D70728F6BE6AEEDF /* DebugCommandRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B19A3F0AC4CA6DC5EA368788 /* DebugCommandRunner.swift */; };
+		E14BCBF067182378D76DDBC0 /* MenuBarRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F5AB1135114A2D99A38DB4 /* MenuBarRootView.swift */; };
+		E252A5B443DA60920C23CED5 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 65DF1187F9E3A1A0C097AF18 /* Cocoa.framework */; };
+		EC47FFFD60E05F3D5766AFBA /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 793F6A46D3CFBD410F339D38 /* WidgetKit.framework */; };
+		F16821567ABD7DDE9314A33B /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 73D5304BC5EBB804F8FE3092 /* FirebaseCrashlytics */; };
+		F38C2FB3E33810B3004D50C0 /* ProviderResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = D14FF1F2373A81631D7B823C /* ProviderResolver.swift */; };
+		F6E69EA4337C65BBA1ADFFD8 /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = 5AE979E22FF3E3A348CD053D /* AppIcon.icns */; };
+		FB03859FDBF5CBEE95BCEA7C /* libUsageBeaconShared.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FE0E4DCC92FE085E95920DC7 /* libUsageBeaconShared.a */; };
+		FDBF4CB1294CF88142385810 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BDD312974877287B9A310ADE /* Carbon.framework */; };
+		FE62C5A9A91467340D620D27 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = F66CD4477534E64444EA414C /* FirebaseAnalytics */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		CFCA95C8BA79F7894D073F7D /* PBXContainerItemProxy */ = {
+		6E648A99FB920D261F1C3754 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 24206D0622416099FEF82BF1 /* Project object */;
+			containerPortal = D91D618920016D2C4E8E761F /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 9F1E5EA737DF25DAAE9EE8D6;
+			remoteGlobalIDString = BED8F56A0A901EB64C057BE0;
 			remoteInfo = UsageBeaconShared;
 		};
-		F3F3FD1A8DA960BE1577BB54 /* PBXContainerItemProxy */ = {
+		948064F875D0EFB1013E837D /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 24206D0622416099FEF82BF1 /* Project object */;
+			containerPortal = D91D618920016D2C4E8E761F /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 9F1E5EA737DF25DAAE9EE8D6;
+			remoteGlobalIDString = 58A203CC9011FC1143157C4D;
+			remoteInfo = UsageBeaconWidget;
+		};
+		DBD2B94577F1325304C79637 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D91D618920016D2C4E8E761F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BED8F56A0A901EB64C057BE0;
 			remoteInfo = UsageBeaconShared;
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		795F448AC485962E7878DACF /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C0EB8B3F3D293F5DA4EEA995 /* UsageBeaconWidget.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		0CCB924533A6005BD0C6FAFF /* UsageBeaconWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = UsageBeaconWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		0F1D955ED7F6C4CB1436B89E /* WorkingDayService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WorkingDayService.swift; path = Services/WorkingDayService.swift; sourceTree = "<group>"; };
-		198EDF48AD3BAEEB502E63E5 /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
-		1CD213D813AC1851EC8B1280 /* AnthropicAdminProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AnthropicAdminProvider.swift; path = Providers/AnthropicAdminProvider.swift; sourceTree = "<group>"; };
-		1D3B5022BC6783CA0586937B /* BeaconDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BeaconDesignSystem.swift; path = UI/BeaconDesignSystem.swift; sourceTree = "<group>"; };
-		1E5A88CA2DE760D5F46AB101 /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = UI/SettingsView.swift; sourceTree = "<group>"; };
-		23128D73E3FBBFB282700E28 /* ClaudeDashboardSessionController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ClaudeDashboardSessionController.swift; path = Services/ClaudeDashboardSessionController.swift; sourceTree = "<group>"; };
-		239CEB450E402FE98D19F936 /* BudgetMath.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetMath.swift; path = Services/BudgetMath.swift; sourceTree = "<group>"; };
-		2F97756A15C5BB597098B0CD /* ProviderResolver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProviderResolver.swift; path = Providers/ProviderResolver.swift; sourceTree = "<group>"; };
-		311F559467A903A2058A9049 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
-		3577AB970B220B3763B8B912 /* UsageBeaconApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UsageBeaconApp.swift; sourceTree = "<group>"; };
-		3DF2D57D4C13E355044B7724 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LaunchAtLoginController.swift; path = Services/LaunchAtLoginController.swift; sourceTree = "<group>"; };
-		3FAFD7A9AB021043945D2965 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Models/Models.swift; sourceTree = "<group>"; };
-		41436D712CC6FC9A94ACAE43 /* TelemetryController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TelemetryController.swift; path = Services/TelemetryController.swift; sourceTree = "<group>"; };
-		4378E96FEEF05C405EA31CC5 /* UsageBeaconWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UsageBeaconWidget.swift; sourceTree = "<group>"; };
-		465273368DC1430B8A4BBA74 /* GlobalHotKeyController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GlobalHotKeyController.swift; path = Services/GlobalHotKeyController.swift; sourceTree = "<group>"; };
-		51CE5FBCFD6F4DBF5CC94FEC /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
-		59CD15CA3BDB1626BAD9A246 /* WidgetSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
-		59F1EE27368E444B2109B503 /* UsageBeacon-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "UsageBeacon-Info.plist"; sourceTree = "<group>"; };
-		5A923689CD2875731967686D /* MenuBarRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MenuBarRootView.swift; path = UI/MenuBarRootView.swift; sourceTree = "<group>"; };
-		5E31733059ED5EF26CB8DCFC /* HTTPClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HTTPClient.swift; path = Services/HTTPClient.swift; sourceTree = "<group>"; };
-		6022943AA6F82303EE0A53CD /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
-		677E6419DD0E3E6CDD2331C9 /* UpdaterController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = UpdaterController.swift; path = Services/UpdaterController.swift; sourceTree = "<group>"; };
-		705C26DA8967A72C93D7BB2E /* ManualBudgetProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ManualBudgetProvider.swift; path = Providers/ManualBudgetProvider.swift; sourceTree = "<group>"; };
-		72ABD8BF097C25665FA37EDB /* CursorAdminProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CursorAdminProvider.swift; path = Providers/CursorAdminProvider.swift; sourceTree = "<group>"; };
-		739A58941B1BA5AE62A55EF8 /* DebugCommandRunner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DebugCommandRunner.swift; path = Diagnostics/DebugCommandRunner.swift; sourceTree = "<group>"; };
-		84D6FBA0A897F6345933430B /* UsageBeacon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UsageBeacon.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		85DF7828090BA45CF90BD7EF /* UsageBeaconWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = UsageBeaconWidget.entitlements; sourceTree = "<group>"; };
-		90EFF0C9E0941D9F9924B763 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
-		99E476F22525100E98C86487 /* FloatingPanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FloatingPanelController.swift; path = Services/FloatingPanelController.swift; sourceTree = "<group>"; };
-		9F073323ADE25FE3FE7AF439 /* AppIcon.icns */ = {isa = PBXFileReference; includeInIndex = 1; path = AppIcon.icns; sourceTree = "<group>"; };
-		9F661E219D8BA881DF85000C /* CustomRESTProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CustomRESTProvider.swift; path = Providers/CustomRESTProvider.swift; sourceTree = "<group>"; };
-		A100C7788E5DB9E7572F1081 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		A1B99ACA635BD815350AF749 /* UsageBeacon.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = UsageBeacon.entitlements; sourceTree = "<group>"; };
-		ACD37AE0D0170BEF4FEE46EE /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		B11A306A462D915197AA3D73 /* libUsageBeaconShared.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libUsageBeaconShared.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		B244DDA79DC7B9A333270225 /* CursorPersonalProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CursorPersonalProvider.swift; path = Providers/CursorPersonalProvider.swift; sourceTree = "<group>"; };
-		BC8B4BE1E91143D133582E73 /* UsageBeaconWidget-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "UsageBeaconWidget-Info.plist"; sourceTree = "<group>"; };
-		BE95160AD3A7A35C834EAD71 /* SecretStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SecretStore.swift; path = Services/SecretStore.swift; sourceTree = "<group>"; };
-		C3EBCCE2F866AE47E30AD337 /* ConfigurationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConfigurationStore.swift; path = Services/ConfigurationStore.swift; sourceTree = "<group>"; };
-		C0D3A0000000000000000002 /* CodexProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CodexProvider.swift; path = Providers/CodexProvider.swift; sourceTree = "<group>"; };
-		D482A2D196D1D3DA10F62EC2 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
-		D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
-		D93D8E162C4585A975B2C31A /* ClaudePersonalProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ClaudePersonalProvider.swift; path = Providers/ClaudePersonalProvider.swift; sourceTree = "<group>"; };
-		DADF11EBFE7D61E5DC89ED3F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
-		E687655B92E28C7C706BEC58 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		EC242C7068A745F33EC61069 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
-		F65F39F1224904DC1CE56144 /* CursorDashboardSessionController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CursorDashboardSessionController.swift; path = Services/CursorDashboardSessionController.swift; sourceTree = "<group>"; };
+		0DB558AC46FBE0176D666FC2 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		189BF27F252224E431471A80 /* ClaudePersonalProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ClaudePersonalProvider.swift; path = Providers/ClaudePersonalProvider.swift; sourceTree = "<group>"; };
+		20F5AB1135114A2D99A38DB4 /* MenuBarRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MenuBarRootView.swift; path = UI/MenuBarRootView.swift; sourceTree = "<group>"; };
+		226DFCE62011F30A74BC4F5E /* SettingsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SettingsView.swift; path = UI/SettingsView.swift; sourceTree = "<group>"; };
+		238513D5635355763E5BA56D /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		2C4A2FDCA8BB5B4FFF3ABAB9 /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
+		38C26F3D09467A5732643EE3 /* UsageBeacon.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = UsageBeacon.entitlements; sourceTree = "<group>"; };
+		44C5F3EEB097F7FCCCB3300C /* TelemetryController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TelemetryController.swift; path = Services/TelemetryController.swift; sourceTree = "<group>"; };
+		5A23AFE1D5E41B4E48920211 /* GlobalHotKeyController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GlobalHotKeyController.swift; path = Services/GlobalHotKeyController.swift; sourceTree = "<group>"; };
+		5AE979E22FF3E3A348CD053D /* AppIcon.icns */ = {isa = PBXFileReference; includeInIndex = 1; path = AppIcon.icns; sourceTree = "<group>"; };
+		5E906E02BAF83374E9A3D7AF /* CustomRESTProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CustomRESTProvider.swift; path = Providers/CustomRESTProvider.swift; sourceTree = "<group>"; };
+		65DF1187F9E3A1A0C097AF18 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		6A2ED6D723473F300597A0FE /* UsageBeaconWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = UsageBeaconWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A5528CBCAE637FFD970C1D8 /* LaunchAtLoginController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LaunchAtLoginController.swift; path = Services/LaunchAtLoginController.swift; sourceTree = "<group>"; };
+		6C8783AC7E15CC2C4A6B4D60 /* UpdaterController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = UpdaterController.swift; path = Services/UpdaterController.swift; sourceTree = "<group>"; };
+		72789C21594DDFE68EDA0EBB /* UsageBeaconWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = UsageBeaconWidget.entitlements; sourceTree = "<group>"; };
+		77A019E9333E536DD093210C /* WidgetSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WidgetSnapshot.swift; sourceTree = "<group>"; };
+		793F6A46D3CFBD410F339D38 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		7CE8F0D32010FAE1F281A5F0 /* UsageBeaconWidget-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "UsageBeaconWidget-Info.plist"; sourceTree = "<group>"; };
+		804B3DBF024069796F9F6FB7 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Models/Models.swift; sourceTree = "<group>"; };
+		81595E1D75357E424641EC7B /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		81C770AB66891051949040BD /* UsageBeacon.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = UsageBeacon.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		82750300F1571CB4C143CEC4 /* BeaconDesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BeaconDesignSystem.swift; path = UI/BeaconDesignSystem.swift; sourceTree = "<group>"; };
+		8336DBC390550C3D07FA6F5F /* UsageBeacon-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "UsageBeacon-Info.plist"; sourceTree = "<group>"; };
+		8A9D6C31D133DBB15FB6C9DE /* WorkingDayService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WorkingDayService.swift; path = Services/WorkingDayService.swift; sourceTree = "<group>"; };
+		919829F8C07E296C28D75101 /* SecretStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SecretStore.swift; path = Services/SecretStore.swift; sourceTree = "<group>"; };
+		98C3CD007D3C90A08B5DF8B5 /* UsageBeaconWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UsageBeaconWidget.swift; sourceTree = "<group>"; };
+		A7082483FBDFA7CDDB40256E /* CursorPersonalProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CursorPersonalProvider.swift; path = Providers/CursorPersonalProvider.swift; sourceTree = "<group>"; };
+		A8E23EBA8E6CAF33323FCDF6 /* ClaudeDashboardSessionController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ClaudeDashboardSessionController.swift; path = Services/ClaudeDashboardSessionController.swift; sourceTree = "<group>"; };
+		AA23E4535B6103B0005338C8 /* EventKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = EventKit.framework; path = System/Library/Frameworks/EventKit.framework; sourceTree = SDKROOT; };
+		ABC3616D9F93197141596954 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		B179B33C7CD6FD69D20F69B3 /* CodexProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CodexProvider.swift; path = Providers/CodexProvider.swift; sourceTree = "<group>"; };
+		B19A3F0AC4CA6DC5EA368788 /* DebugCommandRunner.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DebugCommandRunner.swift; path = Diagnostics/DebugCommandRunner.swift; sourceTree = "<group>"; };
+		BCCF301FC24077D8D6D99FBD /* CursorDashboardSessionController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CursorDashboardSessionController.swift; path = Services/CursorDashboardSessionController.swift; sourceTree = "<group>"; };
+		BDD312974877287B9A310ADE /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = System/Library/Frameworks/Carbon.framework; sourceTree = SDKROOT; };
+		C24DCC0AA90F7D48A4CEECDB /* ConfigurationStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ConfigurationStore.swift; path = Services/ConfigurationStore.swift; sourceTree = "<group>"; };
+		CB0EB12600080FA2C3EEA8AC /* CursorAdminProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CursorAdminProvider.swift; path = Providers/CursorAdminProvider.swift; sourceTree = "<group>"; };
+		CCD5E782ACB7BB419E90807D /* AnthropicAdminProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AnthropicAdminProvider.swift; path = Providers/AnthropicAdminProvider.swift; sourceTree = "<group>"; };
+		CCECB14B27BC8486573FE139 /* BudgetMath.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BudgetMath.swift; path = Services/BudgetMath.swift; sourceTree = "<group>"; };
+		D02E722FA87AE1236548D7BF /* UsageBeaconApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = UsageBeaconApp.swift; sourceTree = "<group>"; };
+		D14FF1F2373A81631D7B823C /* ProviderResolver.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ProviderResolver.swift; path = Providers/ProviderResolver.swift; sourceTree = "<group>"; };
+		E22FF6C6526D693F215076D1 /* FloatingPanelController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FloatingPanelController.swift; path = Services/FloatingPanelController.swift; sourceTree = "<group>"; };
+		E67266406F29D16F4CDC6A9B /* ManualBudgetProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ManualBudgetProvider.swift; path = Providers/ManualBudgetProvider.swift; sourceTree = "<group>"; };
+		E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
+		ED64FB002C50AA34D063BD9F /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		F0DC646C30EE8F5C74EA501D /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		FBB65BADB21A43B1EFBB9E87 /* HTTPClient.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HTTPClient.swift; path = Services/HTTPClient.swift; sourceTree = "<group>"; };
+		FE0E4DCC92FE085E95920DC7 /* libUsageBeaconShared.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libUsageBeaconShared.a; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		3CD8A336E7876C14ED283F85 /* Frameworks */ = {
+		A5AE8201B8C30AACC7291A4A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				59674B5BB79EB926B23DE8FA /* Cocoa.framework in Frameworks */,
-				F579AC38AB7A7CD64D1835CB /* libUsageBeaconShared.a in Frameworks */,
-				48A0C25F7CD30AEF29273717 /* SwiftUI.framework in Frameworks */,
-				40B1AE0EBF315C2E8F3F645F /* WidgetKit.framework in Frameworks */,
+				E252A5B443DA60920C23CED5 /* Cocoa.framework in Frameworks */,
+				66AAFF4570331380C7E538A5 /* libUsageBeaconShared.a in Frameworks */,
+				7736E644C5CBD420AA4330EB /* AppKit.framework in Frameworks */,
+				FDBF4CB1294CF88142385810 /* Carbon.framework in Frameworks */,
+				85C29EB076023CD437BC75A1 /* EventKit.framework in Frameworks */,
+				2A2ED39E93F1BDCA2317D9C0 /* ServiceManagement.framework in Frameworks */,
+				754E4065A4A98C9D0D7CBDC4 /* Security.framework in Frameworks */,
+				120FEA3BB891BAFDBB263641 /* SwiftUI.framework in Frameworks */,
+				9CD9D70AAAF22D9A39CA4DAD /* WebKit.framework in Frameworks */,
+				BB6880820D75889031B1479B /* WidgetKit.framework in Frameworks */,
+				09A589BAB42126C656B0B978 /* Sparkle in Frameworks */,
+				FE62C5A9A91467340D620D27 /* FirebaseAnalytics in Frameworks */,
+				8B4FD20D8AB51E0BF46733BB /* FirebaseCore in Frameworks */,
+				F16821567ABD7DDE9314A33B /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		4BC6FE70757D05DD076848D0 /* Frameworks */ = {
+		CCF8BF0BD67E28926943823D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F2807D9172596E43577D56AD /* Cocoa.framework in Frameworks */,
-				4618ACC7DBAF809ED5FE9138 /* libUsageBeaconShared.a in Frameworks */,
-				0A6CDEA229BAA22EF3824D3E /* AppKit.framework in Frameworks */,
-				58AAE4DEF71CCF68DCD49770 /* Carbon.framework in Frameworks */,
-				BCEA36C9D36C4317524A1709 /* EventKit.framework in Frameworks */,
-				023640745FBAA0008FC061BD /* ServiceManagement.framework in Frameworks */,
-				151DA0D20D516B393174F6D2 /* Security.framework in Frameworks */,
-				201A8BC21F629A0DC591E3AE /* SwiftUI.framework in Frameworks */,
-				43B0DFA477026B9C47642099 /* WebKit.framework in Frameworks */,
-				7BF9FB51591C6908CBC9DD06 /* WidgetKit.framework in Frameworks */,
-				69285E10DB07F0B0792D543A /* Sparkle in Frameworks */,
-				EE236684E8042BB896CF068C /* FirebaseAnalytics in Frameworks */,
-				EAB2ECB6EA9DE1CFF8B68976 /* FirebaseCore in Frameworks */,
-				FA2E55B0D75B49E0FB3B7ADD /* FirebaseCrashlytics in Frameworks */,
+				2896E5CC1AC8159E60F8882C /* Cocoa.framework in Frameworks */,
+				FB03859FDBF5CBEE95BCEA7C /* libUsageBeaconShared.a in Frameworks */,
+				ADAC595A6D6CE7EF87F9FF2D /* SwiftUI.framework in Frameworks */,
+				EC47FFFD60E05F3D5766AFBA /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		588AF3FF230594CF5F649AB3 /* Frameworks */ = {
+		DFCBE5A7A471EE1026B8588D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -169,151 +191,151 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0DB93195F1B1FD7BCA998BBB /* OS X */ = {
+		54442046977B14F2BDA1D022 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				311F559467A903A2058A9049 /* Cocoa.framework */,
-			);
-			name = "OS X";
-			sourceTree = "<group>";
-		};
-		38FA44DF6DE92012743D129A = {
-			isa = PBXGroup;
-			children = (
-				E1BAB5297C410A88309488B5 /* Products */,
-				59129C02CDF7ECF42A094512 /* Frameworks */,
-				5DCF3CAC366DDBDE4439CBF0 /* Sources */,
-				440076208897975A478A72E9 /* Resources */,
-				C4E38320E73A4AB5DD3F344B /* Config */,
-			);
-			sourceTree = "<group>";
-		};
-		440076208897975A478A72E9 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				9F073323ADE25FE3FE7AF439 /* AppIcon.icns */,
-				59F1EE27368E444B2109B503 /* UsageBeacon-Info.plist */,
-				BC8B4BE1E91143D133582E73 /* UsageBeaconWidget-Info.plist */,
-				A1B99ACA635BD815350AF749 /* UsageBeacon.entitlements */,
-				85DF7828090BA45CF90BD7EF /* UsageBeaconWidget.entitlements */,
-			);
-			name = Resources;
-			path = Resources;
-			sourceTree = "<group>";
-		};
-		4A64A687C0B60B64AB43FC6D /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				E687655B92E28C7C706BEC58 /* GoogleService-Info.plist */,
-			);
-			name = Resources;
-			path = Resources;
-			sourceTree = "<group>";
-		};
-		59129C02CDF7ECF42A094512 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				0DB93195F1B1FD7BCA998BBB /* OS X */,
-				90EFF0C9E0941D9F9924B763 /* AppKit.framework */,
-				198EDF48AD3BAEEB502E63E5 /* Carbon.framework */,
-				EC242C7068A745F33EC61069 /* EventKit.framework */,
-				D482A2D196D1D3DA10F62EC2 /* ServiceManagement.framework */,
-				DADF11EBFE7D61E5DC89ED3F /* Security.framework */,
-				ACD37AE0D0170BEF4FEE46EE /* SwiftUI.framework */,
-				51CE5FBCFD6F4DBF5CC94FEC /* WebKit.framework */,
-				A100C7788E5DB9E7572F1081 /* WidgetKit.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		5DCF3CAC366DDBDE4439CBF0 /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				917DC6048ACA98DA7886FEFE /* UsageBeaconShared */,
-				AEBBB0E5EBD7EB3C8E4DF666 /* UsageBeaconApp */,
-				6B1FE232FCF6797C211A2495 /* UsageBeaconWidget */,
+				645DA81EF6FBB3EB571888DF /* UsageBeaconShared */,
+				A2140C02B24E11882550E1A2 /* UsageBeaconApp */,
+				7DDE1E01DA94391AEE4631B7 /* UsageBeaconWidget */,
 			);
 			name = Sources;
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		6B1FE232FCF6797C211A2495 /* UsageBeaconWidget */ = {
+		56E99BA85C0C16398A29E8C8 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4378E96FEEF05C405EA31CC5 /* UsageBeaconWidget.swift */,
+				FE0E4DCC92FE085E95920DC7 /* libUsageBeaconShared.a */,
+				81C770AB66891051949040BD /* UsageBeacon.app */,
+				6A2ED6D723473F300597A0FE /* UsageBeaconWidget.appex */,
 			);
-			name = UsageBeaconWidget;
-			path = UsageBeaconWidget;
+			name = Products;
 			sourceTree = "<group>";
 		};
-		917DC6048ACA98DA7886FEFE /* UsageBeaconShared */ = {
+		645DA81EF6FBB3EB571888DF /* UsageBeaconShared */ = {
 			isa = PBXGroup;
 			children = (
-				59CD15CA3BDB1626BAD9A246 /* WidgetSnapshot.swift */,
+				77A019E9333E536DD093210C /* WidgetSnapshot.swift */,
 			);
 			name = UsageBeaconShared;
 			path = UsageBeaconShared;
 			sourceTree = "<group>";
 		};
-		AEBBB0E5EBD7EB3C8E4DF666 /* UsageBeaconApp */ = {
+		6913FF268A02D08052E094EE = {
 			isa = PBXGroup;
 			children = (
-				6022943AA6F82303EE0A53CD /* AppModel.swift */,
-				739A58941B1BA5AE62A55EF8 /* DebugCommandRunner.swift */,
-				3FAFD7A9AB021043945D2965 /* Models.swift */,
-				1CD213D813AC1851EC8B1280 /* AnthropicAdminProvider.swift */,
-				D93D8E162C4585A975B2C31A /* ClaudePersonalProvider.swift */,
-				C0D3A0000000000000000002 /* CodexProvider.swift */,
-				72ABD8BF097C25665FA37EDB /* CursorAdminProvider.swift */,
-				B244DDA79DC7B9A333270225 /* CursorPersonalProvider.swift */,
-				9F661E219D8BA881DF85000C /* CustomRESTProvider.swift */,
-				705C26DA8967A72C93D7BB2E /* ManualBudgetProvider.swift */,
-				2F97756A15C5BB597098B0CD /* ProviderResolver.swift */,
-				239CEB450E402FE98D19F936 /* BudgetMath.swift */,
-				23128D73E3FBBFB282700E28 /* ClaudeDashboardSessionController.swift */,
-				C3EBCCE2F866AE47E30AD337 /* ConfigurationStore.swift */,
-				F65F39F1224904DC1CE56144 /* CursorDashboardSessionController.swift */,
-				99E476F22525100E98C86487 /* FloatingPanelController.swift */,
-				465273368DC1430B8A4BBA74 /* GlobalHotKeyController.swift */,
-				5E31733059ED5EF26CB8DCFC /* HTTPClient.swift */,
-				3DF2D57D4C13E355044B7724 /* LaunchAtLoginController.swift */,
-				BE95160AD3A7A35C834EAD71 /* SecretStore.swift */,
-				41436D712CC6FC9A94ACAE43 /* TelemetryController.swift */,
-				677E6419DD0E3E6CDD2331C9 /* UpdaterController.swift */,
-				0F1D955ED7F6C4CB1436B89E /* WorkingDayService.swift */,
-				1D3B5022BC6783CA0586937B /* BeaconDesignSystem.swift */,
-				5A923689CD2875731967686D /* MenuBarRootView.swift */,
-				1E5A88CA2DE760D5F46AB101 /* SettingsView.swift */,
-				3577AB970B220B3763B8B912 /* UsageBeaconApp.swift */,
-				4A64A687C0B60B64AB43FC6D /* Resources */,
+				56E99BA85C0C16398A29E8C8 /* Products */,
+				7D035A12C353AFA9CCA1D8E3 /* Frameworks */,
+				54442046977B14F2BDA1D022 /* Sources */,
+				FD4513B96388D60406A30941 /* Resources */,
+				D37EBA92711A405844CCBAB2 /* Config */,
+			);
+			sourceTree = "<group>";
+		};
+		7D035A12C353AFA9CCA1D8E3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D1135E3020D55DA876C382FA /* OS X */,
+				238513D5635355763E5BA56D /* AppKit.framework */,
+				BDD312974877287B9A310ADE /* Carbon.framework */,
+				AA23E4535B6103B0005338C8 /* EventKit.framework */,
+				2C4A2FDCA8BB5B4FFF3ABAB9 /* ServiceManagement.framework */,
+				81595E1D75357E424641EC7B /* Security.framework */,
+				F0DC646C30EE8F5C74EA501D /* SwiftUI.framework */,
+				ED64FB002C50AA34D063BD9F /* WebKit.framework */,
+				793F6A46D3CFBD410F339D38 /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		7DDE1E01DA94391AEE4631B7 /* UsageBeaconWidget */ = {
+			isa = PBXGroup;
+			children = (
+				98C3CD007D3C90A08B5DF8B5 /* UsageBeaconWidget.swift */,
+			);
+			name = UsageBeaconWidget;
+			path = UsageBeaconWidget;
+			sourceTree = "<group>";
+		};
+		A2140C02B24E11882550E1A2 /* UsageBeaconApp */ = {
+			isa = PBXGroup;
+			children = (
+				ABC3616D9F93197141596954 /* AppModel.swift */,
+				B19A3F0AC4CA6DC5EA368788 /* DebugCommandRunner.swift */,
+				804B3DBF024069796F9F6FB7 /* Models.swift */,
+				CCD5E782ACB7BB419E90807D /* AnthropicAdminProvider.swift */,
+				189BF27F252224E431471A80 /* ClaudePersonalProvider.swift */,
+				B179B33C7CD6FD69D20F69B3 /* CodexProvider.swift */,
+				CB0EB12600080FA2C3EEA8AC /* CursorAdminProvider.swift */,
+				A7082483FBDFA7CDDB40256E /* CursorPersonalProvider.swift */,
+				5E906E02BAF83374E9A3D7AF /* CustomRESTProvider.swift */,
+				E67266406F29D16F4CDC6A9B /* ManualBudgetProvider.swift */,
+				D14FF1F2373A81631D7B823C /* ProviderResolver.swift */,
+				CCECB14B27BC8486573FE139 /* BudgetMath.swift */,
+				A8E23EBA8E6CAF33323FCDF6 /* ClaudeDashboardSessionController.swift */,
+				C24DCC0AA90F7D48A4CEECDB /* ConfigurationStore.swift */,
+				BCCF301FC24077D8D6D99FBD /* CursorDashboardSessionController.swift */,
+				E22FF6C6526D693F215076D1 /* FloatingPanelController.swift */,
+				5A23AFE1D5E41B4E48920211 /* GlobalHotKeyController.swift */,
+				FBB65BADB21A43B1EFBB9E87 /* HTTPClient.swift */,
+				6A5528CBCAE637FFD970C1D8 /* LaunchAtLoginController.swift */,
+				919829F8C07E296C28D75101 /* SecretStore.swift */,
+				44C5F3EEB097F7FCCCB3300C /* TelemetryController.swift */,
+				6C8783AC7E15CC2C4A6B4D60 /* UpdaterController.swift */,
+				8A9D6C31D133DBB15FB6C9DE /* WorkingDayService.swift */,
+				82750300F1571CB4C143CEC4 /* BeaconDesignSystem.swift */,
+				20F5AB1135114A2D99A38DB4 /* MenuBarRootView.swift */,
+				226DFCE62011F30A74BC4F5E /* SettingsView.swift */,
+				D02E722FA87AE1236548D7BF /* UsageBeaconApp.swift */,
+				CA9D0CFCE5A8691825CB0F32 /* Resources */,
 			);
 			name = UsageBeaconApp;
 			path = UsageBeaconApp;
 			sourceTree = "<group>";
 		};
-		C4E38320E73A4AB5DD3F344B /* Config */ = {
+		CA9D0CFCE5A8691825CB0F32 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */,
+				0DB558AC46FBE0176D666FC2 /* GoogleService-Info.plist */,
+			);
+			name = Resources;
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		D1135E3020D55DA876C382FA /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				65DF1187F9E3A1A0C097AF18 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
+		D37EBA92711A405844CCBAB2 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */,
 			);
 			name = Config;
 			path = Config;
 			sourceTree = "<group>";
 		};
-		E1BAB5297C410A88309488B5 /* Products */ = {
+		FD4513B96388D60406A30941 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				B11A306A462D915197AA3D73 /* libUsageBeaconShared.a */,
-				84D6FBA0A897F6345933430B /* UsageBeacon.app */,
-				0CCB924533A6005BD0C6FAFF /* UsageBeaconWidget.appex */,
+				5AE979E22FF3E3A348CD053D /* AppIcon.icns */,
+				8336DBC390550C3D07FA6F5F /* UsageBeacon-Info.plist */,
+				7CE8F0D32010FAE1F281A5F0 /* UsageBeaconWidget-Info.plist */,
+				38C26F3D09467A5732643EE3 /* UsageBeacon.entitlements */,
+				72789C21594DDFE68EDA0EBB /* UsageBeaconWidget.entitlements */,
 			);
-			name = Products;
+			name = Resources;
+			path = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		1EEDC81816AA9902E541287F /* Headers */ = {
+		030A94584BF56510430E411A /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -323,38 +345,31 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		0C04CF572F2825F1E3385D70 /* UsageBeacon */ = {
+		58A203CC9011FC1143157C4D /* UsageBeaconWidget */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 18E137592DF34C58DBECB563 /* Build configuration list for PBXNativeTarget "UsageBeacon" */;
+			buildConfigurationList = C3CD43B8835932BABF45AE5A /* Build configuration list for PBXNativeTarget "UsageBeaconWidget" */;
 			buildPhases = (
-				78822487E45F4E58FE54EDF7 /* Sources */,
-				4BC6FE70757D05DD076848D0 /* Frameworks */,
-				D64E7C04DE281B34FB290A38 /* Resources */,
-				EBAD663219FF36F889521351 /* Upload Crashlytics Symbols */,
+				E216BBC343F8029CBDCFDBE1 /* Sources */,
+				CCF8BF0BD67E28926943823D /* Frameworks */,
+				022A3F6FF971E05D7CFC3256 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				5F7C28EC7BB6ED3DCD4D21DB /* PBXTargetDependency */,
+				EA13BFCCC51B21A0B4B59011 /* PBXTargetDependency */,
 			);
-			name = UsageBeacon;
-			packageProductDependencies = (
-				99C26B0AEA35C8A349F38645 /* Sparkle */,
-				B3A147961946B11D056D60C9 /* FirebaseAnalytics */,
-				8C53FFA53586038DB88F1E24 /* FirebaseCore */,
-				8FBF8585F6631D691DA18D70 /* FirebaseCrashlytics */,
-			);
-			productName = UsageBeacon;
-			productReference = 84D6FBA0A897F6345933430B /* UsageBeacon.app */;
-			productType = "com.apple.product-type.application";
+			name = UsageBeaconWidget;
+			productName = UsageBeaconWidget;
+			productReference = 6A2ED6D723473F300597A0FE /* UsageBeaconWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
-		9F1E5EA737DF25DAAE9EE8D6 /* UsageBeaconShared */ = {
+		BED8F56A0A901EB64C057BE0 /* UsageBeaconShared */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9F1142415298C19855B3638D /* Build configuration list for PBXNativeTarget "UsageBeaconShared" */;
+			buildConfigurationList = 685E1558D02284BF58A6989A /* Build configuration list for PBXNativeTarget "UsageBeaconShared" */;
 			buildPhases = (
-				1EEDC81816AA9902E541287F /* Headers */,
-				5EA5D926DC6D727730754A31 /* Sources */,
-				588AF3FF230594CF5F649AB3 /* Frameworks */,
+				030A94584BF56510430E411A /* Headers */,
+				E07B6B5220C87BDBDC59009E /* Sources */,
+				DFCBE5A7A471EE1026B8588D /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -362,37 +377,46 @@
 			);
 			name = UsageBeaconShared;
 			productName = UsageBeaconShared;
-			productReference = B11A306A462D915197AA3D73 /* libUsageBeaconShared.a */;
+			productReference = FE0E4DCC92FE085E95920DC7 /* libUsageBeaconShared.a */;
 			productType = "com.apple.product-type.library.static";
 		};
-		C5715B6F03AE7A643D8ED2F6 /* UsageBeaconWidget */ = {
+		FEFF8543F37363EEDDF881B0 /* UsageBeacon */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = FD79CB694EE1321144837953 /* Build configuration list for PBXNativeTarget "UsageBeaconWidget" */;
+			buildConfigurationList = 4D07CE62F406EFB8DD859CC8 /* Build configuration list for PBXNativeTarget "UsageBeacon" */;
 			buildPhases = (
-				D2C12A9377DFD254FB87A8A5 /* Sources */,
-				3CD8A336E7876C14ED283F85 /* Frameworks */,
-				8C8FCAB0432775C461F4FC11 /* Resources */,
+				5F32C107AB272E125796D348 /* Sources */,
+				A5AE8201B8C30AACC7291A4A /* Frameworks */,
+				D1739A8AF2AD31171A702E61 /* Resources */,
+				795F448AC485962E7878DACF /* Embed App Extensions */,
+				8299C51CA199247D9BED6F8D /* Upload Crashlytics Symbols */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				365921ACDA7A390A654151E1 /* PBXTargetDependency */,
+				87B6E260E47A3F31AF83878F /* PBXTargetDependency */,
+				B20335BEFBD805F9341829A8 /* PBXTargetDependency */,
 			);
-			name = UsageBeaconWidget;
-			productName = UsageBeaconWidget;
-			productReference = 0CCB924533A6005BD0C6FAFF /* UsageBeaconWidget.appex */;
-			productType = "com.apple.product-type.app-extension";
+			name = UsageBeacon;
+			packageProductDependencies = (
+				3A79001075CA0A207EF4867C /* Sparkle */,
+				F66CD4477534E64444EA414C /* FirebaseAnalytics */,
+				A262B4CB92F5F04523A0F3BC /* FirebaseCore */,
+				73D5304BC5EBB804F8FE3092 /* FirebaseCrashlytics */,
+			);
+			productName = UsageBeacon;
+			productReference = 81C770AB66891051949040BD /* UsageBeacon.app */;
+			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		24206D0622416099FEF82BF1 /* Project object */ = {
+		D91D618920016D2C4E8E761F /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1610;
 				LastUpgradeCheck = 1610;
 			};
-			buildConfigurationList = 708C2AD056B5463BF96F6E24 /* Build configuration list for PBXProject "UsageBeacon" */;
+			buildConfigurationList = 079B2356C178233091796B1E /* Build configuration list for PBXProject "UsageBeacon" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -400,45 +424,45 @@
 				en,
 				Base,
 			);
-			mainGroup = 38FA44DF6DE92012743D129A;
+			mainGroup = 6913FF268A02D08052E094EE;
 			minimizedProjectReferenceProxies = 0;
 			packageReferences = (
-				B6C9E02ADEF8DBDEFAC3702C /* XCRemoteSwiftPackageReference "Sparkle" */,
-				D0A1C57A064C911B19039AF9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				9CB674F72D5D65615D6A8552 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				F43B266A3E379E125086F55C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = E1BAB5297C410A88309488B5 /* Products */;
+			productRefGroup = 56E99BA85C0C16398A29E8C8 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				9F1E5EA737DF25DAAE9EE8D6 /* UsageBeaconShared */,
-				0C04CF572F2825F1E3385D70 /* UsageBeacon */,
-				C5715B6F03AE7A643D8ED2F6 /* UsageBeaconWidget */,
+				BED8F56A0A901EB64C057BE0 /* UsageBeaconShared */,
+				FEFF8543F37363EEDDF881B0 /* UsageBeacon */,
+				58A203CC9011FC1143157C4D /* UsageBeaconWidget */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		8C8FCAB0432775C461F4FC11 /* Resources */ = {
+		022A3F6FF971E05D7CFC3256 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D64E7C04DE281B34FB290A38 /* Resources */ = {
+		D1739A8AF2AD31171A702E61 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				36E267EFECBB962D872C3B83 /* GoogleService-Info.plist in Resources */,
-				918DE6B375A481E5E3119A55 /* AppIcon.icns in Resources */,
+				0CEDDFF676DE9ED7B61573A8 /* GoogleService-Info.plist in Resources */,
+				F6E69EA4337C65BBA1ADFFD8 /* AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		EBAD663219FF36F889521351 /* Upload Crashlytics Symbols */ = {
+		8299C51CA199247D9BED6F8D /* Upload Crashlytics Symbols */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -465,124 +489,81 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		5EA5D926DC6D727730754A31 /* Sources */ = {
+		5F32C107AB272E125796D348 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				82058EE9862622DA6567B761 /* WidgetSnapshot.swift in Sources */,
+				A9124B0E213D676E8D88AA7D /* AppModel.swift in Sources */,
+				D86E98B5D70728F6BE6AEEDF /* DebugCommandRunner.swift in Sources */,
+				1CBA5B07B6F671629BADF751 /* Models.swift in Sources */,
+				A9B54DFDD4E2F21D40D91A70 /* AnthropicAdminProvider.swift in Sources */,
+				BB4AF5E887F0AA97FDD8A3A2 /* ClaudePersonalProvider.swift in Sources */,
+				8B6E1F009457A88DBFBE8DE7 /* CodexProvider.swift in Sources */,
+				9C7BC3C18B271041E16B966F /* CursorAdminProvider.swift in Sources */,
+				C88BDC8C76EF680C6E385010 /* CursorPersonalProvider.swift in Sources */,
+				585764ECB24D98BE0958EE94 /* CustomRESTProvider.swift in Sources */,
+				31A99BCEB12F6F8D546AD65F /* ManualBudgetProvider.swift in Sources */,
+				F38C2FB3E33810B3004D50C0 /* ProviderResolver.swift in Sources */,
+				D0EF69D0B0FEC2E197B2ABD5 /* BudgetMath.swift in Sources */,
+				97CB78C87BE2FF20184F97B3 /* ClaudeDashboardSessionController.swift in Sources */,
+				A11BF28594B6CADFE5BA05BE /* ConfigurationStore.swift in Sources */,
+				0E1230841763118045207189 /* CursorDashboardSessionController.swift in Sources */,
+				C1D309F6B9063BEC2673FA41 /* FloatingPanelController.swift in Sources */,
+				03AFB6E56D541801D1A8443B /* GlobalHotKeyController.swift in Sources */,
+				1F3B8E659B291ED29BB8EC3F /* HTTPClient.swift in Sources */,
+				70ED6D5AC044569DA6289D53 /* LaunchAtLoginController.swift in Sources */,
+				75C1EBB2367B37FC28EA6D65 /* SecretStore.swift in Sources */,
+				C297B5AB43F7D12ED0B1D4A9 /* TelemetryController.swift in Sources */,
+				53D839801DF44A9A166D5D88 /* UpdaterController.swift in Sources */,
+				3C9E42BF7A69C6A3EF5CF628 /* WorkingDayService.swift in Sources */,
+				1DA96FA23D02A0224D6729D0 /* BeaconDesignSystem.swift in Sources */,
+				E14BCBF067182378D76DDBC0 /* MenuBarRootView.swift in Sources */,
+				B3DA93BCB1FC0E27801701E0 /* SettingsView.swift in Sources */,
+				0CCF5B9FA817324B5C30FC54 /* UsageBeaconApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		78822487E45F4E58FE54EDF7 /* Sources */ = {
+		E07B6B5220C87BDBDC59009E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5E3128409E07468B0C882465 /* AppModel.swift in Sources */,
-				7B5E32FB0F6C9D53C48A04D7 /* DebugCommandRunner.swift in Sources */,
-				CD159172000232FFCA7FB48E /* Models.swift in Sources */,
-				E552971E82A79FA5B4D7D999 /* AnthropicAdminProvider.swift in Sources */,
-				894DA6426617F117DA0F5BCB /* ClaudePersonalProvider.swift in Sources */,
-				C0D3A0000000000000000001 /* CodexProvider.swift in Sources */,
-				F7020012980AD107F8E53ACC /* CursorAdminProvider.swift in Sources */,
-				10F6EF0507996F7DA7FF56C9 /* CursorPersonalProvider.swift in Sources */,
-				BB10493FC8FF79BACC09D8AD /* CustomRESTProvider.swift in Sources */,
-				E8D4E0329A987D5AC14A38E0 /* ManualBudgetProvider.swift in Sources */,
-				A323C9B96D98DD821151399A /* ProviderResolver.swift in Sources */,
-				9E54B821C8E5FEE1AB103D6D /* BudgetMath.swift in Sources */,
-				59C1E36236D76E90263872FE /* ClaudeDashboardSessionController.swift in Sources */,
-				8A5AF49146F986F46780A3D3 /* ConfigurationStore.swift in Sources */,
-				6F8E5EBFA2507269B51F643F /* CursorDashboardSessionController.swift in Sources */,
-				9C79E3B9B65B8C9D877E6C3A /* FloatingPanelController.swift in Sources */,
-				946BCAC56E1299EF8E13C0EA /* GlobalHotKeyController.swift in Sources */,
-				9D1C48C6FF6F33EE169F1ADC /* HTTPClient.swift in Sources */,
-				9B1B2CA809E63D43ED947F49 /* LaunchAtLoginController.swift in Sources */,
-				27F217753F00436F760D93B1 /* SecretStore.swift in Sources */,
-				925261B87C64453571A3E86E /* TelemetryController.swift in Sources */,
-				F6F626B8123F251E90197A4D /* UpdaterController.swift in Sources */,
-				7268C6E211B2A3BF8D061B6D /* WorkingDayService.swift in Sources */,
-				97AB865DAC61232B76574047 /* BeaconDesignSystem.swift in Sources */,
-				6B5DDEDBA47780770F03FC4B /* MenuBarRootView.swift in Sources */,
-				8985FB3A3E95D98F16111043 /* SettingsView.swift in Sources */,
-				5598E9669B19E4499A455E25 /* UsageBeaconApp.swift in Sources */,
+				9BA66F3A3333131259FDA4F0 /* WidgetSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		D2C12A9377DFD254FB87A8A5 /* Sources */ = {
+		E216BBC343F8029CBDCFDBE1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A68EC504AE0F1EC0819CAB0F /* UsageBeaconWidget.swift in Sources */,
+				B54DCB3984693AD443E0EA22 /* UsageBeaconWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		365921ACDA7A390A654151E1 /* PBXTargetDependency */ = {
+		87B6E260E47A3F31AF83878F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = UsageBeaconShared;
-			target = 9F1E5EA737DF25DAAE9EE8D6 /* UsageBeaconShared */;
-			targetProxy = CFCA95C8BA79F7894D073F7D /* PBXContainerItemProxy */;
+			target = BED8F56A0A901EB64C057BE0 /* UsageBeaconShared */;
+			targetProxy = DBD2B94577F1325304C79637 /* PBXContainerItemProxy */;
 		};
-		5F7C28EC7BB6ED3DCD4D21DB /* PBXTargetDependency */ = {
+		B20335BEFBD805F9341829A8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = UsageBeaconWidget;
+			target = 58A203CC9011FC1143157C4D /* UsageBeaconWidget */;
+			targetProxy = 948064F875D0EFB1013E837D /* PBXContainerItemProxy */;
+		};
+		EA13BFCCC51B21A0B4B59011 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = UsageBeaconShared;
-			target = 9F1E5EA737DF25DAAE9EE8D6 /* UsageBeaconShared */;
-			targetProxy = F3F3FD1A8DA960BE1577BB54 /* PBXContainerItemProxy */;
+			target = BED8F56A0A901EB64C057BE0 /* UsageBeaconShared */;
+			targetProxy = 6E648A99FB920D261F1C3754 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
-		26A0A79FA896DCF6B7AB91AC /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Resources/UsageBeacon.entitlements;
-				CODE_SIGN_STYLE = Manual;
-				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				INFOPLIST_FILE = "Resources/UsageBeacon-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rekindle.usagebeacon;
-				PRODUCT_MODULE_NAME = UsageBeaconApp;
-				PRODUCT_NAME = UsageBeacon;
-				SDKROOT = macosx;
-				SKIP_INSTALL = NO;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Debug;
-		};
-		58B3D9CCD15CD4FC709E889B /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */;
-			buildSettings = {
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Resources/UsageBeaconWidget.entitlements;
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				INFOPLIST_FILE = "Resources/UsageBeaconWidget-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rekindle.usagebeacon.widget;
-				PRODUCT_NAME = UsageBeaconWidget;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Release;
-		};
-		6845CBAA078571623CBA3CE7 /* Release */ = {
+		078F105D6469024180DD52DB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -636,9 +617,52 @@
 			};
 			name = Release;
 		};
-		6AD793ABCDF0A73D195605FF /* Debug */ = {
+		1777E3F7072E1282776048EA /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */;
+			baseConfigurationReference = E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Resources/UsageBeaconWidget.entitlements;
+				CODE_SIGN_STYLE = Manual;
+				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = "Resources/UsageBeaconWidget-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @executable_path/../../../../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rekindle.usagebeacon.widget;
+				PRODUCT_NAME = UsageBeaconWidget;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		2C8737F6EA003947F7175050 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Manual;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				EXECUTABLE_PREFIX = lib;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = UsageBeaconShared;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		636E26E8B8C02E9BEAE31A08 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CLANG_ENABLE_MODULES = YES;
@@ -659,9 +683,9 @@
 			};
 			name = Debug;
 		};
-		A4D73F01314D9E00079200AB /* Release */ = {
+		B972FDF43F79CE1576D41892 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */;
+			baseConfigurationReference = E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */;
 			buildSettings = {
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Manual;
@@ -679,53 +703,7 @@
 			};
 			name = Release;
 		};
-		B8C0978B3A6895FF1D773A65 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */;
-			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_STYLE = Manual;
-				DEFINES_MODULE = YES;
-				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				EXECUTABLE_PREFIX = lib;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_NAME = UsageBeaconShared;
-				SDKROOT = macosx;
-				SKIP_INSTALL = YES;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Debug;
-		};
-		F4CA8C1B4497B0356FAD093B /* Release */ = {
-			isa = XCBuildConfiguration;
-			baseConfigurationReference = D93C5E9A40A3011BA9C04BB7 /* Version.xcconfig */;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = Resources/UsageBeacon.entitlements;
-				CODE_SIGN_STYLE = Manual;
-				COMBINE_HIDPI_IMAGES = YES;
-				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				INFOPLIST_FILE = "Resources/UsageBeacon-Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rekindle.usagebeacon;
-				PRODUCT_MODULE_NAME = UsageBeaconApp;
-				PRODUCT_NAME = UsageBeacon;
-				SDKROOT = macosx;
-				SKIP_INSTALL = NO;
-				SWIFT_VERSION = 6.0;
-			};
-			name = Release;
-		};
-		FCFA3427977897C9CF646D72 /* Debug */ = {
+		BCF2D6B5C8349B17031068C2 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -786,41 +764,93 @@
 			};
 			name = Debug;
 		};
+		DB614392C4A989171EA08A80 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Resources/UsageBeacon.entitlements;
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = "Resources/UsageBeacon-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rekindle.usagebeacon;
+				PRODUCT_MODULE_NAME = UsageBeaconApp;
+				PRODUCT_NAME = UsageBeacon;
+				SDKROOT = macosx;
+				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E7FB0F9DC84FE22C2EE225E0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = E8470E5DF4E683FD1C83C2B6 /* Version.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Resources/UsageBeacon.entitlements;
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = Y3XM9Q3AZT;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				INFOPLIST_FILE = "Resources/UsageBeacon-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rekindle.usagebeacon;
+				PRODUCT_MODULE_NAME = UsageBeaconApp;
+				PRODUCT_NAME = UsageBeacon;
+				SDKROOT = macosx;
+				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		18E137592DF34C58DBECB563 /* Build configuration list for PBXNativeTarget "UsageBeacon" */ = {
+		079B2356C178233091796B1E /* Build configuration list for PBXProject "UsageBeacon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				F4CA8C1B4497B0356FAD093B /* Release */,
-				26A0A79FA896DCF6B7AB91AC /* Debug */,
+				BCF2D6B5C8349B17031068C2 /* Debug */,
+				078F105D6469024180DD52DB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		708C2AD056B5463BF96F6E24 /* Build configuration list for PBXProject "UsageBeacon" */ = {
+		4D07CE62F406EFB8DD859CC8 /* Build configuration list for PBXNativeTarget "UsageBeacon" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				FCFA3427977897C9CF646D72 /* Debug */,
-				6845CBAA078571623CBA3CE7 /* Release */,
+				DB614392C4A989171EA08A80 /* Release */,
+				E7FB0F9DC84FE22C2EE225E0 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9F1142415298C19855B3638D /* Build configuration list for PBXNativeTarget "UsageBeaconShared" */ = {
+		685E1558D02284BF58A6989A /* Build configuration list for PBXNativeTarget "UsageBeaconShared" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				A4D73F01314D9E00079200AB /* Release */,
-				B8C0978B3A6895FF1D773A65 /* Debug */,
+				B972FDF43F79CE1576D41892 /* Release */,
+				2C8737F6EA003947F7175050 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		FD79CB694EE1321144837953 /* Build configuration list for PBXNativeTarget "UsageBeaconWidget" */ = {
+		C3CD43B8835932BABF45AE5A /* Build configuration list for PBXNativeTarget "UsageBeaconWidget" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				58B3D9CCD15CD4FC709E889B /* Release */,
-				6AD793ABCDF0A73D195605FF /* Debug */,
+				1777E3F7072E1282776048EA /* Release */,
+				636E26E8B8C02E9BEAE31A08 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -828,7 +858,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		B6C9E02ADEF8DBDEFAC3702C /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+		9CB674F72D5D65615D6A8552 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sparkle-project/Sparkle";
 			requirement = {
@@ -836,7 +866,7 @@
 				version = 2.9.6;
 			};
 		};
-		D0A1C57A064C911B19039AF9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		F43B266A3E379E125086F55C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
 			requirement = {
@@ -847,27 +877,27 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		8C53FFA53586038DB88F1E24 /* FirebaseCore */ = {
+		3A79001075CA0A207EF4867C /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0A1C57A064C911B19039AF9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
-		};
-		8FBF8585F6631D691DA18D70 /* FirebaseCrashlytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = D0A1C57A064C911B19039AF9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCrashlytics;
-		};
-		99C26B0AEA35C8A349F38645 /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = B6C9E02ADEF8DBDEFAC3702C /* XCRemoteSwiftPackageReference "Sparkle" */;
+			package = 9CB674F72D5D65615D6A8552 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
 		};
-		B3A147961946B11D056D60C9 /* FirebaseAnalytics */ = {
+		73D5304BC5EBB804F8FE3092 /* FirebaseCrashlytics */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D0A1C57A064C911B19039AF9 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			package = F43B266A3E379E125086F55C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+		A262B4CB92F5F04523A0F3BC /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F43B266A3E379E125086F55C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		F66CD4477534E64444EA414C /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F43B266A3E379E125086F55C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseAnalytics;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 24206D0622416099FEF82BF1 /* Project object */;
+	rootObject = D91D618920016D2C4E8E761F /* Project object */;
 }

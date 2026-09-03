@@ -58,13 +58,15 @@ google_service_info = app_resources_group.new_file("GoogleService-Info.plist")
 app_target.resources_build_phase.add_file_reference(google_service_info)
 
 app_target.add_dependency(shared_target)
+app_target.add_dependency(widget_target)
 widget_target.add_dependency(shared_target)
 app_target.frameworks_build_phase.add_file_reference(shared_target.product_reference)
 widget_target.frameworks_build_phase.add_file_reference(shared_target.product_reference)
 
-# Developer ID distribution requires provisioning profiles for App Groups.
-# Keep the widget target available for development, but do not embed it until
-# the release pipeline installs matching profiles for both bundle identifiers.
+embed_extensions = app_target.new_copy_files_build_phase("Embed App Extensions")
+embed_extensions.symbol_dst_subfolder_spec = :plug_ins
+embedded_widget = embed_extensions.add_file_reference(widget_target.product_reference)
+embedded_widget.settings = { "ATTRIBUTES" => ["RemoveHeadersOnCopy"] }
 
 %w[AppKit Carbon EventKit ServiceManagement Security SwiftUI WebKit WidgetKit].each do |framework|
   add_framework(project, app_target, framework)

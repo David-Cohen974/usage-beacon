@@ -46,11 +46,17 @@ spctl --assess --type execute --verbose=2 "$app_path"
 xcrun stapler validate "$app_path"
 "${BASH_SOURCE[0]%/*}/verify-app-launch.sh" "$app_path"
 
-signed_entitlements="$(codesign -d --entitlements :- "$app_path" 2>/dev/null)"
-if grep -Eq '<key>(com\.apple\.security\.application-groups|keychain-access-groups)</key>' <<<"$signed_entitlements"; then
-  test -f "$app_path/Contents/embedded.provisionprofile"
-fi
-test ! -d "$app_path/Contents/PlugIns/UsageBeaconWidget.appex"
+widget_path="$app_path/Contents/PlugIns/UsageBeaconWidget.appex"
+test -d "$widget_path"
+codesign --verify --strict --verbose=2 "$widget_path"
+test "$(plutil -extract CFBundleVersion raw "$widget_path/Contents/Info.plist")" \
+  = "$(plutil -extract CFBundleVersion raw "$app_path/Contents/Info.plist")"
+test "$(plutil -extract NSExtension.NSExtensionPointIdentifier raw "$widget_path/Contents/Info.plist")" \
+  = "com.apple.widgetkit-extension"
+codesign -d --entitlements :- "$app_path" 2>/dev/null \
+  | grep -q 'Y3XM9Q3AZT.com.rekindle.usagebeacon'
+codesign -d --entitlements :- "$widget_path" 2>/dev/null \
+  | grep -q 'Y3XM9Q3AZT.com.rekindle.usagebeacon'
 
 test "$(plutil -extract CFBundleShortVersionString raw "$app_path/Contents/Info.plist")" = "$version"
 test "$(plutil -extract LSMinimumSystemVersion raw "$app_path/Contents/Info.plist")" = "$minimum_macos"
@@ -59,4 +65,4 @@ test "$(plutil -extract SUPublicEDKey raw "$app_path/Contents/Info.plist")" = "T
 test -d "$app_path/Contents/Frameworks/Sparkle.framework"
 
 echo "Verified UsageBeacon $version from $download_url"
-echo "Developer ID, notarization ticket, launchability, Sparkle framework, appcast, and Ed25519 metadata are present."
+echo "Developer ID, notarization ticket, launchability, widget extension, Sparkle framework, appcast, and Ed25519 metadata are present."
