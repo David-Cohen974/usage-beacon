@@ -9,6 +9,29 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
         <description>Signed updates for UsageBeacon.</description>
         <language>en</language>
         <item>
+            <title>1.2.6</title>
+            <pubDate>Sun, 06 Sep 2026 08:29:11 +0000</pubDate>
+            <link>https://david-cohen974.github.io/usage-beacon/</link>
+            <sparkle:fullReleaseNotesLink>https://david-cohen974.github.io/usage-beacon/changelog/</sparkle:fullReleaseNotesLink>
+            <sparkle:version>100010</sparkle:version>
+            <sparkle:shortVersionString>1.2.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## What's Changed
+* Release UsageBeacon 1.2.6 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/17
+
+
+**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.5...v1.2.6
+]]></description>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.2.6.zip" length="7627395" type="application/octet-stream" sparkle:edSignature="h/er+d+TYbcZZZgXU9gxN93jUxRiFGNLqSwqdpltsVOIJKl/DD84mQw7NgKn6kLugf+p3hTKoqnkCR9J/IToDA=="/>
+            <sparkle:deltas>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon100010-100009.delta" sparkle:deltaFrom="100009" length="875666" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="zO8vIw9uat4suDSDwsoHyc8Q+Id8eCqs840Z2UpBm2WjJ6CY2sIQCy5/kqV3yBhgcpRD9RXkZYriFtr6vDXiCQ=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon100010-100008.delta" sparkle:deltaFrom="100008" length="957922" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="/KHZNEzbnHiiTVQwry1eTd0RW0oRpjm4Hcsmgaoguo39diYskjkF/FdnB8dBOoSBjQm2AnJf9GtpW5fM6EnnCg=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon100010-100007.delta" sparkle:deltaFrom="100007" length="1148386" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="llTg3LcMLrOvUx/HKqd252IYkZ3SIRsCyF9jlp3yhMSKQ0Z8HWo02HRkuP58kSDKyN978nL24HpKb6hhVeKeAg=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon100010-100006.delta" sparkle:deltaFrom="100006" length="1218154" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="3P0rohZJ1EH68wDvkHlqH7a+R9hNdI/m+V6f5f84X/jXKKx/rRIbi7SluNYb+fBBkj9ROSYa83tyAU9yoRLyBw=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon100010-100004.delta" sparkle:deltaFrom="100004" length="1137514" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="Ywo7Ap1jq0dJyfLixbM4mcIvPk5ao9PZPFFimmIbdTUDrV2q4pcD8WoGZKOZmLb3Be198Ct+nDF53eh8UEVJBA=="/>
+            </sparkle:deltas>
+        </item>
+        <item>
             <title>1.2.5</title>
             <pubDate>Thu, 03 Sep 2026 13:55:40 +0000</pubDate>
             <link>https://david-cohen974.github.io/usage-beacon/</link>
@@ -16,13 +39,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>100009</sparkle:version>
             <sparkle:shortVersionString>1.2.5</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[## What's Changed
-* Restore widget extension for 1.2.5 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/16
-
-
-**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.4...v1.2.5
-]]></description>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon-1.2.5.zip" length="7562229" type="application/octet-stream" sparkle:edSignature="LYGEIWXyZTvDCwCEmlb3bUrOrtiEa5JIJkinYqqUKR2VtDyZTqyanSxZwF4NzakN4HFU3xCGwT47vAoaPUmpDQ=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.2.5.zip" length="7562229" type="application/octet-stream" sparkle:edSignature="LYGEIWXyZTvDCwCEmlb3bUrOrtiEa5JIJkinYqqUKR2VtDyZTqyanSxZwF4NzakN4HFU3xCGwT47vAoaPUmpDQ=="/>
             <sparkle:deltas>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon100009-100008.delta" sparkle:deltaFrom="100008" length="110910" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="x3Zd5G8aghj6pqxiXLjBvQdAObWAaAWnzV26xteVVp8jlr8+8Buwb/vPIqY8j+3HBMyEgdanqTXxYE8xWroACw=="/>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon100009-100007.delta" sparkle:deltaFrom="100007" length="994538" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="RvJxhdo77+w22F525GvkVTsCfJ9jTCxd7TS9auYO4/S1+Jc68s0OCtgbxGKKkEXz4YIub5V519uOz3DDnQ94BQ=="/>
@@ -39,7 +56,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>100008</sparkle:version>
             <sparkle:shortVersionString>1.2.4</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon-1.2.4.zip" length="7418544" type="application/octet-stream" sparkle:edSignature="ugqOpB7ZpR4qWeyVnaTmWunJp98Lk6vl7cF7OJZ3YtcUxrK4BC1XAJhYYpNQgEXHmfBUv9tebfuDJuN5AwFwDg=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.2.4.zip" length="7418544" type="application/octet-stream" sparkle:edSignature="ugqOpB7ZpR4qWeyVnaTmWunJp98Lk6vl7cF7OJZ3YtcUxrK4BC1XAJhYYpNQgEXHmfBUv9tebfuDJuN5AwFwDg=="/>
             <sparkle:deltas>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.4/UsageBeacon100008-100007.delta" sparkle:deltaFrom="100007" length="911410" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="B+Ip8IiqxeIjd6AHBznD1WNnX2QMO/sLpMvJrGqWrDx0exphIaLL++q0RpxzCUYsNTk7sGY45pUlJs0ccD8TDw=="/>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.4/UsageBeacon100008-100006.delta" sparkle:deltaFrom="100006" length="1010714" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="EU2mXG+9lXreFHBK7uDWg+gchcL//JkZdGCyXTqRxHCMH4Fye9HnNFjUyVGMvbTOpqa5Wasl/1u9IsF57DAZDQ=="/>
@@ -56,7 +73,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>100007</sparkle:version>
             <sparkle:shortVersionString>1.2.3</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon-1.2.3.zip" length="7329505" type="application/octet-stream" sparkle:edSignature="4veq0rkodQ1dk7jBLJWtdJxNw2+iq5cNBngUrPb2xK+OkVAXhVVpOq/cfNLqFYy4q/mXB0+svi9lwOW6yRatCA=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.2.3.zip" length="7329505" type="application/octet-stream" sparkle:edSignature="4veq0rkodQ1dk7jBLJWtdJxNw2+iq5cNBngUrPb2xK+OkVAXhVVpOq/cfNLqFYy4q/mXB0+svi9lwOW6yRatCA=="/>
             <sparkle:deltas>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.3/UsageBeacon100007-100006.delta" sparkle:deltaFrom="100006" length="830558" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="yqevDJPeGDCm95BGn6xDq0xljOKLnkf9V0IgwpUUyC2vJTQ4lzZfcxi+7wgpIaizqwzTUwNoWcW+5TGqqFS3BQ=="/>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.3/UsageBeacon100007-100004.delta" sparkle:deltaFrom="100004" length="829086" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="zzE6gZ6Xqoj1FjxtaQFKWWH1f9UDTD/FM/hxr13Q1jjraN9T+DK3cErOLzKTWzitmTLDZO0Ru/gnNnsbel8+Ag=="/>
@@ -72,7 +89,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>100006</sparkle:version>
             <sparkle:shortVersionString>1.2.2</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon-1.2.2.zip" length="7257683" type="application/octet-stream" sparkle:edSignature="hAEHQNs7UkHhOl+7tOU7EoFg74FeYHIVfhHuroDSplbB76dbI7M3e3WPbUGOQvNlCJDUwT7I8XACbujGX+46AQ=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.2.2.zip" length="7257683" type="application/octet-stream" sparkle:edSignature="hAEHQNs7UkHhOl+7tOU7EoFg74FeYHIVfhHuroDSplbB76dbI7M3e3WPbUGOQvNlCJDUwT7I8XACbujGX+46AQ=="/>
             <sparkle:deltas>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.2/UsageBeacon100006-100004.delta" sparkle:deltaFrom="100004" length="29206" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="dKDvNfgZVa6wwIFGwCfI8JCl1UcUzXLTM4SB8BCstCp4tNR7zCxYB89WfROSeTpKiWhR7G+ZML8dKT6Vd6yjDw=="/>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.2/UsageBeacon100006-100003.delta" sparkle:deltaFrom="100003" length="2374646" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="ulWmu9tPtLbNkf2uQp7oiN/9Z2GpQ2TAHTgj/Bsnd3roXSio7Kg1HtY/3YSWhKeLshJ5j8AFcsTLjs6iDeJ+Dw=="/>
@@ -108,7 +125,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>100004</sparkle:version>
             <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon-1.2.0.zip" length="7401433" type="application/octet-stream" sparkle:edSignature="XFvoCzkC5CMfaGRBOtwSrEfCdrsE24d6rTnhyLL6M054wXJ9EOMp4QLiGb+306Ph23vO5ngIiX/5uDinfD0oBw=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.2.0.zip" length="7401433" type="application/octet-stream" sparkle:edSignature="XFvoCzkC5CMfaGRBOtwSrEfCdrsE24d6rTnhyLL6M054wXJ9EOMp4QLiGb+306Ph23vO5ngIiX/5uDinfD0oBw=="/>
             <sparkle:deltas>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.0/UsageBeacon100004-100003.delta" sparkle:deltaFrom="100003" length="2378890" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="68xhU4tj2xWVuSRep+swplqz5oj4J8vMJ5qBl48kfHpQq1IhSVyQBg9T32NNJSz5wCvgzqWSdjWUSSjwWCO3DA=="/>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.0/UsageBeacon100004-100002.delta" sparkle:deltaFrom="100002" length="2436434" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="UjwZ4wB6eh29skNbicPTt1cGlq/rVQYQQfjbhL8hRQPlo+aOJHehqt9+gD5dyHUZHROdIY1e5GSkzqO1mTSqBQ=="/>
@@ -122,7 +139,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>100003</sparkle:version>
             <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon-1.1.0.zip" length="4854516" type="application/octet-stream" sparkle:edSignature="1FcfYQ5loURbCAN/hwaJyHTXMcncnTGFiVnNVxzd7fpo/OzOn6uuuEGI1aOGnlmK9Y4Guv1FxfVeKwkU+ocUBA=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.1.0.zip" length="4854516" type="application/octet-stream" sparkle:edSignature="1FcfYQ5loURbCAN/hwaJyHTXMcncnTGFiVnNVxzd7fpo/OzOn6uuuEGI1aOGnlmK9Y4Guv1FxfVeKwkU+ocUBA=="/>
             <sparkle:deltas>
                 <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.1.0/UsageBeacon100003-100002.delta" sparkle:deltaFrom="100002" length="367874" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="k+ApdgmcVsp2Zjke6H4Si/RGuvVsIFIOsFTLxv1yoYw4ba0d3sCIqydXfI5wNvZlnpnS0wf0KOnvvU0o+YcFCA=="/>
             </sparkle:deltas>
@@ -135,11 +152,11 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>100002</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.5/UsageBeacon-1.0.0.zip" length="4824758" type="application/octet-stream" sparkle:edSignature="Ff7xgSH71XVt/QmyBuUAZjTlTlx2xZrALJuHq4bxz68QOZ0aAwf4cDm1UYH1KqCXmJG5MidrmFD8IcWtJ6qQBQ=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.6/UsageBeacon-1.0.0.zip" length="4824758" type="application/octet-stream" sparkle:edSignature="Ff7xgSH71XVt/QmyBuUAZjTlTlx2xZrALJuHq4bxz68QOZ0aAwf4cDm1UYH1KqCXmJG5MidrmFD8IcWtJ6qQBQ=="/>
         </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: tqgtBhSVkiyGr+cwuyk0ays27Lz4GRiKHU+mtMD7ICQ67qdsETBuf2Fp0RskKRQ8Xw2HzovYNs9WiDJGrTlABA==
-length: 18056
+edSignature: ZYpYzC1Gx/xzKoPAunVFLwLviymIHxCpDg+VInmPRreBQB2lx1vfm1a3LzG7Y74qDDUTlucFOqNcOcvh+QT3Ag==
+length: 21065
 -->
