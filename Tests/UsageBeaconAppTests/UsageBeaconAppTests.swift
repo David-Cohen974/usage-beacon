@@ -4,6 +4,16 @@ import Testing
 import UsageBeaconShared
 
 struct UsageBeaconAppTests {
+    @MainActor
+    @Test
+    func updaterCacheBustsEveryAppcastCheck() {
+        let url = UpdaterController.cacheBustedFeedURL(
+            now: Date(timeIntervalSince1970: 1_788_694_308)
+        )
+
+        #expect(url == "https://david-cohen974.github.io/usage-beacon/appcast.xml?check=1788694308")
+    }
+
     @Test
     func widgetSnapshotRoundTripsThroughCodable() throws {
         let provider = UsageBeaconWidgetProvider(
@@ -122,6 +132,57 @@ struct UsageBeaconAppTests {
             claudeSession: .unknown,
             hasSecret: false
         ) == .connected)
+    }
+
+    @Test
+    func personalProviderStatusUsesSuccessfulSnapshotWhenSessionProbeIsUnknown() {
+        let provider = StoredProvider(kind: .cursorPersonal)
+        var snapshot = ProviderSnapshotState.placeholder(from: provider)
+        snapshot.lastUpdatedAt = Date()
+        snapshot.usageWindows = [
+            UsageWindowSnapshot(
+                kind: .sevenDay,
+                title: "Weekly",
+                usedPercent: 42,
+                resetsAt: nil
+            )
+        ]
+
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .unknown,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .connected)
+
+        var loadingSnapshot = snapshot
+        loadingSnapshot.isLoading = true
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: loadingSnapshot,
+            cursorSession: .unknown,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .checking)
+
+        var failedSnapshot = snapshot
+        failedSnapshot.errorMessage = "Cursor usage is temporarily unavailable."
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: failedSnapshot,
+            cursorSession: .unknown,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .needsAttention)
+
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .disconnected,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .signInRequired)
     }
 
     @Test

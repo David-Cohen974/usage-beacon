@@ -5,6 +5,7 @@ import Sparkle
 @MainActor
 final class UpdaterController: NSObject, ObservableObject, SPUUpdaterDelegate {
     static let betaUpdatesDefaultsKey = "UsageBeaconReceiveBetaUpdates"
+    static let appcastURLString = "https://david-cohen974.github.io/usage-beacon/appcast.xml"
 
     private var standardController: SPUStandardUpdaterController!
     private var observations: [NSKeyValueObservation] = []
@@ -49,6 +50,15 @@ final class UpdaterController: NSObject, ObservableObject, SPUUpdaterDelegate {
 
     func allowedChannels(for updater: SPUUpdater) -> Set<String> {
         receivesBetaUpdates ? ["beta"] : []
+    }
+
+    func feedURLString(for updater: SPUUpdater) -> String? {
+        Self.cacheBustedFeedURL(now: Date())
+    }
+
+    static func cacheBustedFeedURL(now: Date) -> String {
+        let requestID = Int(now.timeIntervalSince1970)
+        return "\(appcastURLString)?check=\(requestID)"
     }
 
     private func synchronizePublishedState() {
