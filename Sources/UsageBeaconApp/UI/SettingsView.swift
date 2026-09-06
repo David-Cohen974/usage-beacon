@@ -1091,11 +1091,20 @@ private struct ProviderEditorView: View {
         case .codex:
             return "Sync Now"
         case .cursorPersonal:
-            return model.cursorPersonalSessionState == .connected ? "Sync Now" : "Sign In"
+            return personalSessionNeedsSignIn ? "Sign In" : "Sync Now"
         case .claudePersonal:
-            return model.claudePersonalSessionState == .connected ? "Sync Now" : "Sign In"
+            return personalSessionNeedsSignIn ? "Sign In" : "Sync Now"
         case .cursorAdmin, .anthropicAdmin, .manual, .customREST:
             return "Sync Now"
+        }
+    }
+
+    private var personalSessionNeedsSignIn: Bool {
+        switch setupStatus {
+        case .setupRequired, .signInRequired, .waitingForSignIn:
+            return true
+        case .paused, .checking, .syncing, .connected, .ready, .needsAttention:
+            return false
         }
     }
 
@@ -1104,10 +1113,10 @@ private struct ProviderEditorView: View {
         switch provider.kind {
         case .codex:
             model.refresh(providerID: provider.id)
-        case .cursorPersonal where model.cursorPersonalSessionState != .connected:
+        case .cursorPersonal where personalSessionNeedsSignIn:
             isExpanded = true
             model.connectCursorPersonal(using: provider.cursorPersonal?.usagePageURL ?? CursorPersonalSettings().usagePageURL)
-        case .claudePersonal where model.claudePersonalSessionState != .connected:
+        case .claudePersonal where personalSessionNeedsSignIn:
             isExpanded = true
             model.connectClaudePersonal(using: provider.claudePersonal?.usagePageURL ?? ClaudePersonalSettings().usagePageURL)
         case .cursorPersonal, .cursorAdmin, .claudePersonal, .anthropicAdmin, .manual, .customREST:

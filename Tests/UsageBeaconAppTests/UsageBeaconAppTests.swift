@@ -125,6 +125,57 @@ struct UsageBeaconAppTests {
     }
 
     @Test
+    func personalProviderStatusUsesSuccessfulSnapshotWhenSessionProbeIsUnknown() {
+        let provider = StoredProvider(kind: .cursorPersonal)
+        var snapshot = ProviderSnapshotState.placeholder(from: provider)
+        snapshot.lastUpdatedAt = Date()
+        snapshot.usageWindows = [
+            UsageWindowSnapshot(
+                kind: .sevenDay,
+                title: "Weekly",
+                usedPercent: 42,
+                resetsAt: nil
+            )
+        ]
+
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .unknown,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .connected)
+
+        var loadingSnapshot = snapshot
+        loadingSnapshot.isLoading = true
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: loadingSnapshot,
+            cursorSession: .unknown,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .checking)
+
+        var failedSnapshot = snapshot
+        failedSnapshot.errorMessage = "Cursor usage is temporarily unavailable."
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: failedSnapshot,
+            cursorSession: .unknown,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .needsAttention)
+
+        #expect(ProviderSetupStatus.resolve(
+            provider: provider,
+            snapshot: snapshot,
+            cursorSession: .disconnected,
+            claudeSession: .unknown,
+            hasSecret: false
+        ) == .signInRequired)
+    }
+
+    @Test
     func corruptConfigurationIsPreservedAndNeverReplacedWithDemoData() throws {
         let fileManager = FileManager.default
         let directory = fileManager.temporaryDirectory

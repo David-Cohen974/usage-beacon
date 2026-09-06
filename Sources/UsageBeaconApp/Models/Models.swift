@@ -685,6 +685,7 @@ enum ProviderSetupStatus: Equatable {
         }
         if snapshot?.isLoading == true { return .checking }
         if snapshot?.errorMessage != nil { return .needsAttention }
+        if snapshot?.lastUpdatedAt != nil { return .connected }
         return .setupRequired
     }
 }
