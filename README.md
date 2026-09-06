@@ -19,7 +19,7 @@ It is distributed under the MIT License.
 ## Features
 
 - Native SwiftUI macOS interface with menu bar, WidgetKit, and floating HUD modes
-- Optional compact provider meters with remaining percentages in the macOS menu bar
+- Optional compact provider meter with a remaining percentage in the macOS menu bar
 - Small, medium, and large widgets for Notification Center or the desktop
 - System-wide ⇧⌘U shortcut to show or hide the floating HUD
 - Launch-at-login support plus automatic HUD recovery after sleep and display changes

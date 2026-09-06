@@ -409,6 +409,39 @@ struct UsageBeaconAppTests {
     }
 
     @Test
+    @MainActor
+    func menuBarProviderSelectionIsExclusiveAndNormalizesLegacyConfiguration() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? fileManager.removeItem(at: directory) }
+        let store = ConfigurationStore(
+            fileURL: directory.appending(path: "configuration.json"),
+            fileManager: fileManager
+        )
+        let firstProvider = StoredProvider(kind: .cursorPersonal)
+        let secondProvider = StoredProvider(kind: .claudePersonal)
+        var configuration = AppConfiguration.empty
+        configuration.providers = [firstProvider, secondProvider]
+        configuration.settings.menuBarProviderIDs = [firstProvider.id, secondProvider.id]
+        try store.save(configuration)
+
+        let model = AppModel(
+            configurationStore: store,
+            secretStore: InMemorySecretStore(),
+            launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            autoStart: false
+        )
+
+        #expect(model.configuration.settings.menuBarProviderIDs == [firstProvider.id])
+
+        model.setProviderMenuBarVisibility(secondProvider.id, isVisible: true)
+
+        #expect(model.configuration.settings.menuBarProviderIDs == [secondProvider.id])
+        #expect(store.load().settings.menuBarProviderIDs == [secondProvider.id])
+    }
+
+    @Test
     func telemetryUsesOnlyCoarseFailureAndDurationCategories() {
         #expect(TelemetryFailureCategory(error: ProviderFailure.authentication("secret detail")) == .authentication)
         #expect(TelemetryFailureCategory(error: ProviderFailure.httpStatus(code: 429, message: "body", retryAfterSeconds: nil)) == .rateLimit)
