@@ -65,7 +65,13 @@ final class AppModel: ObservableObject {
         self.calendarAccessState = workingDayService.authorizationState
         self.calendarErrorMessage = nil
 
-        let configuration = configurationStore.load()
+        var configuration = configurationStore.load()
+        if configuration.settings.menuBarProviderIDs.count > 1 {
+            let selectedProviderID = configuration.providers.first(where: {
+                configuration.settings.menuBarProviderIDs.contains($0.id)
+            })?.id
+            configuration.settings.menuBarProviderIDs = selectedProviderID.map { [$0] } ?? []
+        }
         self.configuration = configuration
         telemetry.updateConsent(
             crashReportsEnabled: configuration.settings.crashReportingEnabled,
@@ -302,7 +308,7 @@ final class AppModel: ObservableObject {
             return
         }
         if isVisible {
-            configuration.settings.menuBarProviderIDs.insert(providerID)
+            configuration.settings.menuBarProviderIDs = [providerID]
         } else {
             configuration.settings.menuBarProviderIDs.remove(providerID)
         }

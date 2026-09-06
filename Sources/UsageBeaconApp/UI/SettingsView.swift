@@ -373,10 +373,10 @@ struct SettingsView: View {
             }
             Divider().overlay(BeaconPalette.outline)
             VStack(alignment: .leading, spacing: 10) {
-                Label("Provider meters in the menu bar", systemImage: "menubar.rectangle")
+                Label("Provider meter in the menu bar", systemImage: "menubar.rectangle")
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundStyle(BeaconPalette.ink)
-                Text("Show a compact provider mark and remaining percentage beside the UsageBeacon icon. Values follow the same automatic refresh schedule.")
+                Text("Choose one provider to show beside the UsageBeacon icon. Its remaining percentage follows the same automatic refresh schedule.")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)

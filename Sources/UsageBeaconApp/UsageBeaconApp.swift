@@ -125,10 +125,10 @@ private struct UsageBeaconMenuBarLabel: View {
     @ObservedObject var model: AppModel
 
     private var visibleSnapshots: [ProviderSnapshotState] {
-        model.orderedSnapshots.filter { snapshot in
+        Array(model.orderedSnapshots.filter { snapshot in
             snapshot.isEnabled
                 && model.configuration.settings.menuBarProviderIDs.contains(snapshot.id)
-        }
+        }.prefix(1))
     }
 
     var body: some View {
