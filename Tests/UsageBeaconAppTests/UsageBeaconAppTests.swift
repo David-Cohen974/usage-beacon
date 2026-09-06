@@ -4,6 +4,16 @@ import Testing
 import UsageBeaconShared
 
 struct UsageBeaconAppTests {
+    @MainActor
+    @Test
+    func updaterCacheBustsEveryAppcastCheck() {
+        let url = UpdaterController.cacheBustedFeedURL(
+            now: Date(timeIntervalSince1970: 1_788_694_308)
+        )
+
+        #expect(url == "https://david-cohen974.github.io/usage-beacon/appcast.xml?check=1788694308")
+    }
+
     @Test
     func widgetSnapshotRoundTripsThroughCodable() throws {
         let provider = UsageBeaconWidgetProvider(

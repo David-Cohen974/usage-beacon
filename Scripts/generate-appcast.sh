@@ -31,7 +31,7 @@ arguments=(
   --embed-release-notes
   --full-release-notes-url "https://david-cohen974.github.io/usage-beacon/changelog/"
   --link "https://david-cohen974.github.io/usage-beacon/"
-  --maximum-versions 10
+  --maximum-versions 1
   --maximum-deltas 5
   --versions "$build_number"
 )
@@ -64,6 +64,19 @@ if ! grep -q 'sparkle:edSignature=' "$generated_appcast"; then
 fi
 if ! grep -q 'sparkle-signatures:' "$generated_appcast"; then
   echo "Generated appcast is not signed." >&2
+  exit 1
+fi
+
+first_build="$(xmllint --xpath 'string((//*[local-name()="item"])[1]/*[local-name()="version"])' "$generated_appcast")"
+if [[ "$first_build" != "$build_number" ]]; then
+  echo "Generated appcast offers build $first_build before newest build $build_number." >&2
+  exit 1
+fi
+
+stable_items="$(xmllint --xpath 'count(//*[local-name()="item" and not(*[local-name()="channel"])])' "$generated_appcast")"
+beta_items="$(xmllint --xpath 'count(//*[local-name()="item" and *[local-name()="channel" and text()="beta"]])' "$generated_appcast")"
+if (( stable_items > 1 || beta_items > 1 )); then
+  echo "Generated appcast must retain only the newest release in each channel." >&2
   exit 1
 fi
 

@@ -30,7 +30,10 @@ curl --fail --location --silent --show-error "$appcast_url" --output "$appcast_p
 xmllint --noout "$appcast_path"
 grep -q 'sparkle:edSignature=' "$appcast_path"
 grep -q 'sparkle-signatures:' "$appcast_path"
-grep -Eq "<sparkle:shortVersionString>$version</sparkle:shortVersionString>|sparkle:shortVersionString=\"$version\"" "$appcast_path"
+stable_item_count="$(xmllint --xpath 'count(//*[local-name()="item" and not(*[local-name()="channel"])])' "$appcast_path")"
+latest_stable_version="$(xmllint --xpath 'string((//*[local-name()="item" and not(*[local-name()="channel"])])[1]/*[local-name()="shortVersionString"])' "$appcast_path")"
+test "$stable_item_count" = "1"
+test "$latest_stable_version" = "$version"
 
 curl --fail --location --silent --show-error "$download_url" --output "$dmg_path"
 xcrun stapler validate "$dmg_path"
