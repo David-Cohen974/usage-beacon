@@ -87,8 +87,29 @@ enum ProviderKind: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum AppAppearance: String, Codable, CaseIterable, Identifiable {
+    case system
+    case light
+    case dark
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system:
+            return "System"
+        case .light:
+            return "Light"
+        case .dark:
+            return "Dark"
+        }
+    }
+}
+
 struct GlobalSettings: Codable, Equatable {
     var showFloatingHUD: Bool = true
+    var appearance: AppAppearance = .system
+    var menuBarProviderIDs: Set<UUID> = []
     var launchAtLogin: Bool = true
     var crashReportingEnabled: Bool = true
     var usageAnalyticsEnabled: Bool = false
@@ -102,6 +123,8 @@ struct GlobalSettings: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case showFloatingHUD
+        case appearance
+        case menuBarProviderIDs
         case launchAtLogin
         case crashReportingEnabled
         case usageAnalyticsEnabled
@@ -119,6 +142,8 @@ struct GlobalSettings: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         showFloatingHUD = try container.decodeIfPresent(Bool.self, forKey: .showFloatingHUD) ?? true
+        appearance = try container.decodeIfPresent(AppAppearance.self, forKey: .appearance) ?? .system
+        menuBarProviderIDs = try container.decodeIfPresent(Set<UUID>.self, forKey: .menuBarProviderIDs) ?? []
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
         // Missing keys identify a configuration written before telemetry existed. Keep
         // those users opted out; only a genuinely new configuration uses the defaults above.
@@ -141,6 +166,8 @@ struct GlobalSettings: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(showFloatingHUD, forKey: .showFloatingHUD)
+        try container.encode(appearance, forKey: .appearance)
+        try container.encode(menuBarProviderIDs, forKey: .menuBarProviderIDs)
         try container.encode(launchAtLogin, forKey: .launchAtLogin)
         try container.encode(crashReportingEnabled, forKey: .crashReportingEnabled)
         try container.encode(usageAnalyticsEnabled, forKey: .usageAnalyticsEnabled)
@@ -505,6 +532,47 @@ struct ProviderSnapshotState: Identifiable, Equatable {
             errorMessage: nil,
             usageWindows: []
         )
+    }
+
+    var primaryUsageWindow: UsageWindowSnapshot? {
+        usageWindows.first(where: { $0.kind == .sevenDay }) ?? usageWindows.first
+    }
+
+    var utilizationRatio: Double? {
+        if let primaryUsageWindow {
+            return min(max(primaryUsageWindow.usedPercent.doubleValue / 100, 0), 1)
+        }
+
+        guard
+            let monthlyBudgetUSD,
+            monthlyBudgetUSD > 0,
+            let spentUSD
+        else {
+            return nil
+        }
+        return min(max((spentUSD / monthlyBudgetUSD).doubleValue, 0), 1)
+    }
+
+    var menuBarStatusText: String {
+        if errorMessage != nil {
+            return "!"
+        }
+        if let utilizationRatio {
+            let remainingPercent = Int(((1 - utilizationRatio) * 100).rounded())
+            return "\(remainingPercent)%"
+        }
+        return isLoading ? "…" : "—"
+    }
+
+    var menuBarAccessibilityValue: String {
+        if errorMessage != nil {
+            return "Needs attention"
+        }
+        if let utilizationRatio {
+            let remainingPercent = Int(((1 - utilizationRatio) * 100).rounded())
+            return "\(remainingPercent) percent remaining"
+        }
+        return isLoading ? "Refreshing" : "No usage data"
     }
 }
 

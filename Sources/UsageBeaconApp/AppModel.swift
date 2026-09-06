@@ -231,6 +231,7 @@ final class AppModel: ObservableObject {
         let removedProvider = configuration.providers.first(where: { $0.id == id })
         let secretAccount = removedProvider?.secretAccount
         configuration.providers.removeAll { $0.id == id }
+        configuration.settings.menuBarProviderIDs.remove(id)
         if let removedProvider {
             telemetry.track(.providerRemoved(kind: removedProvider.kind))
         }
@@ -288,6 +289,24 @@ final class AppModel: ObservableObject {
         saveConfiguration()
         updateFloatingHUD()
         telemetry.track(.featureChanged(feature: .floatingHUD, enabled: enabled))
+    }
+
+    func setAppearance(_ appearance: AppAppearance) {
+        configuration.settings.appearance = appearance
+        saveConfiguration()
+        updateFloatingHUD()
+    }
+
+    func setProviderMenuBarVisibility(_ providerID: UUID, isVisible: Bool) {
+        guard configuration.providers.contains(where: { $0.id == providerID }) else {
+            return
+        }
+        if isVisible {
+            configuration.settings.menuBarProviderIDs.insert(providerID)
+        } else {
+            configuration.settings.menuBarProviderIDs.remove(providerID)
+        }
+        saveConfiguration()
     }
 
     func toggleFloatingHUD() {
@@ -853,7 +872,8 @@ final class AppModel: ObservableObject {
         let snapshots = orderedSnapshots.filter(\.isEnabled)
         floatingPanelController.update(
             with: snapshots,
-            visible: configuration.settings.showFloatingHUD
+            visible: configuration.settings.showFloatingHUD,
+            appearance: configuration.settings.appearance
         )
         publishWidgetSnapshot(from: snapshots)
     }

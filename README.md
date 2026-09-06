@@ -19,11 +19,12 @@ It is distributed under the MIT License.
 ## Features
 
 - Native SwiftUI macOS interface with menu bar, WidgetKit, and floating HUD modes
+- Optional compact provider meters with remaining percentages in the macOS menu bar
 - Small, medium, and large widgets for Notification Center or the desktop
 - System-wide ⇧⌘U shortcut to show or hide the floating HUD
 - Launch-at-login support plus automatic HUD recovery after sleep and display changes
 - Calendar-aware per-working-day budget math
-- Dark mode support
+- System, light, and dark appearance controls
 - Retry and backoff protection around provider refreshes
 - Secure secret storage in the macOS Keychain
 - Extensible provider model for adding new vendors or custom endpoints
