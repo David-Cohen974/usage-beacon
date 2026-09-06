@@ -15,7 +15,11 @@ final class FloatingPanelController {
     private var hasPositionedPanel = false
     private var collapsedSize = NSSize(width: 220, height: 44)
 
-    func update(with snapshots: [ProviderSnapshotState], visible: Bool) {
+    func update(
+        with snapshots: [ProviderSnapshotState],
+        visible: Bool,
+        appearance: AppAppearance
+    ) {
         if !visible || snapshots.isEmpty {
             panel?.orderOut(nil)
             return
@@ -26,7 +30,11 @@ final class FloatingPanelController {
             hudState.selectedProviderID = nil
         }
 
-        let content = FloatingHUDView(snapshots: snapshots, state: hudState) { [weak self] isExpanded in
+        let content = FloatingHUDView(
+            snapshots: snapshots,
+            state: hudState,
+            appearance: appearance
+        ) { [weak self] isExpanded in
             self?.resizePanel(isExpanded: isExpanded)
         }
         let panel = panel ?? makePanel()

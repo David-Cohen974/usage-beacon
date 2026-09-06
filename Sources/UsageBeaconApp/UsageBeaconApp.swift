@@ -95,12 +95,10 @@ struct UsageBeaconApp: App {
                 DebugCommandView(command: debugCommand)
             } else {
                 MenuBarRootView(model: model)
+                    .preferredColorScheme(model.configuration.settings.appearance.colorScheme)
             }
         } label: {
-            Image(systemName: "dot.radiowaves.left.and.right")
-                .font(.system(size: 13, weight: .semibold))
-                .symbolRenderingMode(.monochrome)
-                .accessibilityLabel("UsageBeacon")
+            UsageBeaconMenuBarLabel(model: model)
         }
         .menuBarExtraStyle(.window)
 
@@ -109,6 +107,7 @@ struct UsageBeaconApp: App {
                 DebugCommandView(command: debugCommand)
             } else {
                 SettingsView(model: model, updater: updater)
+                    .preferredColorScheme(model.configuration.settings.appearance.colorScheme)
             }
         }
         .commands {
@@ -119,6 +118,39 @@ struct UsageBeaconApp: App {
                 .disabled(!updater.canCheckForUpdates)
             }
         }
+    }
+}
+
+private struct UsageBeaconMenuBarLabel: View {
+    @ObservedObject var model: AppModel
+
+    private var visibleSnapshots: [ProviderSnapshotState] {
+        model.orderedSnapshots.filter { snapshot in
+            snapshot.isEnabled
+                && model.configuration.settings.menuBarProviderIDs.contains(snapshot.id)
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "dot.radiowaves.left.and.right")
+                .font(.system(size: 13, weight: .semibold))
+
+            ForEach(visibleSnapshots) { snapshot in
+                HStack(spacing: 2) {
+                    Image(systemName: snapshot.providerKind.menuBarSymbolName)
+                    Text(snapshot.menuBarStatusText)
+                        .monospacedDigit()
+                }
+                .font(.system(size: 11, weight: .semibold))
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(snapshot.providerName)
+                .accessibilityValue(snapshot.menuBarAccessibilityValue)
+            }
+        }
+        .symbolRenderingMode(.monochrome)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("UsageBeacon")
     }
 }
 

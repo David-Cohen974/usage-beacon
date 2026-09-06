@@ -41,6 +41,8 @@ struct UsageBeaconAppTests {
 
         #expect(configuration.providers.isEmpty)
         #expect(configuration.settings.refreshIntervalMinutes == 1)
+        #expect(configuration.settings.appearance == .system)
+        #expect(configuration.settings.menuBarProviderIDs.isEmpty)
         #expect(configuration.settings.crashReportingEnabled)
         #expect(configuration.settings.usageAnalyticsEnabled == false)
         #expect(configuration.settings.telemetryDisclosureAcknowledged == false)
@@ -317,6 +319,93 @@ struct UsageBeaconAppTests {
         #expect(settings.workingWeekSchedule == .systemDefault)
         #expect(settings.customWorkingWeekdays == [2, 3, 4, 5, 6])
         #expect(settings.selectedCalendarIDs == ["cal-1"])
+        #expect(settings.appearance == .system)
+        #expect(settings.menuBarProviderIDs.isEmpty)
+    }
+
+    @Test
+    func displaySettingsRoundTrip() throws {
+        let firstProviderID = UUID()
+        let secondProviderID = UUID()
+        var settings = GlobalSettings()
+        settings.appearance = .dark
+        settings.menuBarProviderIDs = [firstProviderID, secondProviderID]
+
+        let encoded = try JSONEncoder().encode(settings)
+        let decoded = try JSONDecoder().decode(GlobalSettings.self, from: encoded)
+
+        #expect(decoded.appearance == .dark)
+        #expect(decoded.menuBarProviderIDs == [firstProviderID, secondProviderID])
+    }
+
+    @Test
+    func menuBarStatusShowsRemainingUsageAndProviderState() {
+        var usageSnapshot = ProviderSnapshotState.placeholder(
+            from: StoredProvider(kind: .codex)
+        )
+        usageSnapshot.usageWindows = [
+            UsageWindowSnapshot(
+                kind: .sevenDay,
+                title: "7-day window",
+                usedPercent: 42,
+                resetsAt: nil
+            )
+        ]
+        #expect(usageSnapshot.menuBarStatusText == "58%")
+        #expect(usageSnapshot.menuBarAccessibilityValue == "58 percent remaining")
+
+        var budgetSnapshot = ProviderSnapshotState.placeholder(
+            from: StoredProvider(kind: .manual)
+        )
+        budgetSnapshot.monthlyBudgetUSD = 200
+        budgetSnapshot.spentUSD = 50
+        #expect(budgetSnapshot.menuBarStatusText == "75%")
+
+        budgetSnapshot.errorMessage = "offline"
+        #expect(budgetSnapshot.menuBarStatusText == "!")
+        #expect(budgetSnapshot.menuBarAccessibilityValue == "Needs attention")
+
+        var loadingSnapshot = ProviderSnapshotState.placeholder(
+            from: StoredProvider(kind: .cursorPersonal)
+        )
+        loadingSnapshot.isLoading = true
+        #expect(loadingSnapshot.menuBarStatusText == "…")
+        #expect(loadingSnapshot.menuBarAccessibilityValue == "Refreshing")
+    }
+
+    @Test
+    @MainActor
+    func displayPreferencesPersistAndRemovedProvidersLeaveMenuBar() throws {
+        let fileManager = FileManager.default
+        let directory = fileManager.temporaryDirectory
+            .appending(path: "UsageBeaconTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        defer { try? fileManager.removeItem(at: directory) }
+        let store = ConfigurationStore(
+            fileURL: directory.appending(path: "configuration.json"),
+            fileManager: fileManager
+        )
+        let provider = StoredProvider(kind: .codex)
+        var configuration = AppConfiguration.empty
+        configuration.providers = [provider]
+        try store.save(configuration)
+        let model = AppModel(
+            configurationStore: store,
+            secretStore: InMemorySecretStore(),
+            launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            autoStart: false
+        )
+
+        model.setAppearance(.light)
+        model.setProviderMenuBarVisibility(provider.id, isVisible: true)
+
+        var persisted = store.load()
+        #expect(persisted.settings.appearance == .light)
+        #expect(persisted.settings.menuBarProviderIDs == [provider.id])
+
+        model.removeProvider(id: provider.id)
+        persisted = store.load()
+        #expect(persisted.providers.isEmpty)
+        #expect(persisted.settings.menuBarProviderIDs.isEmpty)
     }
 
     @Test

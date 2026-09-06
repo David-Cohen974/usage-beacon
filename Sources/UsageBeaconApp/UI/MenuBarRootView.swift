@@ -552,6 +552,7 @@ struct ProviderCardView: View {
 struct FloatingHUDView: View {
     let snapshots: [ProviderSnapshotState]
     @ObservedObject var state: FloatingHUDState
+    let appearance: AppAppearance
     let onExpansionChange: (Bool) -> Void
 
     private var primary: ProviderSnapshotState? {
@@ -579,6 +580,7 @@ struct FloatingHUDView: View {
         )
         .shadow(color: BeaconPalette.shadow.opacity(0.55), radius: 8, x: 0, y: 4)
         .frame(width: state.isExpanded ? 250 : collapsedWidth, alignment: .leading)
+        .preferredColorScheme(appearance.colorScheme)
     }
 
     private var collapsedRow: some View {

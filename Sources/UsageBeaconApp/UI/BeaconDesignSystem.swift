@@ -1,6 +1,19 @@
 import AppKit
 import SwiftUI
 
+extension AppAppearance {
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return .light
+        case .dark:
+            return .dark
+        }
+    }
+}
+
 extension ProviderSetupStatus {
     var colors: [Color] {
         switch self {
@@ -107,28 +120,24 @@ extension ProviderKind {
             return [BeaconPalette.cyan, BeaconPalette.teal]
         }
     }
+
+    var menuBarSymbolName: String {
+        switch self {
+        case .codex:
+            return "chevron.left.forwardslash.chevron.right"
+        case .cursorPersonal, .cursorAdmin:
+            return "cursorarrow.rays"
+        case .claudePersonal, .anthropicAdmin:
+            return "sparkle"
+        case .manual:
+            return "slider.horizontal.3"
+        case .customREST:
+            return "network"
+        }
+    }
 }
 
 extension ProviderSnapshotState {
-    var primaryUsageWindow: UsageWindowSnapshot? {
-        usageWindows.first(where: { $0.kind == .sevenDay }) ?? usageWindows.first
-    }
-
-    var utilizationRatio: Double? {
-        if let primaryUsageWindow {
-            return min(max(primaryUsageWindow.usedPercent.doubleValue / 100, 0), 1)
-        }
-
-        guard
-            let monthlyBudgetUSD,
-            monthlyBudgetUSD > 0,
-            let spentUSD
-        else {
-            return nil
-        }
-        return min(max((spentUSD / monthlyBudgetUSD).doubleValue, 0), 1)
-    }
-
     var accentColors: [Color] {
         if errorMessage != nil {
             return [BeaconPalette.danger, BeaconPalette.coral]

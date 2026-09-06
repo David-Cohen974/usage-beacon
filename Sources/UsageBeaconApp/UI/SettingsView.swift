@@ -346,6 +346,77 @@ struct SettingsView: View {
     private var displaySection: some View {
         VStack(alignment: .leading, spacing: 14) {
             sectionHeading("Display", subtitle: "Choose the glanceable surface that works best for you.")
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Label("Appearance", systemImage: "circle.lefthalf.filled")
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.ink)
+                    Text("Follow macOS or keep UsageBeacon light or dark.")
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                }
+                Spacer()
+                Picker(
+                    "Appearance",
+                    selection: Binding(
+                        get: { model.configuration.settings.appearance },
+                        set: { model.setAppearance($0) }
+                    )
+                ) {
+                    ForEach(AppAppearance.allCases) { appearance in
+                        Text(appearance.title).tag(appearance)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .frame(width: 230)
+            }
+            Divider().overlay(BeaconPalette.outline)
+            VStack(alignment: .leading, spacing: 10) {
+                Label("Provider meters in the menu bar", systemImage: "menubar.rectangle")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(BeaconPalette.ink)
+                Text("Show a compact provider mark and remaining percentage beside the UsageBeacon icon. Values follow the same automatic refresh schedule.")
+                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if model.configuration.providers.isEmpty {
+                    Text("Add a provider to enable a menu-bar meter.")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                } else {
+                    ForEach(model.configuration.providers) { provider in
+                        let snapshot = model.orderedSnapshots.first(where: { $0.id == provider.id })
+                        Toggle(
+                            isOn: Binding(
+                                get: {
+                                    model.configuration.settings.menuBarProviderIDs.contains(provider.id)
+                                },
+                                set: {
+                                    model.setProviderMenuBarVisibility(provider.id, isVisible: $0)
+                                }
+                            )
+                        ) {
+                            HStack(spacing: 8) {
+                                Image(systemName: provider.kind.menuBarSymbolName)
+                                    .frame(width: 16)
+                                Text(provider.displayName)
+                                    .lineLimit(1)
+                                Spacer()
+                                Text(snapshot?.menuBarStatusText ?? "—")
+                                    .monospacedDigit()
+                                    .foregroundStyle(BeaconPalette.mutedInk)
+                            }
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(BeaconPalette.ink)
+                        }
+                        .toggleStyle(.switch)
+                        .disabled(provider.isEnabled == false)
+                    }
+                }
+            }
+            Divider().overlay(BeaconPalette.outline)
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "rectangle.grid.1x2.fill")
                     .font(.system(size: 18, weight: .semibold))
