@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.3.0",
+    "tag": "v1.3.0",
+    "name": "UsageBeacon 1.3.0",
+    "releaseDate": "2026-09-08T12:18:22Z",
+    "prerelease": false,
+    "notes": "UsageBeacon 1.3.0 brings a cleaner interface and more reliable budget tracking.\n\n- A scrollable menu with readable amounts, persistent controls, and simpler provider rows.\n- Organized Settings pages with native controls and widget-inspired gradients in light and dark mode.\n- More reliable widget refreshes through an atomic shared snapshot.\n- Workday budgets recalculate when schedules or calendars change, without waiting for a provider request.\n- Choose whether a calendar excludes busy all-day events, all-day time off, or Israel full holidays only. Minor fasts and holiday eves remain workdays under the full-holiday rule; overlapping weekends and leave are not deducted twice.\n- Providers refresh independently, and failed refreshes retain the last successful timestamp.\n\nExisting calendar selections retain their previous rule. Review Settings \u2192 Workdays & Calendars to choose the appropriate policy for each calendar.\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.3.0"
+  },
+  {
     "version": "1.2.8",
     "tag": "v1.2.8",
     "name": "UsageBeacon 1.2.8",

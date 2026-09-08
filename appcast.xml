@@ -9,31 +9,36 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
         <description>Signed updates for UsageBeacon.</description>
         <language>en</language>
         <item>
-            <title>1.2.8</title>
-            <pubDate>Sun, 06 Sep 2026 12:18:19 +0000</pubDate>
+            <title>1.3.0</title>
+            <pubDate>Tue, 08 Sep 2026 12:16:41 +0000</pubDate>
             <link>https://david-cohen974.github.io/usage-beacon/</link>
             <sparkle:fullReleaseNotesLink>https://david-cohen974.github.io/usage-beacon/changelog/</sparkle:fullReleaseNotesLink>
-            <sparkle:version>100012</sparkle:version>
-            <sparkle:shortVersionString>1.2.8</sparkle:shortVersionString>
+            <sparkle:version>100013</sparkle:version>
+            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[## What's Changed
-* Fix Cursor status and direct latest updates for 1.2.8 by @David-Cohen974 in https://github.com/David-Cohen974/usage-beacon/pull/19
+            <description sparkle:format="markdown"><![CDATA[UsageBeacon 1.3.0 brings a cleaner interface and more reliable budget tracking.
 
+- A scrollable menu with readable amounts, persistent controls, and simpler provider rows.
+- Organized Settings pages with native controls and widget-inspired gradients in light and dark mode.
+- More reliable widget refreshes through an atomic shared snapshot.
+- Workday budgets recalculate when schedules or calendars change, without waiting for a provider request.
+- Choose whether a calendar excludes busy all-day events, all-day time off, or Israel full holidays only. Minor fasts and holiday eves remain workdays under the full-holiday rule; overlapping weekends and leave are not deducted twice.
+- Providers refresh independently, and failed refreshes retain the last successful timestamp.
 
-**Full Changelog**: https://github.com/David-Cohen974/usage-beacon/compare/v1.2.7...v1.2.8
+Existing calendar selections retain their previous rule. Review Settings → Workdays & Calendars to choose the appropriate policy for each calendar.
 ]]></description>
-            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.8/UsageBeacon-1.2.8.zip" length="7630478" type="application/octet-stream" sparkle:edSignature="iVREM5BTXv8w7uHwkJvTmqIfN0Pbh1zzgB9xmhxjeKZhugEwwchPMSbCXjDaoQrDIXyfb7Gwf3ORgqAkeyknDA=="/>
+            <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.3.0/UsageBeacon-1.3.0.zip" length="7703024" type="application/octet-stream" sparkle:edSignature="6cYt3TFrKS2JrQY4yl31Q8SPTvGEF9spUaOAaIrwRCRnfbf/wKjPVstogWo8yKjjzUgIB3yRZ5e/IIm75X3EBA=="/>
             <sparkle:deltas>
-                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.8/UsageBeacon100012-100011.delta" sparkle:deltaFrom="100011" length="461722" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="ey62pzkhUbTb46sL3A7jyK+SuNeJF/MrfFl1A0v7Au1jac1r5DwoZVizmCdixkDtZmpU48ODpIjirkjmQMzFBQ=="/>
-                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.8/UsageBeacon100012-100010.delta" sparkle:deltaFrom="100010" length="560362" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="wbSEC0JlZ+2BseyXQutFo76z1mUtyDT28yVe8/RlLKTO66mgjliGsNPzuA3+mgQUSTvpNe/aK8GpYHX3AuACAQ=="/>
-                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.8/UsageBeacon100012-100009.delta" sparkle:deltaFrom="100009" length="883386" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="bbZle0lmzqfOmBUc+WVqBq+OzMolu9jlhk3O0Ui0dBLXxp4dYSqUrSKbhbluGMj70aNB2L13MpfgtHTimOhnAA=="/>
-                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.8/UsageBeacon100012-100008.delta" sparkle:deltaFrom="100008" length="964958" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="wIsokqnUSlKEWobOEB/gFwnpMx5C5B6xGrl7IfkRX7M08FHHsHrVecrMblImdO5+p8H3Xl3TuHfQIV+n8NgZAQ=="/>
-                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.2.8/UsageBeacon100012-100007.delta" sparkle:deltaFrom="100007" length="1167334" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="rPbcZFVqdPIB5NrTEEmB1sJHDDSPiHG+7PVHq7b30OsX7qPEOFkg+JucOrvf1dAV3UhvQ0wpKS2sIgVCgkYNBA=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.3.0/UsageBeacon100013-100012.delta" sparkle:deltaFrom="100012" length="1238394" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="zMhAo4Z2TrBzXI2IGhDwIjsgp/tERezwBUJZxmDg+5cfw5yohL4czRPvOxqge896zdRurwj2oqC6V7s7eQssCg=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.3.0/UsageBeacon100013-100011.delta" sparkle:deltaFrom="100011" length="1246718" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="PPZNvstK5KM1lJXzyJkmWrIpzKOYSos2fBcfXJCBbFfVcHYj4fcu39wcHt/XiI/Td2aRcGgtv0qxIRuZXCdaAA=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.3.0/UsageBeacon100013-100010.delta" sparkle:deltaFrom="100010" length="1248734" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="bKwS0swynqB93NyLH4L/Jq484pqfrhZhiSCwxSb6y5t2LvimbI5PwmNxjxqEFy/8MRfdGUECJaj7L8gKJwE9Cg=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.3.0/UsageBeacon100013-100009.delta" sparkle:deltaFrom="100009" length="1357250" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="aSLSjMDNdLn3Z6Ee0MB7kPFVKbeFYD9EnYVVmnlZ0ORbJ1MH+nuurpKt97++3/zoOrI3wcf0/e0kOroBuzodAw=="/>
+                <enclosure url="https://github.com/David-Cohen974/usage-beacon/releases/download/v1.3.0/UsageBeacon100013-100008.delta" sparkle:deltaFrom="100008" length="1417738" type="application/octet-stream" sparkle:deltaFromSparkleExecutableSize="980432" sparkle:deltaFromSparkleLocales="de,he,ar,el,ja,fa,uk" sparkle:edSignature="QbOXBW2bIYAemSIE5Fs3dc88UzVSwhg3010KrVqafZW4MPJhcEX5Apg3XJecC9Sa47jqQDG7aiJRG4SpKbEcCA=="/>
             </sparkle:deltas>
         </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: uMWfQtri5BeDoXwZ27kwpwEITrXG79DVQuJV3t7iqA+aDNUwqu0mnq2X/JAAIMUisU7bqPbrAci0m3uzakFrBQ==
-length: 3965
+edSignature: wndq1ea5T8S3wfJR3lWJNrDcZSxd4kvuYS3V95tE85SHxn2Fh73OytxGbwapwekf+DCVz09Jl2zi7xzahOkdBQ==
+length: 4653
 -->
