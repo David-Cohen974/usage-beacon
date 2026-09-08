@@ -55,19 +55,38 @@ public struct UsageBeaconWidgetSnapshot: Codable, Equatable, Sendable {
 }
 
 public enum UsageBeaconWidgetSnapshotStore {
+    public static func snapshotURL() throws -> URL {
+        guard let container = FileManager.default.containerURL(
+            forSecurityApplicationGroupIdentifier: UsageBeaconWidgetData.appGroupIdentifier
+        ) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        return container.appendingPathComponent("widget-snapshot.json")
+    }
+
     public static func save(_ snapshot: UsageBeaconWidgetSnapshot) throws {
+        try save(snapshot, to: snapshotURL())
+    }
+
+    public static func save(_ snapshot: UsageBeaconWidgetSnapshot, to url: URL) throws {
         let data = try JSONEncoder().encode(snapshot)
-        sharedDefaults.set(data, forKey: UsageBeaconWidgetData.snapshotKey)
+        // Commit the complete payload before asking the other process to reload.
+        try data.write(to: url, options: .atomic)
     }
 
     public static func load() -> UsageBeaconWidgetSnapshot? {
-        guard let data = sharedDefaults.data(forKey: UsageBeaconWidgetData.snapshotKey) else {
-            return nil
+        guard let url = try? snapshotURL() else { return nil }
+        if FileManager.default.fileExists(atPath: url.path) {
+            return load(from: url)
         }
+        // Read the old store only until the upgraded app publishes its first file.
+        guard let data = UserDefaults(suiteName: UsageBeaconWidgetData.appGroupIdentifier)?
+            .data(forKey: UsageBeaconWidgetData.snapshotKey) else { return nil }
         return try? JSONDecoder().decode(UsageBeaconWidgetSnapshot.self, from: data)
     }
 
-    private static var sharedDefaults: UserDefaults {
-        UserDefaults(suiteName: UsageBeaconWidgetData.appGroupIdentifier) ?? .standard
+    public static func load(from url: URL) -> UsageBeaconWidgetSnapshot? {
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return try? JSONDecoder().decode(UsageBeaconWidgetSnapshot.self, from: data)
     }
 }

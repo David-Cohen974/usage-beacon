@@ -185,3 +185,7 @@ Do not replace a public archive silently. Browsers, CDNs, and Sparkle may cache 
 - **Gatekeeper rejection:** download the DMG again, then run `spctl`, `codesign`, and `xcrun stapler validate` as shown in `Scripts/verify-distribution.sh`.
 - **Updater UI does not appear:** use Console.app and filter for `UsageBeacon` or `Sparkle`; Sparkle logs the feed, signature, extraction, permission, and relaunch failures in detail.
 - **Key lost or compromised:** stop releasing and follow Sparkle's documented Ed25519 key-rotation procedure. Do not merely replace `SUPublicEDKey` in a normal release.
+
+## Regression acceptance
+
+Complete and record the signed application checks in [docs/STABILITY.md](docs/STABILITY.md) before publishing. Extension presence alone does not verify widget refresh.

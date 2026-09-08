@@ -19,6 +19,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var launchAtLoginStatus: LaunchAtLoginStatus
     @Published private(set) var launchAtLoginErrorMessage: String?
 
+    private let widgetPublisher: (UsageBeaconWidgetSnapshot) throws -> Void
+    @Published private(set) var widgetSyncErrorMessage: String?
+
     private let configurationStore: ConfigurationStore
     private let secretStore: SecretStoring
     private let httpClient: HTTPClientProtocol
@@ -51,8 +54,13 @@ final class AppModel: ObservableObject {
         claudeDashboardSessionController: ClaudeDashboardSessionController = .shared,
         launchAtLoginController: LaunchAtLoginControlling = LaunchAtLoginController(),
         telemetry: TelemetryReporting = TelemetryController.shared,
+        widgetPublisher: @escaping (UsageBeaconWidgetSnapshot) throws -> Void = { snapshot in
+            try UsageBeaconWidgetSnapshotStore.save(snapshot)
+            WidgetCenter.shared.reloadTimelines(ofKind: UsageBeaconWidgetData.widgetKind)
+        },
         autoStart: Bool = true
     ) {
+        self.widgetPublisher = widgetPublisher
         self.configurationStore = configurationStore
         self.secretStore = secretStore
         self.httpClient = httpClient
@@ -124,7 +132,7 @@ final class AppModel: ObservableObject {
             }
 
             Task { @MainActor [weak self] in
-                await self?.performRefreshAll(force: false)
+                self?.recalculateWorkingDays()
             }
         }
 
@@ -380,13 +388,13 @@ final class AppModel: ObservableObject {
     func setWorkingDaysPerWeek(_ days: Int) {
         configuration.settings.workingDaysPerWeek = min(7, max(1, days))
         saveConfiguration()
-        refreshAll()
+        recalculateWorkingDays()
     }
 
     func setWorkingWeekSchedule(_ schedule: WorkingWeekSchedule) {
         configuration.settings.workingWeekSchedule = schedule
         saveConfiguration()
-        refreshAll()
+        recalculateWorkingDays()
     }
 
     func setCustomWorkingWeekday(_ weekday: Int, isSelected: Bool) {
@@ -403,7 +411,7 @@ final class AppModel: ObservableObject {
 
         configuration.settings.customWorkingWeekdays = GlobalSettings.normalizedCustomWorkingWeekdays(Array(weekdays))
         saveConfiguration()
-        refreshAll()
+        recalculateWorkingDays()
     }
 
     func setCustomWorkingWeekdays(_ weekdays: Set<Int>) {
@@ -412,13 +420,19 @@ final class AppModel: ObservableObject {
         configuration.settings.customWorkingWeekdays = normalized
         configuration.settings.workingDaysPerWeek = normalized.count
         saveConfiguration()
-        refreshAll()
+        recalculateWorkingDays()
     }
 
     func setCalendarAdjustmentsEnabled(_ enabled: Bool) {
         configuration.settings.useCalendarAdjustments = enabled
         saveConfiguration()
-        refreshAll()
+        recalculateWorkingDays()
+    }
+
+    func setCalendarExclusionMode(_ mode: CalendarExclusionMode, calendarID: String) {
+        configuration.settings.calendarExclusionModes[calendarID] = mode
+        saveConfiguration()
+        recalculateWorkingDays()
     }
 
     func setCalendarSelected(_ calendarID: String, isSelected: Bool) {
@@ -430,7 +444,7 @@ final class AppModel: ObservableObject {
         }
         configuration.settings.selectedCalendarIDs = ids.sorted()
         saveConfiguration()
-        refreshAll()
+        recalculateWorkingDays()
     }
 
     func requestCalendarAccess() {
@@ -551,6 +565,7 @@ final class AppModel: ObservableObject {
     private func reloadCalendars(refreshStore: Bool = false) async {
         calendarAccessState = workingDayService.authorizationState
         availableCalendars = workingDayService.availableCalendars(refreshStore: refreshStore)
+        recalculateWorkingDays()
     }
 
     private func refreshCursorPersonalSessionStateIfNeeded() async {
@@ -569,13 +584,17 @@ final class AppModel: ObservableObject {
         _ = await claudeDashboardSessionController.refreshSessionState(pageURL: pageURL)
     }
 
-    private func performRefreshAll(force: Bool) async {
-        for provider in configuration.providers {
-            await performRefresh(providerID: provider.id, force: force)
+    func performRefreshAll(force: Bool) async {
+        recalculateWorkingDays()
+        let providerIDs = configuration.providers.map(\.id)
+        await withTaskGroup(of: Void.self) { group in
+            for id in providerIDs {
+                group.addTask { await self.performRefresh(providerID: id, force: force) }
+            }
         }
     }
 
-    private func performRefresh(providerID: UUID, force: Bool) async {
+    func performRefresh(providerID: UUID, force: Bool) async {
         guard let provider = configuration.providers.first(where: { $0.id == providerID }) else {
             return
         }
@@ -615,6 +634,10 @@ final class AppModel: ObservableObject {
                     httpClient: httpClient,
                     now: Date()
                 )
+                guard configuration.providers.first(where: { $0.id == provider.id }) == provider else {
+                    snapshotStates[provider.id]?.isLoading = false
+                    return
+                }
                 let enriched = enrich(rawSnapshot)
                 snapshotStates[provider.id] = enriched
                 telemetry.track(
@@ -641,6 +664,10 @@ final class AppModel: ObservableObject {
             }
         }
 
+        guard configuration.providers.first(where: { $0.id == provider.id }) == provider else {
+            snapshotStates[provider.id]?.isLoading = false
+            return
+        }
         var failed = snapshotStates[provider.id] ?? .placeholder(from: provider)
         failed.isLoading = false
         failed.errorMessage = userFacingErrorMessage(
@@ -648,7 +675,6 @@ final class AppModel: ObservableObject {
             error: finalError ?? ProviderFailure.network("Unknown refresh failure."),
             attemptsUsed: attemptsUsed
         )
-        failed.lastUpdatedAt = Date()
         snapshotStates[provider.id] = failed
         let reportedError = finalError ?? ProviderFailure.network("Unknown refresh failure.")
         let failureCategory = TelemetryFailureCategory(error: reportedError)
@@ -674,14 +700,7 @@ final class AppModel: ObservableObject {
     private func enrich(_ rawSnapshot: RawBudgetSnapshot) -> ProviderSnapshotState {
         let adjustedRemaining = rawSnapshot.remainingUSD
             ?? rawSnapshot.monthlyBudgetUSD.map { max($0 - rawSnapshot.spentUSD, 0) }
-        let workingDaysRemaining = configuration.settings.useCalendarAdjustments
-            ? workingDayService.remainingWorkingDays(
-                from: Date(),
-                until: rawSnapshot.billingCycleEnd,
-                selectedCalendarIDs: configuration.settings.selectedCalendarIDs,
-                settings: configuration.settings
-            )
-            : workingDaysUntilCycleEnd(rawSnapshot.billingCycleEnd)
+        let workingDaysRemaining = remainingWorkingDays(until: rawSnapshot.billingCycleEnd, now: Date())
         let perWorkingDay = BudgetMath.remainingPerWorkingDay(
             remainingUSD: adjustedRemaining,
             workingDaysRemaining: workingDaysRemaining
@@ -708,17 +727,25 @@ final class AppModel: ObservableObject {
         )
     }
 
-    private func workingDaysUntilCycleEnd(_ cycleEnd: Date) -> Int {
-        var calendar = Calendar.current
-        calendar.timeZone = .current
-        let start = calendar.startOfDay(for: Date())
-        let end = calendar.startOfDay(for: cycleEnd)
-        return WorkingDayService.remainingWorkingDays(
-            from: start,
-            until: end,
-            blockedDays: [],
-            settings: configuration.settings,
-            calendar: calendar
+    func recalculateWorkingDays(now: Date = Date()) {
+        for id in Array(snapshotStates.keys) {
+            guard var snapshot = snapshotStates[id], let end = snapshot.billingCycleEnd else { continue }
+            let days = remainingWorkingDays(until: end, now: now)
+            snapshot.workingDaysRemaining = days
+            snapshot.perWorkingDayRemainingUSD = BudgetMath.remainingPerWorkingDay(
+                remainingUSD: snapshot.remainingUSD, workingDaysRemaining: days
+            )
+            snapshotStates[id] = snapshot
+        }
+        updateFloatingHUD()
+    }
+
+    private func remainingWorkingDays(until end: Date, now: Date) -> Int {
+        workingDayService.remainingWorkingDays(
+            from: now, until: end,
+            selectedCalendarIDs: configuration.settings.useCalendarAdjustments
+                ? configuration.settings.selectedCalendarIDs : [],
+            settings: configuration.settings
         )
     }
 
@@ -886,7 +913,7 @@ final class AppModel: ObservableObject {
 
     private func publishWidgetSnapshot(from snapshots: [ProviderSnapshotState]? = nil) {
         let snapshots = snapshots ?? orderedSnapshots.filter(\.isEnabled)
-        let hasLoadedSnapshot = snapshots.contains { $0.lastUpdatedAt != nil }
+        let hasLoadedSnapshot = snapshots.contains { $0.lastUpdatedAt != nil || $0.errorMessage != nil }
         guard snapshots.isEmpty || hasLoadedSnapshot else {
             return
         }
@@ -930,10 +957,12 @@ final class AppModel: ObservableObject {
         }
 
         let newestUpdate = snapshots.compactMap(\.lastUpdatedAt).max() ?? Date()
-        try? UsageBeaconWidgetSnapshotStore.save(
-            UsageBeaconWidgetSnapshot(updatedAt: newestUpdate, providers: widgetProviders)
-        )
-        WidgetCenter.shared.reloadTimelines(ofKind: UsageBeaconWidgetData.widgetKind)
+        do {
+            try widgetPublisher(UsageBeaconWidgetSnapshot(updatedAt: newestUpdate, providers: widgetProviders))
+            widgetSyncErrorMessage = nil
+        } catch {
+            widgetSyncErrorMessage = "The desktop widget could not sync. Try refreshing UsageBeacon again."
+        }
     }
 
     private func userFacingErrorMessage(for provider: StoredProvider, error: Error, attemptsUsed: Int? = nil) -> String {

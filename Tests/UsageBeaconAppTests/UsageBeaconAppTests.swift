@@ -1,9 +1,166 @@
+import AppKit
+import SwiftUI
+
 import Foundation
 import Testing
 @testable import UsageBeaconApp
 import UsageBeaconShared
 
 struct UsageBeaconAppTests {
+    @Test
+    func zeroWorkdaysExplainWhyDailyBudgetIsUnavailable() {
+        var snapshot = ProviderSnapshotState.placeholder(from: StoredProvider(kind: .manual))
+        snapshot.workingDaysRemaining = 0
+        #expect(snapshot.workingDayBudgetDetail.contains("review schedule and calendars"))
+        snapshot.workingDaysRemaining = 17
+        #expect(snapshot.workingDayBudgetDetail == "17 days left")
+    }
+
+    @Test(arguments: [true, false])
+    @MainActor
+    func inFlightResponseCannotRestoreRemovedOrDisabledProvider(remove: Bool) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("configuration.json"))
+        var provider = StoredProvider(kind: .customREST)
+        provider.customREST?.endpointURL = "https://example.com/usage"
+        provider.customREST?.spentPath = "spent"
+        provider.customREST?.monthlyBudgetPath = "budget"
+        var configuration = AppConfiguration.empty
+        configuration.providers = [provider]
+        configuration.settings.showFloatingHUD = false
+        configuration.settings.crashReportingEnabled = false
+        try store.save(configuration)
+        let client = SuspendedHTTPClient()
+        let model = AppModel(
+            configurationStore: store, secretStore: InMemorySecretStore(), httpClient: client,
+            launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            telemetry: SpyTelemetryReporter(), widgetPublisher: { _ in }, autoStart: false
+        )
+        let refresh = Task { await model.performRefreshAll(force: true) }
+        await client.waitUntilStarted()
+        if remove {
+            model.removeProvider(id: provider.id)
+        } else {
+            provider.isEnabled = false
+            model.updateProvider(provider)
+        }
+        await client.finish()
+        await refresh.value
+        if remove {
+            #expect(model.snapshotStates[provider.id] == nil)
+        } else {
+            #expect(model.snapshotStates[provider.id]?.isEnabled == false)
+            #expect(model.snapshotStates[provider.id]?.isLoading == false)
+            #expect(model.snapshotStates[provider.id]?.remainingUSD == nil)
+        }
+    }
+
+    @Test
+    func widgetStoreReplacesPreviousSnapshotAndClearsRemovedProviders() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let first = UsageBeaconWidgetSnapshot(updatedAt: Date(timeIntervalSince1970: 100), providers: [])
+        let second = UsageBeaconWidgetSnapshot(updatedAt: Date(timeIntervalSince1970: 200), providers: [])
+        try UsageBeaconWidgetSnapshotStore.save(first, to: url)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: url) == first)
+        try UsageBeaconWidgetSnapshotStore.save(second, to: url)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: url) == second)
+        try Data("invalid".utf8).write(to: url)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: url) == nil)
+    }
+
+    @Test
+    @MainActor
+    func refreshPublishesChangedBudgetsAndScheduleWithoutNetwork() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("configuration.json"))
+        var provider = StoredProvider(kind: .manual)
+        provider.manual?.monthlyBudgetUSD = 700
+        provider.manual?.spentUSD = 100
+        var configuration = AppConfiguration.empty
+        configuration.providers = [provider]
+        configuration.settings.showFloatingHUD = false
+        configuration.settings.crashReportingEnabled = false
+        try store.save(configuration)
+        let widgetURL = directory.appendingPathComponent("snapshot.json")
+        let model = AppModel(
+            configurationStore: store, secretStore: InMemorySecretStore(),
+            launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            telemetry: SpyTelemetryReporter(),
+            widgetPublisher: { try UsageBeaconWidgetSnapshotStore.save($0, to: widgetURL) },
+            autoStart: false
+        )
+        await model.performRefreshAll(force: true)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: widgetURL)?.providers.first?.remainingUSD == 600)
+        provider.manual?.spentUSD = 200
+        model.updateProvider(provider)
+        await model.performRefreshAll(force: true)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: widgetURL)?.providers.first?.remainingUSD == 500)
+        let updatedAt = model.snapshotStates[provider.id]?.lastUpdatedAt
+        model.setWorkingWeekSchedule(.mondayStart)
+        model.setWorkingDaysPerWeek(7)
+        let cycleEnd = try #require(model.snapshotStates[provider.id]?.billingCycleEnd)
+        let referenceDay = cycleEnd.addingTimeInterval(-20 * 86_400)
+        model.recalculateWorkingDays(now: referenceDay)
+        let everyDayCount = try #require(model.snapshotStates[provider.id]?.workingDaysRemaining)
+        model.setWorkingDaysPerWeek(1)
+        model.recalculateWorkingDays(now: referenceDay)
+        let oneDayCount = try #require(model.snapshotStates[provider.id]?.workingDaysRemaining)
+        #expect(oneDayCount < everyDayCount)
+        #expect(model.snapshotStates[provider.id]?.lastUpdatedAt == updatedAt)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: widgetURL)?.providers.first?.perWorkingDayUSD
+            == model.snapshotStates[provider.id]?.perWorkingDayRemainingUSD?.doubleValue)
+        // Failure retains the age of the last successful data.
+        provider.manual = nil
+        model.updateProvider(provider)
+        await model.performRefreshAll(force: true)
+        #expect(model.snapshotStates[provider.id]?.errorMessage != nil)
+        #expect(model.snapshotStates[provider.id]?.lastUpdatedAt == updatedAt)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: widgetURL)?.providers.first?.hasError == true)
+        model.removeProvider(id: provider.id)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: widgetURL)?.providers.isEmpty == true)
+    }
+
+    @Test
+    @MainActor
+    func widgetWriteFailureIsReported() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("configuration.json"))
+        var configuration = AppConfiguration.empty
+        configuration.settings.showFloatingHUD = false
+        configuration.settings.crashReportingEnabled = false
+        try store.save(configuration)
+        let model = AppModel(
+            configurationStore: store, secretStore: InMemorySecretStore(),
+            launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            telemetry: SpyTelemetryReporter(),
+            widgetPublisher: { _ in throw CocoaError(.fileWriteNoPermission) }, autoStart: false
+        )
+        #expect(model.widgetSyncErrorMessage != nil)
+    }
+
+    @Test
+    @MainActor
+    func workingDayIncludesPartialResetDayButExcludesMidnightReset() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(secondsFromGMT: 0))
+        let morning = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 8, hour: 9)))
+        let midday = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 8, hour: 12)))
+        let service = WorkingDayService(calendar: calendar)
+        var settings = GlobalSettings()
+        settings.workingWeekSchedule = .mondayStart
+        settings.workingDaysPerWeek = 5
+        #expect(service.remainingWorkingDays(from: morning, until: midday,
+            selectedCalendarIDs: [], settings: settings) == 1)
+        #expect(service.remainingWorkingDays(from: midday, until: morning,
+            selectedCalendarIDs: [], settings: settings) == 0)
+        #expect(service.remainingWorkingDays(from: morning, until: calendar.startOfDay(for: morning),
+            selectedCalendarIDs: [], settings: settings) == 0)
+    }
+
     @MainActor
     @Test
     func updaterCacheBustsEveryAppcastCheck() {
@@ -453,6 +610,7 @@ struct UsageBeaconAppTests {
             configurationStore: store,
             secretStore: InMemorySecretStore(),
             launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            widgetPublisher: { _ in },
             autoStart: false
         )
 
@@ -491,6 +649,7 @@ struct UsageBeaconAppTests {
             configurationStore: store,
             secretStore: InMemorySecretStore(),
             launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            widgetPublisher: { _ in },
             autoStart: false
         )
 
@@ -527,6 +686,7 @@ struct UsageBeaconAppTests {
             configurationStore: store,
             launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
             telemetry: telemetry,
+            widgetPublisher: { _ in },
             autoStart: false
         )
 
@@ -566,6 +726,7 @@ struct UsageBeaconAppTests {
         let model = AppModel(
             configurationStore: store,
             launchAtLoginController: launchController,
+            widgetPublisher: { _ in },
             autoStart: false
         )
 
@@ -1510,4 +1671,104 @@ private func utcDate(year: Int, month: Int, day: Int) -> Date {
     components.month = month
     components.day = day
     return components.date!
+}
+
+private actor SuspendedHTTPClient: HTTPClientProtocol {
+    private var pending: CheckedContinuation<Void, Never>?
+    private var started: CheckedContinuation<Void, Never>?
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        await withCheckedContinuation { continuation in
+            pending = continuation
+            started?.resume()
+            started = nil
+        }
+        return (Data(#"{"spent":100,"budget":700}"#.utf8), response(for: request))
+    }
+
+    func waitUntilStarted() async {
+        if pending != nil { return }
+        await withCheckedContinuation { started = $0 }
+    }
+
+    func finish() {
+        pending?.resume()
+        pending = nil
+    }
+}
+
+// Opt-in native layout check and screenshots, using an isolated configuration.
+// USAGEBEACON_UI_CAPTURE_DIR=/tmp/beacon-ui swift test --filter menuLayoutCapture
+extension UsageBeaconAppTests {
+    @Test @MainActor
+    func menuLayoutCapture() async throws {
+        guard let path = ProcessInfo.processInfo.environment["USAGEBEACON_UI_CAPTURE_DIR"] else { return }
+        let directory = URL(fileURLWithPath: path)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("fixture.json"))
+        var config = AppConfiguration.empty
+        config.settings.showFloatingHUD = false
+        config.settings.crashReportingEnabled = false
+        config.settings.useCalendarAdjustments = false
+        config.settings.telemetryDisclosureAcknowledged = true
+        config.providers = (1...4).map { index in
+            var provider = StoredProvider(kind: .manual)
+            provider.displayName = "Example provider \(index)"
+            return provider
+        }
+        try store.save(config)
+        let model = AppModel(configurationStore: store, secretStore: InMemorySecretStore(),
+                             launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+                             telemetry: SpyTelemetryReporter(), widgetPublisher: { _ in }, autoStart: false)
+        await model.performRefreshAll(force: true)
+        for dark in [false, true] {
+        for page in SettingsView.Page.allCases {
+            let host = NSHostingView(rootView: SettingsView(model: model, updater: UpdaterController(startUpdater: false), selectedPage: page).preferredColorScheme(dark ? .dark : .light))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 980, height: 680), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = host
+            window.setContentSize(NSSize(width: 980, height: 680))
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: rep)
+            try #require(rep.representation(using: .png, properties: [:])).write(to: directory.appendingPathComponent("settings-\(page.id)-\(dark ? "dark" : "light").png"))
+            window.contentView = nil
+        }
+        }
+        for dark in [false, true] {
+            let host = NSHostingView(rootView: MenuBarRootView(model: model).preferredColorScheme(dark ? .dark : .light))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 620),
+                                  styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = host
+            window.setContentSize(host.fittingSize)
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(300))
+            var pendingViews: [NSView] = [host]
+            var scrollView: NSScrollView?
+            while let view = pendingViews.popLast() {
+                if let candidate = view as? NSScrollView {
+                    scrollView = candidate
+                    break
+                }
+                pendingViews.append(contentsOf: view.subviews)
+            }
+            let scroll = try #require(scrollView)
+            #expect(scroll.contentView.bounds.height > 250)
+            let document = try #require(scroll.documentView)
+            #expect(document.bounds.height > scroll.contentView.bounds.height)
+            for bottom in [false, true] {
+                if bottom {
+                    scroll.contentView.scroll(to: NSPoint(x: 0, y: document.bounds.height - scroll.contentView.bounds.height))
+                    scroll.reflectScrolledClipView(scroll.contentView)
+                    #expect(scroll.contentView.bounds.minY > 0)
+                }
+                host.layoutSubtreeIfNeeded()
+                let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: rep)
+                let data = try #require(rep.representation(using: .png, properties: [:]))
+                try data.write(to: directory.appendingPathComponent("menu-\(dark ? "dark" : "light")-\(bottom ? "bottom" : "top").png"))
+            }
+            window.contentView = nil
+        }
+    }
 }

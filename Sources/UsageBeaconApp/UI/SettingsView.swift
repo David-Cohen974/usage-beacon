@@ -30,12 +30,38 @@ struct SettingsView: View {
         )
     }
 
-    var body: some View {
-        ZStack {
-            BeaconBackdrop()
+    enum Page: String, CaseIterable, Identifiable {
+        case providers = "Providers"
+        case schedule = "Workdays & Calendars"
+        case appearance = "Appearance"
+        case privacy = "Privacy & Diagnostics"
+        case updates = "Updates"
+        var id: String { rawValue }
+        var symbol: String {
+            switch self {
+            case .providers: "square.stack.3d.up"
+            case .schedule: "calendar"
+            case .appearance: "paintbrush"
+            case .privacy: "hand.raised"
+            case .updates: "arrow.down.circle"
+            }
+        }
+    }
+    @State var selectedPage: Page? = .providers
 
+    var body: some View {
+        HStack(spacing: 0) {
+            List(Page.allCases, selection: $selectedPage) { page in
+                Label { Text(page.rawValue) } icon: { BeaconAccentIcon(symbol: page.symbol) }.tag(page)
+                    .padding(.vertical, 4)
+            }
+            .listStyle(.sidebar)
+            .scrollContentBackground(.hidden)
+            .frame(width: 210)
+            .background(.ultraThinMaterial)
+            Divider()
             ScrollView {
-                VStack(alignment: .leading, spacing: 34) {
+                VStack(alignment: .leading, spacing: 20) {
                     if let recovery = model.configurationRecovery {
                         configurationRecoveryBanner(recovery)
                     }
@@ -48,17 +74,24 @@ struct SettingsView: View {
                     if model.configuration.settings.telemetryDisclosureAcknowledged == false {
                         crashReportingDisclosure
                     }
-                    overviewHero
-                    providersSection
-                    budgetSchedule
-                    displaySection
-                    diagnosticsSection
-                    updatesSection
+                    switch selectedPage ?? .providers {
+                    case .providers: providersSection
+                    case .schedule: budgetSchedule
+                    case .appearance: displaySection
+                    case .privacy: diagnosticsSection
+                    case .updates: updatesSection
+                    }
                 }
-                .padding(30)
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .id(selectedPage)
+            .scrollIndicators(.visible)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(minWidth: 980, minHeight: 760)
+        .background { BeaconBackdrop() }
+        .tint(BeaconPalette.cyan)
+        .frame(minWidth: 900, idealWidth: 980, minHeight: 540, idealHeight: 680)
     }
 
     private var crashReportingDisclosure: some View {
@@ -69,11 +102,11 @@ struct SettingsView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Help improve UsageBeacon")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(size: 16, weight: .bold))
                     .foregroundStyle(BeaconPalette.ink)
 
                 Text("Crash reports are on for new installations. They include stack traces and sanitized diagnostics, never credentials, account identifiers, provider responses, URLs, spending, limits, or token usage.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -81,7 +114,7 @@ struct SettingsView: View {
                     "Read the privacy policy",
                     destination: URL(string: "https://david-cohen974.github.io/usage-beacon/privacy/")!
                 )
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 11, weight: .semibold))
             }
 
             Spacer(minLength: 20)
@@ -110,113 +143,34 @@ struct SettingsView: View {
         )
     }
 
-    private var overviewHero: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Usage & Budget")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundStyle(BeaconPalette.ink)
-
-                    Text("Track your AI usage and keep your daily spend on target.")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(BeaconPalette.mutedInk)
-                }
-
-                Spacer()
-
-                Button {
-                    model.refreshAll()
-                } label: {
-                    Label("Sync all", systemImage: "arrow.triangle.2.circlepath")
-                }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: [BeaconPalette.cyan, BeaconPalette.teal],
-                        filled: true
-                    )
-                )
-            }
-
-            if let totalSpentToday {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(alignment: .firstTextBaseline) {
-                        Text("TODAY")
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
-                            .tracking(1.2)
-                            .foregroundStyle(BeaconPalette.mutedInk)
-                        Spacer()
-                        Text(currency(totalSpentToday))
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(BeaconPalette.ink)
-                    }
-                    if let dailyUsageRatio {
-                        BeaconGaugeBar(value: dailyUsageRatio, colors: [BeaconPalette.cyan, BeaconPalette.teal], height: 8)
-                    }
-                    Text(dailyUsageDetail)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(BeaconPalette.mutedInk)
-                }
-                .padding(18)
-                .beaconCard(colors: [BeaconPalette.cyan, BeaconPalette.teal], cornerRadius: 22)
-            } else {
-                HStack(spacing: 8) {
-                    Text("\(activeProviders.count) enabled connector\(activeProviders.count == 1 ? "" : "s")")
-                    Text("·")
-                    Text(workingDaysDescription)
-                    Text("·")
-                    Text("Auto-refresh every \(model.configuration.settings.refreshIntervalMinutes)m")
-                    Text("·")
-                    Text("No usage data yet")
-                }
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(BeaconPalette.mutedInk)
-            }
-        }
-        .padding(.bottom, 2)
-    }
-
     private var budgetSchedule: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Budget Schedule", subtitle: "Set the working days that shape your daily budget runway.")
+            sectionHeading("Workdays & Calendars", subtitle: "Choose your workweek and the calendars used for time off.")
 
             VStack(alignment: .leading, spacing: 12) {
                 Text("Working days")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BeaconPalette.ink)
                 HStack(spacing: 10) {
                     ForEach(orderedDisplayWeekdays, id: \.self) { weekday in
-                        let selected = configuredWorkingWeekdays.contains(weekday)
-                        Button {
-                            var weekdays = configuredWorkingWeekdays
-                            if selected, weekdays.count > 1 {
-                                weekdays.remove(weekday)
-                            } else if !selected {
-                                weekdays.insert(weekday)
+                        Toggle(Calendar.current.shortWeekdaySymbols[weekday - 1], isOn: Binding(
+                            get: { configuredWorkingWeekdays.contains(weekday) },
+                            set: { selected in
+                                var weekdays = configuredWorkingWeekdays
+                                if selected { weekdays.insert(weekday) }
+                                else if weekdays.count > 1 { weekdays.remove(weekday) }
+                                model.setCustomWorkingWeekdays(weekdays)
                             }
-                            model.setCustomWorkingWeekdays(weekdays)
-                        } label: {
-                            VStack(spacing: 7) {
-                                Text(Calendar.current.veryShortWeekdaySymbols[weekday - 1])
-                                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                                Circle()
-                                    .fill(selected ? BeaconPalette.teal : BeaconPalette.track)
-                                    .frame(width: 9, height: 9)
-                            }
-                            .frame(width: 32, height: 44)
-                            .foregroundStyle(selected ? BeaconPalette.ink : BeaconPalette.mutedInk)
-                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(selected ? BeaconPalette.teal.opacity(0.14) : .clear))
-                        }
-                        .buttonStyle(.plain)
+                        ))
+                        .toggleStyle(.checkbox)
+                        .accessibilityLabel(Calendar.current.weekdaySymbols[weekday - 1])
                     }
                 }
                 Text("\(model.configuration.settings.effectiveWorkingDaysPerWeek) days selected. Holidays and vacation only affect these days.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
             }
-            .padding(18)
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+            .padding(.vertical, 8)
 
             calendarModule
         }
@@ -227,10 +181,10 @@ struct SettingsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Time Off & Holidays")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(BeaconPalette.ink)
-                    Text("Exclude holidays and vacation days from your daily budget calculation.")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                    Text("Use busy all-day events for work calendars. For Jewish holiday calendars in Israel, choose full holidays only. Every all-day entry is for calendars containing only your days off.")
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                 }
                 Spacer()
@@ -245,7 +199,7 @@ struct SettingsView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(BeaconPalette.danger)
                     Text(calendarErrorMessage)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(BeaconPalette.ink)
                     Spacer()
                     Button("Dismiss") { model.dismissCalendarError() }
@@ -260,10 +214,10 @@ struct SettingsView: View {
                         .foregroundStyle(BeaconPalette.cyan)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(calendarEmptyStateTitle)
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(BeaconPalette.ink)
                         Text(calendarEmptyStateDetail)
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(BeaconPalette.mutedInk)
                     }
                     Spacer(minLength: 8)
@@ -276,15 +230,48 @@ struct SettingsView: View {
                     Toggle(isOn: Binding(get: { model.configuration.settings.selectedCalendarIDs.contains(calendar.id) }, set: { model.setCalendarSelected(calendar.id, isSelected: $0) })) {
                         HStack(spacing: 10) {
                             Circle().fill(Color(hex: calendar.colorHex)).frame(width: 10, height: 10)
-                            Text(calendar.title).font(.system(size: 13, weight: .semibold, design: .rounded))
+                            Text(calendar.title).font(.system(size: 13, weight: .semibold))
                         }
                     }
                     .toggleStyle(.switch)
+                    if model.configuration.settings.selectedCalendarIDs.contains(calendar.id) {
+                        Picker("Exclude", selection: Binding(
+                            get: { model.configuration.settings.calendarExclusionModes[calendar.id] ?? .busyAllDay },
+                            set: { model.setCalendarExclusionMode($0, calendarID: calendar.id) }
+                        )) {
+                            ForEach(CalendarExclusionMode.allCases) { mode in
+                                Text(mode.title).tag(mode)
+                            }
+                        }
+                        .font(.caption)
+                    }
+                }
+            }
+            if model.configuration.settings.useCalendarAdjustments,
+               model.configuration.settings.selectedCalendarIDs.contains(where: {
+                model.configuration.settings.calendarExclusionModes[$0] == .israelYomTov
+            }) {
+                Text("Israel full holidays only. Minor fasts, holiday eves and Chol HaMoed stay in your work schedule unless you record separate time off.")
+                    .font(.caption)
+                    .foregroundStyle(BeaconPalette.mutedInk)
+                DisclosureGroup("Full holidays remaining this month") {
+                    let calendar = Calendar.current
+                    let holidays = WorkingDayService.israelYomTovDays(
+                        from: Date(), until: BudgetMath.calendarMonthCycle(now: Date()).end,
+                        calendar: calendar
+                    )
+                    ForEach(holidays.keys.sorted(), id: \.self) { day in
+                        let isWorkingDay = WorkingDayService.isConfiguredWorkingDay(
+                            day, settings: model.configuration.settings, calendar: calendar
+                        )
+                        Text("\(day.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))) · \(holidays[day] ?? "") · \(isWorkingDay ? "excluded" : "already outside your workweek")")
+                            .font(.caption)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                 }
             }
         }
-        .padding(18)
-        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+        .padding(.vertical, 8)
     }
 
     private var calendarEmptyStateTitle: String {
@@ -329,30 +316,30 @@ struct SettingsView: View {
                 model.requestCalendarAccess()
             }
             .disabled(model.isRequestingCalendarAccess)
-            .buttonStyle(BeaconActionButtonStyle(colors: [BeaconPalette.cyan, BeaconPalette.teal], filled: false))
+            .buttonStyle(.bordered)
         case .fullAccess, .unknown:
             Button("Refresh Calendars") {
                 model.refreshCalendarAccess()
             }
-            .buttonStyle(BeaconActionButtonStyle(colors: [BeaconPalette.cyan, BeaconPalette.teal], filled: false))
+            .buttonStyle(.bordered)
         case .writeOnly, .denied, .restricted:
             Button("Open System Settings") {
                 model.openCalendarPrivacySettings()
             }
-            .buttonStyle(BeaconActionButtonStyle(colors: [BeaconPalette.cyan, BeaconPalette.teal], filled: false))
+            .buttonStyle(.bordered)
         }
     }
 
     private var displaySection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            sectionHeading("Display", subtitle: "Choose the glanceable surface that works best for you.")
+            sectionHeading("Appearance", subtitle: "Choose how UsageBeacon appears on your Mac.")
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Label("Appearance", systemImage: "circle.lefthalf.filled")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(BeaconPalette.ink)
                     Text("Follow macOS or keep UsageBeacon light or dark.")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                 }
                 Spacer()
@@ -374,16 +361,16 @@ struct SettingsView: View {
             Divider().overlay(BeaconPalette.outline)
             VStack(alignment: .leading, spacing: 10) {
                 Label("Provider meter in the menu bar", systemImage: "menubar.rectangle")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BeaconPalette.ink)
                 Text("Choose one provider to show beside the UsageBeacon icon. Its remaining percentage follows the same automatic refresh schedule.")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if model.configuration.providers.isEmpty {
                     Text("Add a provider to enable a menu-bar meter.")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(BeaconPalette.mutedInk)
                 } else {
                     ForEach(model.configuration.providers) { provider in
@@ -408,7 +395,7 @@ struct SettingsView: View {
                                     .monospacedDigit()
                                     .foregroundStyle(BeaconPalette.mutedInk)
                             }
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(BeaconPalette.ink)
                         }
                         .toggleStyle(.switch)
@@ -425,7 +412,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
                         Text("Notification Center Widget")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(BeaconPalette.ink)
                         BeaconPill(
                             title: "Ready to add",
@@ -434,7 +421,7 @@ struct SettingsView: View {
                         )
                     }
                     Text("Open Notification Center, choose Edit Widgets, search for UsageBeacon, then pick a small, medium, or large widget.")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -444,10 +431,10 @@ struct SettingsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Label("Floating HUD", systemImage: "sparkles.tv")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(BeaconPalette.ink)
                     Text("Show or hide anytime with \(GlobalHotKeyController.displayName)")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                 }
                 Spacer()
@@ -459,10 +446,10 @@ struct SettingsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Label("Launch at login", systemImage: "power")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(BeaconPalette.ink)
                     Text(launchAtLoginDetail)
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(model.launchAtLoginStatus == .requiresApproval ? BeaconPalette.amber : BeaconPalette.mutedInk)
                 }
                 Spacer()
@@ -470,7 +457,7 @@ struct SettingsView: View {
                     Button("Open Login Items") {
                         model.openLoginItemsSettings()
                     }
-                    .buttonStyle(BeaconActionButtonStyle(colors: [BeaconPalette.amber, BeaconPalette.coral], filled: false))
+                    .buttonStyle(.bordered)
                 }
                 Toggle(
                     "Launch at login",
@@ -484,7 +471,7 @@ struct SettingsView: View {
             }
             Divider().overlay(BeaconPalette.outline)
             HStack {
-                Text("Auto-refresh").font(.system(size: 14, weight: .semibold, design: .rounded)).foregroundStyle(BeaconPalette.ink)
+                Text("Auto-refresh").font(.system(size: 14, weight: .semibold)).foregroundStyle(BeaconPalette.ink)
                 Spacer()
                 Picker("Auto-refresh", selection: Binding(get: { model.configuration.settings.refreshIntervalMinutes }, set: { model.setRefreshInterval(minutes: $0) })) {
                     ForEach([1, 2, 5, 10, 15, 30, 60], id: \.self) { minute in
@@ -496,8 +483,7 @@ struct SettingsView: View {
                 .frame(width: 170)
             }
         }
-        .padding(18)
-        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+        .padding(.vertical, 8)
     }
 
     private var launchAtLoginDetail: String {
@@ -572,10 +558,10 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
                         Text("UsageBeacon \(appVersionDescription)")
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(BeaconPalette.ink)
                         Text("Every update is verified with Sparkle Ed25519 signing and Apple code signing.")
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(BeaconPalette.mutedInk)
                     }
                     Spacer()
@@ -583,17 +569,11 @@ struct SettingsView: View {
                         updater.checkForUpdates()
                     }
                     .disabled(!updater.canCheckForUpdates)
-                    .buttonStyle(
-                        BeaconActionButtonStyle(
-                            colors: [BeaconPalette.cyan, BeaconPalette.teal],
-                            filled: false
-                        )
-                    )
+                    .buttonStyle(.bordered)
                 }
                 .padding(.vertical, 14)
             }
-            .padding(.horizontal, 18)
-            .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
+            .padding(.vertical, 8)
         }
     }
 
@@ -643,18 +623,14 @@ struct SettingsView: View {
                     Image(systemName: "lock.shield.fill")
                         .foregroundStyle(BeaconPalette.teal)
                     Text("Crash reports are on for new installations and can be turned off here. Anonymous usage analytics remain off until enabled. Telemetry never includes API keys, cookies, account identifiers, provider responses, URLs, spending, budgets, limits, or token usage.")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 8)
                 }
                 .padding(.vertical, 14)
             }
-            .padding(.horizontal, 18)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(BeaconPalette.surfaceSoft)
-            )
+            .padding(.vertical, 8)
         }
     }
 
@@ -666,10 +642,10 @@ struct SettingsView: View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BeaconPalette.ink)
                 Text(detail)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
             }
             Spacer()
@@ -689,10 +665,10 @@ struct SettingsView: View {
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("Providers")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(BeaconPalette.ink)
                     Text("Connect usage sources and budgets.")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -706,30 +682,19 @@ struct SettingsView: View {
                         }
                     }
                 } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add Provider")
-                    }
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(LinearGradient(colors: [BeaconPalette.cyan, BeaconPalette.teal], startPoint: .topLeading, endPoint: .bottomTrailing))
-                    )
+                    Label("Add Provider", systemImage: "plus")
                 }
-                .menuStyle(.borderlessButton)
+                .menuStyle(.borderedButton)
             }
 
             if model.configuration.providers.isEmpty {
                 VStack(alignment: .leading, spacing: 18) {
                     Text("Let’s connect your first usage source")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(BeaconPalette.ink)
 
                     Text("UsageBeacon starts empty. Choose a service below, sign in, and wait for the status to say Connected before expecting usage data.")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
 
                     HStack(alignment: .top, spacing: 12) {
@@ -744,32 +709,32 @@ struct SettingsView: View {
                         } label: {
                             Label("Track Codex", systemImage: ProviderKind.codex.symbolName)
                         }
-                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.codex.accentColors, filled: true))
+                        .buttonStyle(.bordered)
 
                         Button {
                             model.addProviderAndBeginSetup(kind: .cursorPersonal)
                         } label: {
                             Label("Sign in to Cursor", systemImage: ProviderKind.cursorPersonal.symbolName)
                         }
-                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.cursorPersonal.accentColors, filled: true))
+                        .buttonStyle(.bordered)
 
                         Button {
                             model.addProviderAndBeginSetup(kind: .claudePersonal)
                         } label: {
                             Label("Sign in to Claude", systemImage: ProviderKind.claudePersonal.symbolName)
                         }
-                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.claudePersonal.accentColors, filled: false))
+                        .buttonStyle(.bordered)
 
                         Button {
                             model.addProvider(kind: .manual)
                         } label: {
                             Label("Add Manual Budget", systemImage: ProviderKind.manual.symbolName)
                         }
-                        .buttonStyle(BeaconActionButtonStyle(colors: ProviderKind.manual.accentColors, filled: false))
+                        .buttonStyle(.bordered)
                     }
 
                     Label("Your password stays in the service’s own sign-in page. UsageBeacon reuses only the local browser session on this Mac.", systemImage: "lock.shield")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                 }
                 .padding(24)
@@ -793,16 +758,16 @@ struct SettingsView: View {
     private func onboardingStep(number: Int, title: String, detail: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Text("\(number)")
-                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 24, height: 24)
                 .background(Circle().fill(BeaconPalette.ink))
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(BeaconPalette.ink)
                 Text(detail)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -860,7 +825,7 @@ struct SettingsView: View {
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(BeaconPalette.danger)
             Text(recovery.message)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(BeaconPalette.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer()
@@ -877,7 +842,7 @@ struct SettingsView: View {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(BeaconPalette.danger)
             Text(message)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(BeaconPalette.ink)
             Spacer()
             Button("Dismiss") { model.dismissPersistenceError() }
@@ -891,7 +856,7 @@ struct SettingsView: View {
             Image(systemName: "power.circle.fill")
                 .foregroundStyle(BeaconPalette.amber)
             Text(message)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(BeaconPalette.ink)
             Spacer()
             Button("Open Login Items") { model.openLoginItemsSettings() }
@@ -908,10 +873,10 @@ struct SettingsView: View {
     private func sectionHeading(_ title: String, subtitle: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(BeaconPalette.ink)
             Text(subtitle)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(BeaconPalette.mutedInk)
         }
     }
@@ -953,7 +918,7 @@ private struct ProviderEditorView: View {
                                 .toggleStyle(.switch)
 
                             Text("This controls whether UsageBeacon refreshes this connector. It does not mean the account is connected.")
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(BeaconPalette.mutedInk)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -974,21 +939,14 @@ private struct ProviderEditorView: View {
                         } label: {
                             Label("Delete provider", systemImage: "trash")
                         }
-                        .buttonStyle(
-                            BeaconActionButtonStyle(
-                                colors: [BeaconPalette.danger, BeaconPalette.coral],
-                                filled: false
-                            )
-                        )
+                        .buttonStyle(.bordered)
                     }
                 }
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .padding(16)
-        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(BeaconPalette.surfaceSoft))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(BeaconPalette.outline, lineWidth: 1))
-        .animation(.spring(response: 0.42, dampingFraction: 0.82), value: isExpanded)
+        .overlay(alignment: .bottom) { Divider() }
         .task(id: provider.id) {
             secret = model.loadSecret(for: provider.id)
             if provider.kind == .cursorPersonal || provider.kind == .claudePersonal,
@@ -1008,7 +966,7 @@ private struct ProviderEditorView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(provider.displayName)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold))
                     BeaconPill(
                         title: setupStatus.title,
                         symbol: setupStatus.symbol,
@@ -1018,7 +976,7 @@ private struct ProviderEditorView: View {
                     .foregroundStyle(BeaconPalette.ink)
 
                 Text(providerMetadata)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1028,20 +986,13 @@ private struct ProviderEditorView: View {
             Button(primaryActionTitle) {
                 performPrimaryAction()
             }
-            .buttonStyle(
-                BeaconActionButtonStyle(
-                    colors: provider.kind.accentColors,
-                    filled: false
-                )
-            )
+            .buttonStyle(.bordered)
 
             Button {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.80)) {
-                    isExpanded.toggle()
-                }
+                isExpanded.toggle()
             } label: {
-                Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle.fill")
-                    .font(.system(size: 24, weight: .bold))
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(BeaconPalette.ink)
             }
             .buttonStyle(.plain)
@@ -1225,7 +1176,7 @@ private struct ProviderEditorView: View {
         ) {
             if let errorMessage = snapshot.errorMessage {
                 Text(errorMessage)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(BeaconPalette.danger)
                     .padding(14)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1276,7 +1227,7 @@ private struct ProviderEditorView: View {
                     BeaconMetricTile(
                         title: "Per workday",
                         value: currency(snapshot.perWorkingDayRemainingUSD),
-                        detail: snapshot.workingDaysRemaining.map { "\($0) day\($0 == 1 ? "" : "s") left" } ?? "No calendar math",
+                        detail: snapshot.workingDayBudgetDetail,
                         colors: [BeaconPalette.cyan, BeaconPalette.teal]
                     )
                     BeaconMetricTile(
@@ -1340,10 +1291,10 @@ private struct PersonalConnectionControls: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(status.title)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(BeaconPalette.ink)
                     Text(statusDetail)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(status == .needsAttention ? BeaconPalette.danger : BeaconPalette.mutedInk)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1358,19 +1309,19 @@ private struct PersonalConnectionControls: View {
                     Button(status == .waitingForSignIn ? "Reopen Sign-In" : "Sign in to \(serviceName)") {
                         onConnect()
                     }
-                    .buttonStyle(BeaconActionButtonStyle(colors: colors, filled: true))
+                    .buttonStyle(.bordered)
                 }
 
                 Button("Check Connection") {
                     onCheckSession()
                 }
-                .buttonStyle(BeaconActionButtonStyle(colors: colors, filled: status == .connected || status == .syncing))
+                .buttonStyle(.bordered)
 
                 if status == .connected || status == .syncing || status == .waitingForSignIn {
                     Button("Disconnect") {
                         onDisconnect()
                     }
-                    .buttonStyle(BeaconActionButtonStyle(colors: [BeaconPalette.amber, BeaconPalette.coral], filled: false))
+                    .buttonStyle(.bordered)
                 }
             }
         }
@@ -1468,7 +1419,7 @@ private struct CodexProviderFields: View {
                 Image(systemName: "checkmark.shield.fill")
                     .foregroundStyle(BeaconPalette.teal)
                 Text("Sync reports each available Codex limit bucket, its utilization percentage, and its reset time. Codex must already be installed and signed in on this Mac.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1509,7 +1460,7 @@ private struct ClaudePersonalProviderFields: View {
             )
 
             Text("For organization accounts, an owner may need to enable Organization settings → Usage → Member analytics before Claude shows personal spend.")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(BeaconPalette.mutedInk)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -1672,7 +1623,7 @@ private struct ManualProviderFields: View {
                     in: 1 ... 28
                 ) {
                     Text("Resets on day \(settings.billingCycleDay) of the month")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(BeaconPalette.ink)
                 }
             }
@@ -1764,7 +1715,7 @@ private struct CustomRESTProviderFields: View {
                     in: 1 ... 28
                 ) {
                     Text("Fallback reset day \(settings.fallbackBillingCycleDay)")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(BeaconPalette.ink)
                 }
             }
@@ -1794,12 +1745,12 @@ private struct SettingsPanel<Content: View>: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(BeaconPalette.ink)
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1808,8 +1759,8 @@ private struct SettingsPanel<Content: View>: View {
             content
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(20)
-        .beaconCard(colors: colors, cornerRadius: 28)
+        .padding(.vertical, 12)
+        .overlay(alignment: .top) { Divider() }
     }
 }
 
@@ -1831,13 +1782,13 @@ private struct ProviderFieldGroup<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title.uppercased())
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 11, weight: .semibold))
                 .tracking(1.0)
                 .foregroundStyle(BeaconPalette.mutedInk)
 
             if let detail {
                 Text(detail)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1858,7 +1809,7 @@ private struct WeekdaySelectionChip: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 11, weight: .semibold))
                 Text(title)
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.system(size: 11, weight: .semibold))
                     .lineLimit(1)
             }
             .foregroundStyle(isSelected ? Color.white : BeaconPalette.ink)
@@ -1890,18 +1841,8 @@ private struct WeekdaySelectionChip: View {
 
 private struct BeaconInputChromeModifier: ViewModifier {
     func body(content: Content) -> some View {
-        content
-            .textFieldStyle(.plain)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(BeaconPalette.surfaceInteractive)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(BeaconPalette.glareStrong, lineWidth: 1)
-                    )
-            )
+        content.textFieldStyle(.roundedBorder)
+            .controlSize(.regular)
     }
 }
 

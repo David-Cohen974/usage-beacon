@@ -21,7 +21,18 @@ jobs:
           xcode-version: latest-stable
 
       - name: Run tests
-        run: swift test --jobs 1
+        run: swift test --jobs 1 --enable-code-coverage
+
+      - name: Report test coverage
+        run: python3 Scripts/report-test-coverage.py
+
+      - name: Check native menu layout and scrolling
+        env:
+          USAGEBEACON_UI_CAPTURE_DIR: ${{ runner.temp }}/usagebeacon-ui
+        run: swift test --jobs 1 --filter menuLayoutCapture
+
+      - name: Verify widget data across processes
+        run: ./Scripts/verify-widget-store.sh
 
       - name: Validate release sources
         run: |

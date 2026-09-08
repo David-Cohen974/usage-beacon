@@ -15,6 +15,28 @@ enum CalendarAccessState: Equatable {
     }
 }
 
+// A value representation keeps event classification and date arithmetic testable
+// without reading or changing a user's calendars.
+struct WorkingDayEvent {
+    var start: Date
+    var end: Date
+    var isAllDay: Bool = true
+    var availability: EKEventAvailability = .busy
+    var isCanceled: Bool = false
+    var isDeclined: Bool = false
+    var isBirthday: Bool = false
+    var mode: CalendarExclusionMode = .busyAllDay
+
+    var excludesWorkingDay: Bool {
+        guard isAllDay, !isCanceled, !isDeclined, !isBirthday, start < end else { return false }
+        switch mode {
+        case .busyAllDay: return availability == .busy || availability == .unavailable
+        case .allDay: return true
+        case .israelYomTov: return false // Calculated from Hebrew dates, not event titles.
+        }
+    }
+}
+
 @MainActor
 final class WorkingDayService {
     private let eventStore = EKEventStore()
@@ -22,7 +44,7 @@ final class WorkingDayService {
     private var eventStoreChangedObserver: NSObjectProtocol?
     private var pendingCalendarChangeTask: Task<Void, Never>?
 
-    init(calendar: Calendar = .current) {
+    init(calendar: Calendar = .autoupdatingCurrent) {
         self.calendar = calendar
     }
 
@@ -86,11 +108,11 @@ final class WorkingDayService {
         selectedCalendarIDs: [String],
         settings: GlobalSettings
     ) -> Int {
-        var localCalendar = calendar
-        localCalendar.timeZone = .current
+        guard now < cycleEnd else { return 0 }
+        let localCalendar = calendar
 
         let start = localCalendar.startOfDay(for: now)
-        let end = localCalendar.startOfDay(for: cycleEnd)
+        let end = cycleEnd
         guard start < end else {
             return 0
         }
@@ -99,6 +121,7 @@ final class WorkingDayService {
             from: start,
             until: end,
             selectedCalendarIDs: selectedCalendarIDs,
+            settings: settings,
             calendar: localCalendar
         )
 
@@ -238,21 +261,29 @@ final class WorkingDayService {
         from start: Date,
         until end: Date,
         selectedCalendarIDs: [String],
+        settings: GlobalSettings,
         calendar: Calendar
     ) -> Set<Date> {
+        let usesIsraelSchedule = selectedCalendarIDs.contains {
+            settings.calendarExclusionModes[$0] == .israelYomTov
+        }
+        let scheduledHolidays = usesIsraelSchedule
+            ? Set(Self.israelYomTovDays(from: start, until: end, calendar: calendar).keys)
+            : Set<Date>()
         guard
             isAuthorized,
             !selectedCalendarIDs.isEmpty
         else {
-            return []
+            return scheduledHolidays
         }
 
         let selected = Set(selectedCalendarIDs)
         let calendars = eventStore.calendars(for: .event).filter {
             selected.contains($0.calendarIdentifier)
+                && settings.calendarExclusionModes[$0.calendarIdentifier] != .israelYomTov
         }
         guard !calendars.isEmpty else {
-            return []
+            return scheduledHolidays
         }
 
         let predicate = eventStore.predicateForEvents(
@@ -260,13 +291,68 @@ final class WorkingDayService {
             end: end,
             calendars: calendars
         )
+        let events = eventStore.events(matching: predicate).map { event in
+            WorkingDayEvent(
+                start: event.startDate, end: event.endDate, isAllDay: event.isAllDay,
+                availability: event.availability, isCanceled: event.status == .canceled,
+                isDeclined: event.attendees?.contains {
+                    $0.isCurrentUser && $0.participantStatus == .declined
+                } ?? false,
+                isBirthday: event.calendar.type == .birthday || event.birthdayContactIdentifier != nil,
+                mode: settings.calendarExclusionModes[event.calendar.calendarIdentifier] ?? .busyAllDay
+            )
+        }
+        return scheduledHolidays.union(Self.blockedDays(events: events, from: start, until: end, calendar: calendar))
+    }
+
+    // Full-day budget exclusions, using the Israel (not diaspora) Yom Tov schedule.
+    // Hebrew dates avoid dependence on translated calendar titles or incomplete feeds.
+    // Foundation reserves month 7 for Adar II, so Nisan is 8 and Sivan is 10 in both
+    // ordinary and leap years. Reference fixtures are checked against Hebcal Yom Tov.
+    nonisolated static func israelYomTovDays(
+        from start: Date, until end: Date, calendar: Calendar
+    ) -> [Date: String] {
+        guard start < end else { return [:] }
+        var hebrew = Calendar(identifier: .hebrew)
+        hebrew.timeZone = calendar.timeZone
+        var dates: [Date: String] = [:]
+        var day = calendar.startOfDay(for: start)
+        while day < end {
+            let parts = hebrew.dateComponents([.month, .day], from: day)
+            let name: String?
+            switch (parts.month, parts.day) {
+            case (1, 1): name = "Rosh Hashanah — day 1"
+            case (1, 2): name = "Rosh Hashanah — day 2"
+            case (1, 10): name = "Yom Kippur"
+            case (1, 15): name = "Sukkot — first day"
+            case (1, 22): name = "Shemini Atzeret / Simchat Torah"
+            case (8, 15): name = "Passover — first day"
+            case (8, 21): name = "Passover — seventh day"
+            case (10, 6): name = "Shavuot"
+            default: name = nil
+            }
+            if let name { dates[day] = name }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day), next > day else { break }
+            day = next
+        }
+        return dates
+    }
+
+    nonisolated static func blockedDays(
+        events: [WorkingDayEvent], from start: Date, until end: Date, calendar: Calendar
+    ) -> Set<Date> {
+        guard start < end else { return [] }
+        let firstDay = calendar.startOfDay(for: start)
         var blocked: Set<Date> = []
-        for event in eventStore.events(matching: predicate) where event.isAllDay {
-            var day = calendar.startOfDay(for: event.startDate)
-            let eventEnd = calendar.startOfDay(for: event.endDate)
-            while day < eventEnd {
+        for event in events where event.excludesWorkingDay {
+            let clippedEnd = min(event.end, end)
+            var day = calendar.startOfDay(for: max(event.start, firstDay))
+            // Keep the actual exclusive end instant. Some providers use 23:59:59,
+            // others use next-day midnight; both must include the final occupied day.
+            while day < clippedEnd {
                 blocked.insert(day)
-                day = calendar.date(byAdding: .day, value: 1, to: day) ?? eventEnd
+                guard let next = calendar.date(byAdding: .day, value: 1, to: day), next > day else { break }
+                day = next
             }
         }
         return blocked

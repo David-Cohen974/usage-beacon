@@ -67,7 +67,11 @@ The UI layer is intentionally thin:
 
 ### Widget extension
 
-`Sources/UsageBeaconWidget` renders small, medium, and large WidgetKit layouts for the desktop and Notification Center. `Sources/UsageBeaconShared` contains the narrow Codable snapshot contract shared by the app and widget. The app and extension use the macOS team-scoped `Y3XM9Q3AZT.com.rekindle.usagebeacon` group container. Secrets and provider credentials never enter the shared snapshot.
+`Sources/UsageBeaconWidget` renders small, medium, and large WidgetKit layouts for the desktop and Notification Center. `Sources/UsageBeaconShared` contains the narrow Codable snapshot contract shared by the app and widget. The app and extension use the macOS team-scoped `Y3XM9Q3AZT.com.rekindle.usagebeacon` group container. Snapshots are committed atomically to `widget-snapshot.json` before requesting a WidgetKit reload. The extension reads the file on every timeline request; legacy shared preferences are read only before the first file is created. Write failures are reported in the menu. Secrets and provider credentials never enter the shared snapshot.
+
+Workday calculations run locally when schedules or calendars change and before periodic refreshes, even if a provider is offline. Refreshes run independently across providers. Results from a request whose provider configuration changed or was removed are discarded. Failed requests preserve the timestamp of the last successful data.
+
+CI tests successive provider refreshes through the shared file, schedule changes, failure timestamps, provider removal, and persistence failures. `Scripts/verify-widget-store.sh` also checks ten writes against a separate, persistent reader process. These tests do not substitute for the signed WidgetKit checks in `docs/STABILITY.md`.
 
 ## Extension points
 
@@ -87,3 +91,9 @@ To add a new provider:
 - Readable provider failures
 - Best-effort parsing only where no supported API exists
 - Minimal hidden behavior
+
+### Calendar exclusion rules
+
+`WorkingDayEvent` separates event classification from EventKit access. Selected calendars use `busyAllDay` by default. Dedicated holiday/time-off calendars can explicitly use `allDay`; the latter includes Free/unsupported-availability entries. Cancelled, declined, birthday and timed events are never whole-day exclusions. The selected mode is stored per calendar in `GlobalSettings.calendarExclusionModes` and shown in Settings. Date expansion is half-open and preserves 23:59:59 provider end times rather than flooring them to midnight.
+
+`israelYomTov` is a separate, explicit calendar mode for full Jewish holidays in Israel. It generates full civil-day exclusions from Foundation's Hebrew calendar and ignores arbitrary feed entries. It works without a network feed or EventKit read permission, while selected personal-calendar rules still require EventKit. Duplicate feeds do not multiply deductions. Eves, minor fasts, Chol HaMoed and national observances are not full-day exclusions in this mode. Independent multi-year Hebcal fixtures validate the date set.
