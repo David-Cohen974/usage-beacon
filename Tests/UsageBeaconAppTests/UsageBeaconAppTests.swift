@@ -1743,8 +1743,16 @@ extension UsageBeaconAppTests {
             window.setContentSize(host.fittingSize)
             host.layoutSubtreeIfNeeded()
             try await Task.sleep(for: .milliseconds(300))
-            func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
-            let scroll = try #require(descendants(host).compactMap { $0 as? NSScrollView }.first)
+            var pendingViews: [NSView] = [host]
+            var scrollView: NSScrollView?
+            while let view = pendingViews.popLast() {
+                if let candidate = view as? NSScrollView {
+                    scrollView = candidate
+                    break
+                }
+                pendingViews.append(contentsOf: view.subviews)
+            }
+            let scroll = try #require(scrollView)
             #expect(scroll.contentView.bounds.height > 250)
             let document = try #require(scroll.documentView)
             #expect(document.bounds.height > scroll.contentView.bounds.height)
