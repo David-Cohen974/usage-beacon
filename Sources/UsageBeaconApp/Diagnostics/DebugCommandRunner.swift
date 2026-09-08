@@ -1,4 +1,5 @@
 import AppKit
+import EventKit
 import FirebaseCrashlytics
 import Foundation
 
@@ -63,13 +64,43 @@ enum DebugCommandRunner {
     private static func runCalendarDiagnostic() {
         let service = WorkingDayService()
         let calendars = service.availableCalendars(refreshStore: true)
-        let selectedIDs = Set(ConfigurationStore().load().settings.selectedCalendarIDs)
-        let report: [String: Any] = [
+        let settings = ConfigurationStore().load().settings
+        let selectedIDs = Set(settings.selectedCalendarIDs)
+        var report: [String: Any] = [
             "authorization": calendarAccessDescription(service.authorizationState),
             "availableCalendarCount": calendars.count,
             "selectedCalendarCount": selectedIDs.count,
-            "matchedSelectedCalendarCount": calendars.filter { selectedIDs.contains($0.id) }.count
+            "matchedSelectedCalendarCount": calendars.filter { selectedIDs.contains($0.id) }.count,
+            "workingDaysWithCalendar": service.remainingWorkingDays(
+                from: Date(), until: BudgetMath.calendarMonthCycle(now: Date()).end,
+                selectedCalendarIDs: Array(selectedIDs), settings: settings
+            ),
+            "selectedCalendars": calendars.filter { selectedIDs.contains($0.id) }.map {
+                ["id": $0.id, "title": $0.title,
+                 "mode": (settings.calendarExclusionModes[$0.id] ?? .busyAllDay).rawValue]
+            }
         ]
+        if service.isAuthorized {
+            let store = EKEventStore()
+            let start = Calendar.current.startOfDay(for: Date())
+            let end = BudgetMath.calendarMonthCycle(now: Date()).end
+            let selected = store.calendars(for: .event).filter { selectedIDs.contains($0.calendarIdentifier) }
+            if !selected.isEmpty {
+                let predicate = store.predicateForEvents(withStart: start, end: end, calendars: selected)
+                report["allDayEvents"] = store.events(matching: predicate).filter(\.isAllDay).map { event in
+                    [
+                        "calendar": event.calendar.title,
+                        "title": event.title ?? "",
+                        "start": ISO8601DateFormatter().string(from: event.startDate),
+                        "end": ISO8601DateFormatter().string(from: event.endDate),
+                        "availability": event.availability.rawValue,
+                        "status": event.status.rawValue,
+                        "selfAttendance": event.attendees?.first(where: \.isCurrentUser)?.participantStatus.rawValue ?? -1,
+                        "birthday": event.birthdayContactIdentifier != nil
+                    ] as [String: Any]
+                }
+            }
+        }
         if let data = try? JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys]),
            let string = String(data: data, encoding: .utf8) {
             print(string)
@@ -208,12 +239,22 @@ enum DebugCommandRunner {
                     now: Date()
                 )
                 report["liveProviderSnapshot"] = [
+                    "billingCycleEnd": ISO8601DateFormatter().string(from: snapshot.billingCycleEnd),
+                    "workingDaysWithoutCalendar": WorkingDayService().remainingWorkingDays(
+                        from: Date(), until: snapshot.billingCycleEnd, selectedCalendarIDs: [],
+                        settings: configuration.settings
+                    ),
+                    "workingDaysWithCalendar": WorkingDayService().remainingWorkingDays(
+                        from: Date(), until: snapshot.billingCycleEnd,
+                        selectedCalendarIDs: configuration.settings.selectedCalendarIDs,
+                        settings: configuration.settings
+                    ),
                     "spentUSD": snapshot.spentUSD.description,
                     "remainingUSD": snapshot.remainingUSD?.description ?? "nil",
                     "spentTodayUSD": snapshot.spentTodayUSD?.description ?? "nil",
                     "lastPromptCostUSD": snapshot.lastPromptCostUSD?.description ?? "nil",
                     "notes": snapshot.notes
-                ]
+                ] as [String: Any]
             } catch {
                 report["liveProviderError"] = error.localizedDescription
             }

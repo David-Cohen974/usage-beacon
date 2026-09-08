@@ -39,215 +39,103 @@ struct MenuBarRootView: View {
         connectedSnapshots.compactMap(\.billingCycleEnd).min()
     }
 
-    var body: some View {
-        ZStack {
-            BeaconBackdrop()
-
-            VStack(alignment: .leading, spacing: 16) {
-                heroCard
-                snapshotsSection
-                footerBar
-            }
-            .padding(16)
-        }
-        .frame(width: 388)
+    // A bounded window gives the scroll view a real viewport even when its
+    // document contains several providers or long error messages.
+    private var menuHeight: CGFloat {
+        min(620, max(240, (NSScreen.main?.visibleFrame.height ?? 700) - 48))
     }
 
-    private var heroCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(greeting)
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(BeaconPalette.mutedInk)
-
-                    Text("Protect the runway.")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundStyle(BeaconPalette.ink)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-
-                    Text(heroSubtitle)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(BeaconPalette.mutedInk)
-                        .fixedSize(horizontal: false, vertical: true)
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label { Text("UsageBeacon").font(.headline) } icon: {
+                    BeaconAccentIcon(symbol: "waveform.path.ecg")
                 }
-
                 Spacer()
-
-                Button {
-                    model.refreshAll()
-                } label: {
+                Button { model.refreshAll() } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: [BeaconPalette.cyan, BeaconPalette.teal],
-                        filled: true
-                    )
-                )
+                .disabled(activeSnapshots.contains(where: \.isLoading))
+                .help("Refresh all providers")
             }
-
-            HStack(spacing: 8) {
-                BeaconPill(
-                    title: "\(connectedSnapshots.count) connected source\(connectedSnapshots.count == 1 ? "" : "s")",
-                    symbol: connectedSnapshots.isEmpty ? "exclamationmark.circle.fill" : "waveform.path.ecg",
-                    colors: connectedSnapshots.isEmpty ? [BeaconPalette.amber, BeaconPalette.coral] : [BeaconPalette.cyan, BeaconPalette.teal]
-                )
-                if let earliestReset {
-                    BeaconPill(
-                        title: "Resets \(DateFormatter.shortDate.string(from: earliestReset))",
-                        symbol: "calendar",
-                        colors: [BeaconPalette.amber, BeaconPalette.coral]
-                    )
-                }
-            }
-
-            HStack(spacing: 8) {
-                BeaconMetricTile(
-                    title: "Remaining",
-                    value: currency(totalRemaining),
-                    detail: connectedSnapshots.isEmpty ? "Finish connector setup" : "Across connected providers",
-                    colors: [BeaconPalette.cyan, BeaconPalette.teal]
-                )
-                BeaconMetricTile(
-                    title: "Spent",
-                    value: currency(totalSpent),
-                    detail: DateFormatter.beaconMonth.string(from: Date()),
-                    colors: [BeaconPalette.amber, BeaconPalette.coral]
-                )
-                BeaconMetricTile(
-                    title: "Today",
-                    value: currency(totalSpentToday),
-                    detail: totalSpentToday == nil ? "No live daily data yet" : "Across daily-aware providers",
-                    colors: [BeaconPalette.rose, BeaconPalette.amber]
-                )
-            }
-        }
-        .padding(18)
-        .beaconCard(colors: [BeaconPalette.cyan, BeaconPalette.peach], cornerRadius: 32)
-    }
-
-    @ViewBuilder
-    private var snapshotsSection: some View {
-        if model.orderedSnapshots.isEmpty {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("No providers yet")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    .foregroundStyle(BeaconPalette.ink)
-
-                Text("Start with Cursor Personal for a zero-admin setup, or add a manual budget to test the HUD immediately.")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(BeaconPalette.mutedInk)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                ForegroundSettingsButton {
-                    HStack(spacing: 8) {
-                        Image(systemName: "plus.circle.fill")
-                        Text("Add First Connector")
+            .padding(16)
+            .background(.ultraThinMaterial)
+            Divider()
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 20) {
+                    summary
+                    if let message = model.widgetSyncErrorMessage {
+                        Label(message, systemImage: "exclamationmark.triangle")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    if model.orderedSnapshots.isEmpty {
+                        Text("No providers yet").font(.headline)
+                        Text("Add a provider in Settings to see your usage and remaining budget.")
+                            .foregroundStyle(.secondary)
+                        ForegroundSettingsButton { Text("Add Provider…") }
+                    } else {
+                        ForEach(model.orderedSnapshots) { snapshot in
+                            Divider()
+                            ProviderCardView(snapshot: snapshot, setupStatus: setupStatus(for: snapshot))
+                        }
                     }
                 }
-                .buttonStyle(
-                    BeaconActionButtonStyle(
-                        colors: [BeaconPalette.coral, BeaconPalette.amber],
-                        filled: true
-                    )
-                )
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(18)
-            .beaconCard(colors: [BeaconPalette.peach, BeaconPalette.coral], cornerRadius: 30)
-        } else {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    ForEach(model.orderedSnapshots) { snapshot in
-                        ProviderCardView(snapshot: snapshot, setupStatus: setupStatus(for: snapshot))
-                    }
-                }
-                .padding(.trailing, 2)
+            .scrollIndicators(.visible)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Divider()
+            HStack {
+                Toggle("Floating HUD", isOn: Binding(
+                    get: { model.configuration.settings.showFloatingHUD },
+                    set: { model.setShowFloatingHUD($0) }
+                ))
+                .toggleStyle(.checkbox)
+                .help("Show the floating usage panel (\(GlobalHotKeyController.displayName))")
+                Spacer()
+                ForegroundSettingsButton { Text("Settings…") }
+                    .keyboardShortcut(",", modifiers: .command)
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+                    .keyboardShortcut("q", modifiers: .command)
             }
-            .frame(maxHeight: 450)
+            .controlSize(.small)
+            .padding(16)
+            .background(.ultraThinMaterial)
         }
+        .background { BeaconBackdrop() }
+        .tint(BeaconPalette.cyan)
+        .frame(width: 400, height: menuHeight)
+        .transaction { $0.animation = nil }
     }
 
-    private var footerBar: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 10) {
-                Image(systemName: model.configuration.settings.showFloatingHUD ? "sparkles.tv.fill" : "sparkles.tv")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(BeaconPalette.ink)
-
-                Toggle(
-                    "Floating HUD",
-                    isOn: Binding(
-                        get: { model.configuration.settings.showFloatingHUD },
-                        set: { model.setShowFloatingHUD($0) }
-                    )
-                )
-                .labelsHidden()
-                .toggleStyle(.switch)
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text("Floating HUD")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundStyle(BeaconPalette.ink)
-                    Text(GlobalHotKeyController.displayName)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
-                        .foregroundStyle(BeaconPalette.mutedInk)
-                }
+    private var summary: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Remaining budget").foregroundStyle(.secondary)
+            Text(currency(totalRemaining))
+                .font(.system(size: 30, weight: .semibold))
+                .foregroundStyle(BeaconPalette.luminousInk)
+                .monospacedDigit()
+                .fixedSize(horizontal: false, vertical: true)
+            Text("\(connectedSnapshots.count) connected source\(connectedSnapshots.count == 1 ? "" : "s")")
+                .font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Text("Cycle spent")
+                Spacer()
+                Text(currency(totalSpent)).monospacedDigit()
             }
-
-            Spacer()
-
-            ForegroundSettingsButton {
-                Label("Settings", systemImage: "slider.horizontal.3")
+            HStack {
+                Text("Today spent")
+                Spacer()
+                Text(currency(totalSpentToday)).monospacedDigit()
             }
-            .buttonStyle(
-                BeaconActionButtonStyle(
-                    colors: [BeaconPalette.cyan, BeaconPalette.teal],
-                    filled: false
-                )
-            )
-
-            Button("Quit") {
-                NSApplication.shared.terminate(nil)
+            if let earliestReset {
+                Text("Next reset \(DateFormatter.shortDate.string(from: earliestReset))")
+                    .font(.caption).foregroundStyle(.secondary)
             }
-            .buttonStyle(
-                BeaconActionButtonStyle(
-                    colors: [BeaconPalette.coral, BeaconPalette.amber],
-                    filled: false
-                )
-            )
         }
-        .padding(14)
-        .beaconCard(colors: [BeaconPalette.peach, BeaconPalette.cyan], cornerRadius: 24)
-    }
-
-    private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5 ..< 12:
-            return "Good morning"
-        case 12 ..< 18:
-            return "Good afternoon"
-        default:
-            return "Good evening"
-        }
-    }
-
-    private var heroSubtitle: String {
-        if activeSnapshots.isEmpty {
-            return "Wire your budgets into one place and keep the month visually under control."
-        }
-
-        if connectedSnapshots.isEmpty {
-            return "Your connector is added but not connected yet. Open Settings and finish sign-in."
-        }
-
-        if let totalRemaining, totalRemaining > 0 {
-            return "You still have \(currency(totalRemaining)) left to spend before the cycle flips."
-        }
-
-        return "Every connected budget is out of visible remaining runway. Time to triage."
     }
 
     private func setupStatus(for snapshot: ProviderSnapshotState) -> ProviderSetupStatus {
@@ -278,7 +166,8 @@ struct ProviderCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 10) {
-                ProviderKindOrb(kind: snapshot.providerKind)
+                BeaconAccentIcon(symbol: snapshot.providerKind.symbolName)
+                    .font(.title3)
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(snapshot.providerName)
@@ -286,12 +175,6 @@ struct ProviderCardView: View {
                         .foregroundStyle(BeaconPalette.ink)
 
                     HStack(spacing: 8) {
-                        BeaconPill(
-                            title: snapshot.providerKind.title,
-                            symbol: snapshot.providerKind.symbolName,
-                            colors: snapshot.accentColors
-                        )
-
                         BeaconPill(
                             title: setupStatus.title,
                             symbol: setupStatus.symbol,
@@ -346,10 +229,7 @@ struct ProviderCardView: View {
                 }
 
                 if snapshot.usageWindows.isEmpty == false {
-                    LazyVGrid(
-                        columns: [GridItem(.adaptive(minimum: 140), spacing: 10)],
-                        spacing: 10
-                    ) {
+                    VStack(alignment: .leading, spacing: 12) {
                         ForEach(snapshot.usageWindows) { window in
                             metricPanel(
                                 title: window.title,
@@ -369,20 +249,11 @@ struct ProviderCardView: View {
                         }
                     }
                 } else {
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.flexible(), spacing: 10),
-                            GridItem(.flexible(), spacing: 10),
-                            GridItem(.flexible(), spacing: 10)
-                        ],
-                        spacing: 10
-                    ) {
+                    VStack(alignment: .leading, spacing: 12) {
                         metricPanel(
                             title: "Per workday",
                             value: currency(snapshot.perWorkingDayRemainingUSD),
-                            detail: snapshot.workingDaysRemaining.map {
-                                "\($0) day\($0 == 1 ? "" : "s") left"
-                            } ?? "No calendar math"
+                            detail: snapshot.workingDayBudgetDetail
                         )
                         metricPanel(
                             title: "Today spent",
@@ -407,7 +278,7 @@ struct ProviderCardView: View {
                     }
                 }
 
-                HStack {
+                VStack(alignment: .leading, spacing: 4) {
                     if let cycleEnd = snapshot.primaryUsageWindow?.resetsAt ?? snapshot.billingCycleEnd {
                         BeaconPill(
                             title: "Resets \(DateFormatter.shortDate.string(from: cycleEnd))",
@@ -443,9 +314,7 @@ struct ProviderCardView: View {
                 }
             }
         }
-        .padding(16)
-        .beaconCard(colors: snapshot.accentColors, cornerRadius: 28)
-        .animation(.spring(response: 0.45, dampingFraction: 0.82), value: snapshot)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var setupBanner: some View {
@@ -474,31 +343,19 @@ struct ProviderCardView: View {
     }
 
     private func metricPanel(title: String, value: String, detail: String) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title.uppercased())
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .tracking(1.0)
-                .foregroundStyle(BeaconPalette.mutedInk)
-
-            Text(value)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                .foregroundStyle(BeaconPalette.ink)
-                .monospacedDigit()
-                .contentTransition(.numericText())
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).foregroundStyle(.secondary)
+                Spacer(minLength: 12)
+                Text(value).fontWeight(.medium).monospacedDigit()
+            }
             Text(detail)
-                .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundStyle(BeaconPalette.mutedInk)
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+        .font(.callout)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(BeaconPalette.cardStrong)
-        )
     }
 
     private var headlineValue: String {

@@ -94,7 +94,13 @@ jobs:
           : "${SPARKLE_PRIVATE_KEY:?Missing SPARKLE_PRIVATE_KEY}"
 
       - name: Run tests
-        run: swift test --jobs 1
+        run: swift test --jobs 1 --enable-code-coverage
+
+      - name: Report test coverage
+        run: python3 Scripts/report-test-coverage.py
+
+      - name: Verify widget data across processes
+        run: ./Scripts/verify-widget-store.sh
 
       - name: Import Developer ID certificate
         id: signing
@@ -159,7 +165,9 @@ jobs:
         id: notes
         run: |
           notes_path="${RUNNER_TEMP}/release-notes.md"
-          if gh api \
+          if [[ -f "release-notes/${{ steps.release.outputs.release_version }}.md" ]]; then
+            cp "release-notes/${{ steps.release.outputs.release_version }}.md" "$notes_path"
+          elif gh api \
             --method POST \
             "/repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
             -f tag_name="${{ steps.release.outputs.tag }}" \

@@ -30,11 +30,12 @@ extension ProviderSetupStatus {
 }
 
 enum BeaconPalette {
-    static let ink = dynamic(light: rgba(0.10, 0.14, 0.24), dark: rgba(0.93, 0.95, 0.99))
-    static let mutedInk = dynamic(light: rgba(0.33, 0.38, 0.47), dark: rgba(0.68, 0.74, 0.82))
+    static let ink = Color(nsColor: .labelColor)
+    static let mutedInk = Color(nsColor: .secondaryLabelColor)
     static let cream = dynamic(light: rgba(0.98, 0.96, 0.92), dark: rgba(0.06, 0.08, 0.13))
     static let mist = dynamic(light: rgba(0.91, 0.96, 0.99), dark: rgba(0.10, 0.14, 0.20))
     static let canvas = dynamic(light: rgba(1.00, 1.00, 1.00), dark: rgba(0.04, 0.06, 0.10))
+    static let luminousInk = dynamic(light: rgba(0.04, 0.36, 0.42), dark: rgba(0.40, 0.88, 0.84))
     static let teal = Color(red: 0.13, green: 0.69, blue: 0.63)
     static let cyan = Color(red: 0.25, green: 0.56, blue: 0.95)
     static let coral = Color(red: 0.96, green: 0.44, blue: 0.40)
@@ -42,11 +43,11 @@ enum BeaconPalette {
     static let peach = Color(red: 1.00, green: 0.86, blue: 0.76)
     static let rose = Color(red: 0.94, green: 0.52, blue: 0.63)
     static let card = dynamic(light: rgba(1.00, 1.00, 1.00, 0.80), dark: rgba(0.08, 0.11, 0.17, 0.84))
-    static let cardStrong = dynamic(light: rgba(1.00, 1.00, 1.00, 0.94), dark: rgba(0.12, 0.16, 0.24, 0.94))
-    static let surfaceSoft = dynamic(light: rgba(1.00, 1.00, 1.00, 0.72), dark: rgba(0.16, 0.20, 0.29, 0.86))
-    static let surfaceElevated = dynamic(light: rgba(1.00, 1.00, 1.00, 0.82), dark: rgba(0.18, 0.23, 0.33, 0.90))
-    static let surfaceInteractive = dynamic(light: rgba(1.00, 1.00, 1.00, 0.88), dark: rgba(0.14, 0.18, 0.27, 0.96))
-    static let outline = dynamic(light: rgba(1.00, 1.00, 1.00, 0.72), dark: rgba(0.90, 0.95, 1.00, 0.12))
+    static let cardStrong = Color(nsColor: .controlBackgroundColor)
+    static let surfaceSoft = Color(nsColor: .controlBackgroundColor)
+    static let surfaceElevated = Color(nsColor: .controlBackgroundColor)
+    static let surfaceInteractive = Color(nsColor: .controlBackgroundColor)
+    static let outline = Color(nsColor: .separatorColor)
     static let glareStrong = dynamic(light: rgba(1.00, 1.00, 1.00, 0.86), dark: rgba(1.00, 1.00, 1.00, 0.16))
     static let glareSoft = dynamic(light: rgba(1.00, 1.00, 1.00, 0.72), dark: rgba(1.00, 1.00, 1.00, 0.08))
     static let glaze = dynamic(light: rgba(1.00, 1.00, 1.00, 0.18), dark: rgba(1.00, 1.00, 1.00, 0.04))
@@ -158,93 +159,36 @@ extension ProviderSnapshotState {
     }
 }
 
+// A stationary wash echoes the widget without animating or affecting layout.
 struct BeaconBackdrop: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var animate = false
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        ZStack {
+        if contrast == .increased || reduceTransparency {
+            Color(nsColor: .windowBackgroundColor)
+        } else {
             LinearGradient(
-                colors: [BeaconPalette.cream, BeaconPalette.mist, BeaconPalette.canvas],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: scheme == .dark
+                    ? [Color(red: 0.08, green: 0.12, blue: 0.20),
+                       Color(red: 0.08, green: 0.18, blue: 0.24),
+                       Color(red: 0.08, green: 0.24, blue: 0.27)]
+                    : [Color(red: 0.96, green: 0.98, blue: 1),
+                       Color(red: 0.95, green: 0.98, blue: 0.99),
+                       Color(red: 0.88, green: 0.96, blue: 0.94)],
+                startPoint: .topLeading, endPoint: .bottomTrailing
             )
-
-            GlowOrb(
-                colors: [BeaconPalette.peach, BeaconPalette.coral],
-                size: 340,
-                offset: animate ? CGSize(width: -130, height: -210) : CGSize(width: -190, height: -280),
-                opacity: 0.45
-            )
-
-            GlowOrb(
-                colors: [BeaconPalette.cyan, BeaconPalette.teal],
-                size: 320,
-                offset: animate ? CGSize(width: 200, height: 150) : CGSize(width: 150, height: 230),
-                opacity: 0.39
-            )
-
-            GlowOrb(
-                colors: [BeaconPalette.amber, BeaconPalette.peach],
-                size: 220,
-                offset: animate ? CGSize(width: 150, height: -190) : CGSize(width: 220, height: -130),
-                opacity: 0.29
-            )
-
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            BeaconPalette.glareStrong.opacity(0.3),
-                            Color.clear,
-                            BeaconPalette.glaze
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-        }
-        .ignoresSafeArea()
-        .onAppear {
-            guard reduceMotion == false else {
-                animate = false
-                return
-            }
-            withAnimation(.easeInOut(duration: 8).repeatForever(autoreverses: true)) {
-                animate = true
-            }
-        }
-        .onChange(of: reduceMotion) { _, shouldReduceMotion in
-            if shouldReduceMotion {
-                withAnimation(nil) { animate = false }
-            }
         }
     }
 }
 
-private struct GlowOrb: View {
-    let colors: [Color]
-    let size: CGFloat
-    let offset: CGSize
-    let opacity: Double
-
+struct BeaconAccentIcon: View {
+    let symbol: String
     var body: some View {
-        Circle()
-            .fill(
-                RadialGradient(
-                    colors: [
-                        colors.first?.opacity(opacity) ?? .clear,
-                        colors.last?.opacity(opacity * 0.35) ?? .clear,
-                        Color.clear
-                    ],
-                    center: .center,
-                    startRadius: 12,
-                    endRadius: size / 2
-                )
-            )
-            .frame(width: size, height: size)
-            .blur(radius: 18)
-            .offset(offset)
+        Image(systemName: symbol)
+            .foregroundStyle(LinearGradient(colors: [BeaconPalette.cyan, BeaconPalette.teal], startPoint: .topLeading, endPoint: .bottomTrailing))
+            .accessibilityHidden(true)
     }
 }
 
@@ -306,35 +250,12 @@ struct BeaconPill: View {
     var colors: [Color] = [BeaconPalette.cyan, BeaconPalette.teal]
 
     var body: some View {
-        HStack(spacing: 6) {
-            if let symbol {
-                Image(systemName: symbol)
-                    .font(.system(size: 10, weight: .semibold))
-            }
-            Text(title)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .lineLimit(1)
+        HStack(spacing: 4) {
+            if let symbol { Image(systemName: symbol) }
+            Text(title).fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundStyle(BeaconPalette.ink)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 5)
-        .background(
-            Capsule(style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            colors.first?.opacity(0.20) ?? BeaconPalette.surfaceSoft,
-                            BeaconPalette.glareSoft
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay(
-                    Capsule(style: .continuous)
-                        .stroke(BeaconPalette.glareStrong, lineWidth: 1)
-                )
-        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 }
 
@@ -349,30 +270,18 @@ struct BeaconActionButtonStyle: ButtonStyle {
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(background)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
                             .stroke(borderColor, lineWidth: 1)
                     )
             )
-            .shadow(color: filled ? colors.last?.opacity(0.20) ?? .clear : .clear, radius: 12, x: 0, y: 8)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.spring(response: 0.24, dampingFraction: 0.72), value: configuration.isPressed)
+            .opacity(configuration.isPressed ? 0.7 : 1)
     }
 
     private var background: AnyShapeStyle {
-        if filled {
-            return AnyShapeStyle(
-                LinearGradient(
-                    colors: colors,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-        }
-
-        return AnyShapeStyle(BeaconPalette.cardStrong)
+        AnyShapeStyle(filled ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
     }
 
     private var borderColor: Color {
@@ -385,7 +294,6 @@ struct BeaconGaugeBar: View {
     let colors: [Color]
     var height: CGFloat = 12
 
-    @State private var displayedValue: Double = 0
 
     var body: some View {
         GeometryReader { proxy in
@@ -401,18 +309,10 @@ struct BeaconGaugeBar: View {
                             endPoint: .trailing
                         )
                     )
-                    .frame(width: proxy.size.width * displayedValue)
+                    .frame(width: proxy.size.width * clampedValue)
             }
         }
         .frame(height: height)
-        .onAppear {
-            displayedValue = clampedValue
-        }
-        .onChange(of: value) { _, newValue in
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.82)) {
-                displayedValue = min(max(newValue, 0), 1)
-            }
-        }
     }
 
     private var clampedValue: Double {
@@ -424,23 +324,9 @@ struct ProviderKindOrb: View {
     let kind: ProviderKind
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    LinearGradient(
-                        colors: kind.accentColors,
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: 42, height: 42)
-
-            Image(systemName: kind.symbolName)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
-        }
-        .shadow(color: kind.accentColors.last?.opacity(0.22) ?? .clear, radius: 12, x: 0, y: 8)
-        .accessibilityHidden(true)
+        BeaconAccentIcon(symbol: kind.symbolName)
+            .font(.system(size: 20, weight: .medium))
+            .frame(width: 32, height: 32)
     }
 }
 
@@ -475,40 +361,10 @@ struct BeaconCardModifier: ViewModifier {
     let cornerRadius: CGFloat
 
     func body(content: Content) -> some View {
-        content
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(BeaconPalette.card)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        colors.first?.opacity(0.08) ?? .clear,
-                                        BeaconPalette.glaze
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        colors.first?.opacity(0.35) ?? .clear,
-                                        BeaconPalette.glareStrong,
-                                        colors.last?.opacity(0.25) ?? .clear
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-            )
-            .shadow(color: BeaconPalette.shadow, radius: 22, x: 0, y: 12)
+        content.background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .controlBackgroundColor))
+        )
     }
 }
 

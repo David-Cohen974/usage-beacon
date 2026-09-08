@@ -106,6 +106,21 @@ enum AppAppearance: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum CalendarExclusionMode: String, Codable, CaseIterable, Identifiable {
+    case busyAllDay
+    case allDay
+    case israelYomTov
+
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .busyAllDay: return "Busy or unavailable all-day events"
+        case .allDay: return "Every all-day entry (dedicated time off)"
+        case .israelYomTov: return "Israel: full holidays only (Yom Tov)"
+        }
+    }
+}
+
 struct GlobalSettings: Codable, Equatable {
     var showFloatingHUD: Bool = true
     var appearance: AppAppearance = .system
@@ -117,6 +132,7 @@ struct GlobalSettings: Codable, Equatable {
     var refreshIntervalMinutes: Int = 1
     var useCalendarAdjustments: Bool = true
     var selectedCalendarIDs: [String] = []
+    var calendarExclusionModes: [String: CalendarExclusionMode] = [:]
     var workingDaysPerWeek: Int = 5
     var workingWeekSchedule: WorkingWeekSchedule = .systemDefault
     var customWorkingWeekdays: [Int] = [2, 3, 4, 5, 6]
@@ -132,6 +148,7 @@ struct GlobalSettings: Codable, Equatable {
         case refreshIntervalMinutes
         case useCalendarAdjustments
         case selectedCalendarIDs
+        case calendarExclusionModes
         case workingDaysPerWeek
         case workingWeekSchedule
         case customWorkingWeekdays
@@ -156,6 +173,10 @@ struct GlobalSettings: Codable, Equatable {
         refreshIntervalMinutes = max(1, try container.decodeIfPresent(Int.self, forKey: .refreshIntervalMinutes) ?? 1)
         useCalendarAdjustments = try container.decodeIfPresent(Bool.self, forKey: .useCalendarAdjustments) ?? true
         selectedCalendarIDs = try container.decodeIfPresent([String].self, forKey: .selectedCalendarIDs) ?? []
+        // Preserve the previous all-day rule for legacy selections; newly selected
+        // calendars default to busy/unavailable unless the user chooses time off.
+        calendarExclusionModes = try container.decodeIfPresent([String: CalendarExclusionMode].self, forKey: .calendarExclusionModes)
+            ?? Dictionary(selectedCalendarIDs.map { ($0, .allDay) }, uniquingKeysWith: { first, _ in first })
         workingDaysPerWeek = min(7, max(1, try container.decodeIfPresent(Int.self, forKey: .workingDaysPerWeek) ?? 5))
         workingWeekSchedule = try container.decodeIfPresent(WorkingWeekSchedule.self, forKey: .workingWeekSchedule) ?? .systemDefault
         customWorkingWeekdays = Self.normalizedCustomWorkingWeekdays(
@@ -175,6 +196,7 @@ struct GlobalSettings: Codable, Equatable {
         try container.encode(refreshIntervalMinutes, forKey: .refreshIntervalMinutes)
         try container.encode(useCalendarAdjustments, forKey: .useCalendarAdjustments)
         try container.encode(selectedCalendarIDs, forKey: .selectedCalendarIDs)
+        try container.encode(calendarExclusionModes, forKey: .calendarExclusionModes)
         try container.encode(workingDaysPerWeek, forKey: .workingDaysPerWeek)
         try container.encode(workingWeekSchedule, forKey: .workingWeekSchedule)
         try container.encode(Self.normalizedCustomWorkingWeekdays(customWorkingWeekdays), forKey: .customWorkingWeekdays)
@@ -511,6 +533,12 @@ struct ProviderSnapshotState: Identifiable, Equatable {
     var notes: [String]
     var errorMessage: String?
     var usageWindows: [UsageWindowSnapshot]
+
+    var workingDayBudgetDetail: String {
+        guard let days = workingDaysRemaining else { return "Waiting for usage" }
+        guard days > 0 else { return "No workdays left; review schedule and calendars" }
+        return "\(days) day\(days == 1 ? "" : "s") left"
+    }
 
     static func placeholder(from provider: StoredProvider) -> ProviderSnapshotState {
         ProviderSnapshotState(
