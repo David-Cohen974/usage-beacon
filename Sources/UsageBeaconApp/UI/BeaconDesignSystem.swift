@@ -187,9 +187,9 @@ struct BeaconBackdrop: View {
                     ? [Color(red: 0.08, green: 0.12, blue: 0.20),
                        Color(red: 0.08, green: 0.18, blue: 0.24),
                        Color(red: 0.08, green: 0.24, blue: 0.27)]
-                    : [Color(red: 0.96, green: 0.98, blue: 1),
-                       Color(red: 0.95, green: 0.98, blue: 0.99),
-                       Color(red: 0.88, green: 0.96, blue: 0.94)],
+                    : [Color(red: 0.80, green: 0.91, blue: 1.00),
+                       Color(red: 0.88, green: 0.97, blue: 0.98),
+                       Color(red: 1.00, green: 0.91, blue: 0.84)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
         }

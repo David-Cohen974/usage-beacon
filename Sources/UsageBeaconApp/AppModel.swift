@@ -81,7 +81,6 @@ final class AppModel: ObservableObject {
             configuration.settings.menuBarProviderIDs = selectedProviderID.map { [$0] } ?? []
         }
         self.configuration = configuration
-        NSApp?.appearance = configuration.settings.appearance.nsAppearance
         telemetry.updateConsent(
             crashReportsEnabled: configuration.settings.crashReportingEnabled,
             usageAnalyticsEnabled: configuration.settings.usageAnalyticsEnabled
@@ -97,6 +96,7 @@ final class AppModel: ObservableObject {
         )
         self.cursorPersonalSessionState = cursorDashboardSessionController.state
         self.claudePersonalSessionState = claudeDashboardSessionController.state
+        applyAppearance(configuration.settings.appearance)
 
         cursorDashboardSessionController.onStateChange = { [weak self] state in
             guard let self else {
@@ -308,9 +308,22 @@ final class AppModel: ObservableObject {
 
     func setAppearance(_ appearance: AppAppearance) {
         configuration.settings.appearance = appearance
-        NSApp?.appearance = appearance.nsAppearance
+        applyAppearance(appearance)
         saveConfiguration()
         updateFloatingHUD()
+    }
+
+    /// Clear explicit window appearances as well as the application appearance.
+    /// SwiftUI's `preferredColorScheme(nil)` cannot remove an appearance that
+    /// AppKit attached to an already-created Settings window.
+    private func applyAppearance(_ appearance: AppAppearance) {
+        let nsAppearance = appearance.nsAppearance
+        NSApp?.appearance = nsAppearance
+        NSApp?.windows.forEach { window in
+            window.appearance = nsAppearance
+            window.invalidateShadow()
+            window.contentView?.needsDisplay = true
+        }
     }
 
     func setProviderMenuBarVisibility(_ providerID: UUID, isVisible: Bool) {
