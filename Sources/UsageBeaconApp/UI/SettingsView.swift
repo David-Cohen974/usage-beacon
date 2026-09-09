@@ -1760,7 +1760,6 @@ private struct SettingsPanel<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 12)
-        .overlay(alignment: .top) { Divider() }
     }
 }
 

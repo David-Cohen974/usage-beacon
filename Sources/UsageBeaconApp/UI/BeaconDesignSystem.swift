@@ -12,6 +12,19 @@ extension AppAppearance {
             return .dark
         }
     }
+
+    /// Keep AppKit windows and SwiftUI scenes on the same appearance. `nil`
+    /// is intentional: AppKit then follows the current system setting.
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return NSAppearance(named: .aqua)
+        case .dark:
+            return NSAppearance(named: .darkAqua)
+        }
+    }
 }
 
 extension ProviderSetupStatus {

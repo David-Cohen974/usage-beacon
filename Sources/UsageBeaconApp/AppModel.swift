@@ -81,6 +81,7 @@ final class AppModel: ObservableObject {
             configuration.settings.menuBarProviderIDs = selectedProviderID.map { [$0] } ?? []
         }
         self.configuration = configuration
+        NSApp?.appearance = configuration.settings.appearance.nsAppearance
         telemetry.updateConsent(
             crashReportsEnabled: configuration.settings.crashReportingEnabled,
             usageAnalyticsEnabled: configuration.settings.usageAnalyticsEnabled
@@ -307,6 +308,7 @@ final class AppModel: ObservableObject {
 
     func setAppearance(_ appearance: AppAppearance) {
         configuration.settings.appearance = appearance
+        NSApp?.appearance = appearance.nsAppearance
         saveConfiguration()
         updateFloatingHUD()
     }
