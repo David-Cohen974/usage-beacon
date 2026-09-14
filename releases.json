@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.3.2",
+    "tag": "v1.3.2",
+    "name": "UsageBeacon 1.3.2",
+    "releaseDate": "2026-09-14T09:02:11Z",
+    "prerelease": false,
+    "notes": "# UsageBeacon 1.3.2\n\n- Click anywhere on a provider's header row to expand or collapse its settings. Sync and connection actions are inside the expanded panel.\n- The first provider to successfully sync is selected for the menu bar meter automatically. Existing selections and subsequent manual opt-outs are preserved.\n- Switches keep a blue on-state when the window is inactive, with a checkmark and thumb position to distinguish on from off. Disabled states, keyboard access, VoiceOver, and reduced-motion settings are retained.\n",
+    "url": "https://github.com/David-Cohen974/usage-beacon/releases/tag/v1.3.2"
+  },
+  {
     "version": "1.3.0",
     "tag": "v1.3.0",
     "name": "UsageBeacon 1.3.0",
