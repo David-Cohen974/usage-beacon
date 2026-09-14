@@ -192,7 +192,8 @@ h2 { font-size: clamp(32px, 3.5vw, 46px); line-height: 1.12; }
 .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); }
 .mac-menubar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #283644; font-size: 11px; border-block: 1px solid #ffffff12; }
 .mac-app { margin-right: auto; font-weight: 600; }
-.menubar-usage { padding: 5px 8px; border: 1px solid #74ded889; border-radius: 6px; background: #132c30; white-space: nowrap; }
+.menubar-usage { padding: 5px 8px; border: 1px solid #74ded889; border-radius: 6px; background: #132c30; color: inherit; white-space: nowrap; cursor: pointer; transition: background .2s ease, border-color .2s ease, transform .2s ease; }
+.menubar-usage:hover, .menubar-usage:focus-visible { border-color: var(--teal); background: #1b4144; transform: translateY(-1px); }
 .menubar-usage b { margin-left: 5px; color: #91eee6; }
 .mac-time { color: #c1cbd5; }
 .demo-desktop { position: relative; min-height: 388px; padding: 22px; display: flex; align-items: center; justify-content: flex-end; background: radial-gradient(ellipse at 0% 100%, #245859, transparent 70%), #101e2c; }
@@ -200,7 +201,9 @@ h2 { font-size: clamp(32px, 3.5vw, 46px); line-height: 1.12; }
 .demo-context .eyebrow { font-size: 9px; letter-spacing: .06em; }
 .demo-context strong { display: block; margin-top: 15px; font-size: 24px; line-height: 1.15; letter-spacing: -.04em; }
 .demo-context p { color: #bbcdd0; font-size: 12px; line-height: 1.7; }
-.demo-panel { position: relative; width: 290px; padding: 18px; background: #101923; border: 1px solid #ffffff26; border-radius: 14px; box-shadow: 0 18px 36px #0004; }
+.demo-backdrop { position: absolute; inset: 0; background: rgba(1, 7, 15, .42); opacity: 0; pointer-events: none; transition: opacity .35s ease; }
+.demo-panel { position: relative; width: 290px; padding: 18px; background: #101923; border: 1px solid #ffffff26; border-radius: 14px; box-shadow: 0 18px 36px #0004; transform-origin: top right; transition: opacity .32s cubic-bezier(.22,.8,.22,1), transform .42s cubic-bezier(.22,1.25,.36,1), filter .32s ease; }
+.demo-panel.is-hidden { opacity: 0; transform: translateY(-18px) scale(.94); filter: blur(2px); pointer-events: none; }
 .panel-heading { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .panel-heading span { margin-left: auto; color: var(--muted); font-size: 10px; }
 .panel-label { color: var(--muted); font-size: 11px; margin-block: 18px; }
@@ -217,10 +220,14 @@ h2 { font-size: clamp(32px, 3.5vw, 46px); line-height: 1.12; }
 .demo-toolbar { min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; color: #bac8d2; font-size: 11px; line-height: 1.6; }
 .shortcut-control { padding: 7px; border: 1px solid var(--line-bright); border-radius: 6px; background: #182a32; color: var(--ink); cursor: pointer; white-space: nowrap; }
 kbd { font: inherit; }
-.hud-preview { position: relative; width: 250px; padding: 24px; border: 1px solid var(--line-bright); border-radius: 16px; background: #101923; }
+.hud-preview { position: relative; width: 250px; padding: 24px; border: 1px solid var(--line-bright); border-radius: 16px; background: #101923; transform-origin: bottom right; transition: opacity .28s ease, transform .5s cubic-bezier(.22,1.35,.36,1), filter .28s ease; }
+.hud-preview.is-hidden { opacity: 0; transform: translate(34px, 28px) scale(.78); filter: blur(4px); pointer-events: none; }
 .hud-preview span, .hud-preview small { display: block; color: var(--muted); font-size: 12px; }
 .hud-preview strong { display: block; margin-block: 12px; font-size: 52px; color: var(--teal); }
 .product-demo[data-active-surface="notification"] .demo-panel { border-radius: 24px; background: #20303a; }
+.product-demo.notification-is-open .demo-backdrop { opacity: 1; }
+.product-demo.notification-is-open .demo-panel { transform: translateY(5px) scale(1.02); box-shadow: 0 28px 58px #0008; }
+.product-demo.menu-is-open .demo-panel { transform: translateY(0) scale(1.02); box-shadow: 0 24px 52px #0008; }
 .surfaces, .how-it-works, .signal-breakdown, .installation, .closing { padding-block: 80px; }
 .surface-grid { gap: 16px; border: 0; margin-top: 36px; }
 .surface-item, .surface-item + .surface-item, .surface-item:last-child { padding: 24px; border: 1px solid var(--line); border-radius: 14px; }

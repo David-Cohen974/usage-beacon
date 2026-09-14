@@ -48,9 +48,10 @@
 
         <div class="product-demo" data-active-surface="menu" data-demo-state="open" aria-label="Example UsageBeacon preview">
           <div class="demo-caption"><span class="live-dot"></span> A glance at your Mac <span>Example data</span></div>
-          <div class="mac-menubar"><span class="mac-app">◈ &nbsp; UsageBeacon</span><span class="menubar-usage" aria-label="Cursor: 68 percent remaining">◉ &nbsp; Cursor <b>68%</b></span><span class="mac-time">Mon 9:41</span></div>
+          <div class="mac-menubar"><span class="mac-app">◈ &nbsp; UsageBeacon</span><button class="menubar-usage" type="button" aria-expanded="true" aria-controls="surface-preview">◉ &nbsp; Cursor <b>68%</b></button><span class="mac-time">Mon 9:41</span></div>
           <div class="demo-desktop">
             <div class="demo-context"><span class="eyebrow">Less dashboard checking.</span><strong>More room<br>to focus.</strong><p>Your remaining percentage,<br>right in the menu bar.</p></div>
+            <div class="demo-backdrop" aria-hidden="true"></div>
             <div class="demo-panel" id="surface-preview" role="region" aria-label="Menu bar preview">
               <div class="panel-heading"><img src="assets/app-icon.png" width="28" height="28" alt=""><strong>UsageBeacon</strong><span>Example</span></div>
               <p class="panel-label" data-preview-title>Menu bar overview</p>
@@ -62,9 +63,9 @@
               <div class="provider-meter codex"><span style="width:81%"></span></div>
               <div class="panel-bottom"><span>One place. Three providers.</span><span>↻</span></div>
             </div>
-            <div class="hud-preview" hidden><span>Cursor · Monthly budget left</span><strong>68%</strong><small>$73.44 remaining</small></div>
+            <div class="hud-preview is-hidden" aria-hidden="true"><span>Cursor · Monthly budget left</span><strong>68%</strong><small>$73.44 remaining</small></div>
           </div>
-          <div class="demo-toolbar"><span data-preview-description>Click the menu bar icon for the full picture.</span><button class="shortcut-control" type="button" aria-pressed="true" hidden>Toggle HUD <kbd>⇧⌘U</kbd></button></div>
+          <div class="demo-toolbar"><span data-preview-description>Click the menu bar icon for the full picture.</span><button class="shortcut-control" type="button" aria-pressed="false" hidden>Toggle HUD <kbd>⇧⌘U</kbd></button></div>
         </div>
       </section>
 

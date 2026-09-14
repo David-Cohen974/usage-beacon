@@ -112,15 +112,23 @@ function initHomeDemo() {
   const panel = demo.querySelector(".demo-panel");
   const hud = demo.querySelector(".hud-preview");
   const shortcut = demo.querySelector(".shortcut-control");
+  const menubar = demo.querySelector(".menubar-usage");
+  const backdrop = demo.querySelector(".demo-backdrop");
   const labels = {
     menu: ["Menu bar overview", "Click the menu bar icon for the full picture."],
     notification: ["Notification Center widget", "Add a widget to Notification Center or your desktop."],
     hud: ["Floating HUD", "Keep your budget above your work. Toggle it with ⇧⌘U."],
   };
   const toggleHud = () => {
-    hud.hidden = !hud.hidden;
-    shortcut.setAttribute("aria-pressed", String(!hud.hidden));
+    const visible = hud.classList.toggle("is-hidden");
+    hud.setAttribute("aria-hidden", String(visible));
+    shortcut.setAttribute("aria-pressed", String(!visible));
   };
+  const toggleMenu = () => {
+    const open = demo.classList.toggle("menu-is-open");
+    menubar.setAttribute("aria-expanded", String(open));
+  };
+  menubar.addEventListener("click", toggleMenu);
   shortcut.addEventListener("click", toggleHud);
   document.querySelectorAll("[data-surface]").forEach((surface) => {
     surface.setAttribute("aria-controls", "surface-preview");
@@ -131,10 +139,15 @@ function initHomeDemo() {
       });
       const mode = surface.dataset.surface;
       demo.dataset.activeSurface = mode;
-      panel.hidden = mode === "hud";
-      hud.hidden = mode !== "hud";
+      panel.classList.toggle("is-hidden", mode === "hud");
+      panel.setAttribute("aria-hidden", String(mode === "hud"));
+      hud.classList.toggle("is-hidden", mode !== "hud");
+      hud.setAttribute("aria-hidden", String(mode !== "hud"));
       shortcut.hidden = mode !== "hud";
-      shortcut.setAttribute("aria-pressed", String(!hud.hidden));
+      shortcut.setAttribute("aria-pressed", String(mode === "hud"));
+      demo.classList.toggle("notification-is-open", mode === "notification");
+      demo.classList.toggle("menu-is-open", mode === "menu");
+      menubar.setAttribute("aria-expanded", String(mode === "menu"));
       panel.setAttribute("aria-label", labels[mode][0]);
       demo.querySelector("[data-preview-title]").textContent = labels[mode][0];
       demo.querySelector("[data-preview-description]").textContent = labels[mode][1];
