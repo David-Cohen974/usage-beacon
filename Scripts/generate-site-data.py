@@ -12,8 +12,8 @@ def fail(message: str) -> None:
     raise SystemExit(message)
 
 
-if len(sys.argv) != 3:
-    fail("Usage: generate-site-data.py <github-releases.json> <site-output-dir>")
+if len(sys.argv) not in (3, 4):
+    fail("Usage: generate-site-data.py <github-releases.json> <site-output-dir> [github-latest-release.json]")
 
 releases_path = Path(sys.argv[1])
 output_dir = Path(sys.argv[2])
@@ -25,6 +25,12 @@ if not isinstance(releases, list):
 published = [release for release in releases if not release.get("draft", False)]
 published.sort(key=lambda release: release.get("published_at") or "", reverse=True)
 stable = next((release for release in published if not release.get("prerelease", False)), None)
+
+# GitHub's designated latest stable release can differ from publication-date order.
+if len(sys.argv) == 4:
+    stable = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8"))
+    if not isinstance(stable, dict) or stable.get("draft") or stable.get("prerelease") or not stable.get("tag_name"):
+        fail("Latest release must be a published stable release")
 
 minimum_macos = "14.0"
 latest = {

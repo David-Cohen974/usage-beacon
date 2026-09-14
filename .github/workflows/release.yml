@@ -276,9 +276,11 @@ jobs:
       - name: Generate latest version and changelog metadata
         run: |
           gh api "/repos/${GITHUB_REPOSITORY}/releases?per_page=100" > "${RUNNER_TEMP}/releases.json"
+          gh api "/repos/${GITHUB_REPOSITORY}/releases/latest" > "${RUNNER_TEMP}/latest-release.json"
           ./Scripts/generate-site-data.py \
             "${RUNNER_TEMP}/releases.json" \
-            "${{ steps.pages.outputs.pages_dir }}"
+            "${{ steps.pages.outputs.pages_dir }}" \
+            "${RUNNER_TEMP}/latest-release.json"
 
       - name: Publish website and appcast to gh-pages
         run: |

@@ -1,12 +1,16 @@
 name: Publish Website
 
 on:
+  release:
+    types: [published, edited, released, deleted]
   workflow_dispatch:
   push:
     branches:
       - main
     paths:
       - "site/**"
+      - "Scripts/generate-site-data.py"
+      - ".github/workflows/website.yml"
 
 permissions:
   contents: write
@@ -49,6 +53,14 @@ jobs:
           test -f "$pages_dir/latest.json" || cp site/latest.json "$pages_dir/latest.json"
           test -f "$pages_dir/releases.json" || cp site/releases.json "$pages_dir/releases.json"
           echo "pages_dir=$pages_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Refresh release metadata from GitHub
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "/repos/${GITHUB_REPOSITORY}/releases?per_page=100" > "${RUNNER_TEMP}/releases.json"
+          gh api "/repos/${GITHUB_REPOSITORY}/releases/latest" > "${RUNNER_TEMP}/latest-release.json"
+          python3 Scripts/generate-site-data.py "${RUNNER_TEMP}/releases.json" "${{ steps.pages.outputs.pages_dir }}" "${RUNNER_TEMP}/latest-release.json"
 
       - name: Publish gh-pages branch
         run: |

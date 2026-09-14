@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#020713">
-    <meta name="description" content="UsageBeacon is a native Mac utility that keeps Cursor and Claude usage visible in your menu bar, Notification Center, and a floating HUD.">
+    <meta name="description" content="UsageBeacon is a native Mac utility that keeps Cursor, Claude, and Codex usage visible in your menu bar, Notification Center, and a floating HUD.">
     <meta property="og:title" content="UsageBeacon for Mac">
     <meta property="og:description" content="Your AI usage. Always in sight.">
     <meta property="og:type" content="website">
@@ -12,8 +12,9 @@
     <meta property="og:image" content="https://david-cohen974.github.io/usage-beacon/assets/app-icon.png">
     <title>UsageBeacon — Your AI usage, always in sight</title>
     <link rel="icon" href="assets/app-icon.png">
-    <link rel="stylesheet" href="assets/site.css?v=9">
-    <script src="assets/site.js?v=8" defer></script>
+    <link rel="stylesheet" href="assets/site.css?v=10">
+    <script type="module" src="assets/remote-config.js?v=1"></script>
+    <script src="assets/site.js?v=10" defer></script>
   </head>
   <body data-page="home">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -24,7 +25,7 @@
         <span>UsageBeacon</span>
       </a>
       <nav aria-label="Main navigation">
-        <a href="#surfaces">Surfaces</a>
+        <a href="#surfaces">Features</a>
         <a href="#how-it-works">How it works</a>
         <a href="changelog/">Changelog</a>
         <a href="https://github.com/David-Cohen974/usage-beacon">GitHub</a>
@@ -37,74 +38,47 @@
         <div class="hero-copy">
           <p class="eyebrow"><span></span> Native utility for macOS</p>
           <h1>Your AI usage.<br>Always in sight.</h1>
-          <p class="hero-lede">UsageBeacon turns Cursor and Claude usage into one calm signal—right on your Mac.</p>
+          <p class="hero-lede">UsageBeacon turns Cursor, Claude, and Codex usage into clear remaining percentages, budgets, and reset windows—right on your Mac.</p>
           <div class="hero-actions">
             <a class="button primary download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download for Mac</a>
             <a class="button secondary" href="#surfaces">See how it works <span aria-hidden="true">→</span></a>
           </div>
-          <p class="release-meta">Free &amp; open source <i>·</i> <span data-minimum-macos>macOS 14+</span> <i>·</i> Apple notarized</p>
+          <p class="release-meta"><span data-latest-version>Latest release</span> <i>·</i> Free &amp; open source <i>·</i> <span data-minimum-macos>macOS 14+</span> <i>·</i> Apple notarized</p>
         </div>
 
-        <div class="product-demo" data-demo-state="open" aria-label="Interactive preview of UsageBeacon on a Mac">
-          <img class="mac-workspace" src="assets/usagebeacon-mac-workspace.png" alt="MacBook showing a calm dark workspace" width="1536" height="1024">
-
-          <div class="notification-center" aria-hidden="true">
-            <p class="nc-date">Monday, August 24</p>
-            <div class="nc-controls"><span>Focus<br><b>On</b></span><span>Wi-Fi<br><b>Home</b></span></div>
-            <div class="usage-widget widget-medium">
-              <div class="widget-head"><span><i></i> UsageBeacon</span><small>Synced now</small></div>
-              <div class="budget-line"><span>CURSOR MONTHLY</span><b>68% left</b></div>
-              <div class="progress"><span></span></div>
-              <div class="amount-line"><strong>$34.20</strong><span>of $108 remaining</span></div>
-              <div class="widget-row"><span>Today</span><b>$6.42</b></div>
-              <div class="widget-row"><span>Daily runway</span><b>$8.10</b></div>
+        <div class="product-demo" data-active-surface="menu" data-demo-state="open" aria-label="Example UsageBeacon preview">
+          <div class="demo-caption"><span class="live-dot"></span> A glance at your Mac <span>Example data</span></div>
+          <div class="mac-menubar"><span class="mac-app">◈ &nbsp; UsageBeacon</span><span class="menubar-usage" aria-label="Cursor: 68 percent remaining">◉ &nbsp; Cursor <b>68%</b></span><span class="mac-time">Mon 9:41</span></div>
+          <div class="demo-desktop">
+            <div class="demo-context"><span class="eyebrow">Less dashboard checking.</span><strong>More room<br>to focus.</strong><p>Your remaining percentage,<br>right in the menu bar.</p></div>
+            <div class="demo-panel" id="surface-preview" role="region" aria-label="Menu bar preview">
+              <div class="panel-heading"><img src="assets/app-icon.png" width="28" height="28" alt=""><strong>UsageBeacon</strong><span>Example</span></div>
+              <p class="panel-label" data-preview-title>Menu bar overview</p>
+              <div class="provider-row"><span><i class="provider-icon">↗</i> Cursor <small>Monthly budget</small></span><b>68%<small>remaining</small></b></div>
+              <div class="provider-meter"><span style="width:68%"></span></div>
+              <div class="provider-row"><span><i class="provider-icon claude">✳</i> Claude <small>Session quota</small></span><b>42%<small>remaining</small></b></div>
+              <div class="provider-meter claude"><span style="width:42%"></span></div>
+              <div class="provider-row"><span><i class="provider-icon codex">◎</i> Codex <small>5-hour window</small></span><b>81%<small>remaining</small></b></div>
+              <div class="provider-meter codex"><span style="width:81%"></span></div>
+              <div class="panel-bottom"><span>One place. Three providers.</span><span>↻</span></div>
             </div>
-            <div class="nc-note"><span>Calendar</span><b>Team stand-up · 10:00</b></div>
+            <div class="hud-preview" hidden><span>Cursor · Monthly budget left</span><strong>68%</strong><small>$73.44 remaining</small></div>
           </div>
-
-          <div class="extracted-widget" aria-hidden="true">
-            <div class="widget-head"><span><i></i> UsageBeacon</span><small>Synced now</small></div>
-            <div class="budget-line"><span>CURSOR MONTHLY</span><b>68% left</b></div>
-            <div class="progress"><span></span></div>
-            <div class="amount-line"><strong>$34.20</strong><span>of $108 remaining</span></div>
-            <div class="widget-row"><span>Today</span><b>$6.42</b></div>
-            <div class="widget-row"><span>Daily runway</span><b>$8.10</b></div>
-          </div>
-
-          <div class="menu-popover" aria-hidden="true">
-            <div class="widget-head"><span><i></i> UsageBeacon</span><small>Synced now</small></div>
-            <div class="budget-line"><span>CURSOR MONTHLY</span><b>68% left</b></div>
-            <div class="progress"><span></span></div>
-            <div class="amount-line"><strong>$34.20</strong><span>of $108 remaining</span></div>
-            <div class="widget-row"><span>Today</span><b>$6.42</b></div>
-            <div class="widget-row"><span>Daily runway</span><b>$8.10</b></div>
-          </div>
-
-          <div class="hud-preview" aria-hidden="true">
-            <div class="budget-line"><span>CURSOR MONTHLY</span><b>68% left</b></div>
-            <div class="progress"><span></span></div>
-            <div class="amount-line"><strong>$34.20</strong><span>of $108 remaining</span></div>
-          </div>
-
-          <button class="shortcut-control" type="button" aria-pressed="true" aria-label="Replay the show and hide demonstration">
-            <span>Show or hide instantly</span>
-            <kbd>⇧</kbd><kbd>⌘</kbd><kbd>U</kbd>
-            <small>Your HUD appears when you need it—and disappears when you don’t.</small>
-          </button>
+          <div class="demo-toolbar"><span data-preview-description>Click the menu bar icon for the full picture.</span><button class="shortcut-control" type="button" aria-pressed="true" hidden>Toggle HUD <kbd>⇧⌘U</kbd></button></div>
         </div>
       </section>
 
       <section id="surfaces" class="surfaces section-shell" aria-labelledby="surfaces-title">
         <div class="section-heading centered">
           <p class="eyebrow"><span></span> One live snapshot</p>
-        <h2 id="surfaces-title">Three surfaces. One live snapshot.</h2>
+        <h2 id="surfaces-title">Your usage, where you need it.</h2>
           <p>Choose the view that fits your workflow. Every surface stays in sync, so the number you need is always close.</p>
         </div>
         <div class="surface-grid">
           <button class="surface-item is-active" type="button" data-surface="menu" aria-pressed="true">
             <span class="surface-index">01</span>
             <strong>Menu bar</strong>
-            <p>Open a compact popover for budget left, today’s spend, and daily runway.</p>
+            <p>See your selected provider’s remaining percentage in the top bar. Click to open all your sources.</p>
             <span class="surface-action">Preview surface →</span>
           </button>
           <button class="surface-item" type="button" data-surface="notification" aria-pressed="false">
@@ -131,7 +105,7 @@
         <ol class="steps">
           <li>
             <span>01</span>
-            <div><strong>Connect a source</strong><p>Sign in to Cursor or Claude, use an admin key, enter a manual budget, or map a custom REST endpoint.</p></div>
+            <div><strong>Connect a source</strong><p>Connect Cursor, Claude, or Codex, use an admin key, enter a manual budget, or map a custom REST endpoint.</p></div>
           </li>
           <li>
             <span>02</span>
@@ -148,9 +122,9 @@
         <div class="breakdown-preview" aria-label="Example UsageBeacon budget snapshot">
           <div class="preview-top"><span><i></i> Cursor Personal</span><b>Synced just now</b></div>
           <p class="preview-label">MONTHLY BUDGET LEFT</p>
-          <div class="preview-value"><strong>$34.20</strong><span>68%</span></div>
+          <div class="preview-value"><strong>$73.44</strong><span>68%</span></div>
           <div class="preview-meter"><span></span></div>
-          <div class="preview-stats"><span><small>SPENT TODAY</small><b>$6.42</b></span><span><small>DAILY RUNWAY</small><b>$8.10</b></span><span><small>WORKING DAYS</small><b>9 left</b></span></div>
+          <div class="preview-stats"><span><small>SPENT TODAY</small><b>$6.42</b></span><span><small>DAILY RUNWAY</small><b>$8.16</b></span><span><small>WORKING DAYS</small><b>9 left</b></span></div>
         </div>
         <div class="breakdown-copy">
           <p class="eyebrow"><span></span> Understand the number</p>
@@ -169,7 +143,7 @@
           <p class="eyebrow"><span></span> Local-first by design</p>
           <h2>Your credentials stay on your Mac.</h2>
         </div>
-        <p>Secrets live in macOS Keychain. UsageBeacon talks directly to your configured sources and does not require a UsageBeacon account, analytics service, or cloud backend.</p>
+        <p>Secrets live in macOS Keychain, and provider connections come directly from your Mac. No UsageBeacon account is required. Crash reporting and optional analytics have separate controls in Settings.</p>
         <a class="text-link" href="privacy/">Read the privacy details →</a>
       </section>
 
@@ -182,7 +156,7 @@
         <ol>
           <li><span>1</span><div><strong>Download</strong><p>Get the latest signed DMG.</p></div></li>
           <li><span>2</span><div><strong>Install</strong><p>Drag UsageBeacon into Applications.</p></div></li>
-          <li><span>3</span><div><strong>Connect</strong><p>Add Cursor, Claude, or another source.</p></div></li>
+          <li><span>3</span><div><strong>Connect</strong><p>Add Cursor, Claude, Codex, or another source.</p></div></li>
           <li><span>4</span><div><strong>Glance</strong><p>Choose menu bar, widgets, or HUD.</p></div></li>
         </ol>
       </section>
@@ -193,7 +167,7 @@
         <h2>Keep the useful number close.</h2>
         <p>Free, open source, and built for macOS.</p>
         <a class="button primary download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download for Mac</a>
-        <p class="release-meta"><span data-latest-version>Version 1.0.0</span> <i>·</i> <span data-minimum-macos>macOS 14+</span></p>
+        <p class="release-meta"><span data-latest-version>Latest release</span> <i>·</i> <span data-minimum-macos>macOS 14+</span></p>
       </section>
     </main>
 
@@ -204,7 +178,7 @@
         <a href="https://github.com/David-Cohen974/usage-beacon">GitHub</a>
         <a href="privacy/">Privacy</a>
         <a href="changelog/">Changelog</a>
-        <a id="support" class="support-link" href="https://buymeacoffee.com/David134974" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span> Buy me a coffee</a>
+        <a id="support" class="support-link" data-support-link href="https://buymeacoffee.com/David134974" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span> Buy me a coffee</a>
         <a class="download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download</a>
       </nav>
     </footer>
