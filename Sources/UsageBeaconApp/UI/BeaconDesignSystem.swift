@@ -12,6 +12,19 @@ extension AppAppearance {
             return .dark
         }
     }
+
+    /// Keep AppKit windows and SwiftUI scenes on the same appearance. `nil`
+    /// is intentional: AppKit then follows the current system setting.
+    var nsAppearance: NSAppearance? {
+        switch self {
+        case .system:
+            return nil
+        case .light:
+            return NSAppearance(named: .aqua)
+        case .dark:
+            return NSAppearance(named: .darkAqua)
+        }
+    }
 }
 
 extension ProviderSetupStatus {
@@ -174,9 +187,9 @@ struct BeaconBackdrop: View {
                     ? [Color(red: 0.08, green: 0.12, blue: 0.20),
                        Color(red: 0.08, green: 0.18, blue: 0.24),
                        Color(red: 0.08, green: 0.24, blue: 0.27)]
-                    : [Color(red: 0.96, green: 0.98, blue: 1),
-                       Color(red: 0.95, green: 0.98, blue: 0.99),
-                       Color(red: 0.88, green: 0.96, blue: 0.94)],
+                    : [Color(red: 0.95, green: 0.97, blue: 0.99),
+                       Color(red: 0.97, green: 0.99, blue: 1.00),
+                       Color(red: 0.99, green: 0.98, blue: 0.96)],
                 startPoint: .topLeading, endPoint: .bottomTrailing
             )
         }
@@ -223,24 +236,9 @@ struct BeaconMetricTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .fill(BeaconPalette.cardStrong)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
-                        .stroke(
-                            LinearGradient(
-                                colors: [
-                                    colors.first?.opacity(0.35) ?? .clear,
-                                    BeaconPalette.glareStrong
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(BeaconPalette.surfaceSoft)
         )
-        .shadow(color: BeaconPalette.shadow, radius: 16, x: 0, y: 10)
     }
 }
 
@@ -260,32 +258,78 @@ struct BeaconPill: View {
 }
 
 struct BeaconActionButtonStyle: ButtonStyle {
-    let colors: [Color]
-    var filled: Bool = true
+    var colors: [Color] = [BeaconPalette.cyan, BeaconPalette.teal]
+    var filled: Bool = false
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .foregroundStyle(filled ? Color.white : BeaconPalette.ink)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(background)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .stroke(borderColor, lineWidth: 1)
-                    )
-            )
-            .opacity(configuration.isPressed ? 0.7 : 1)
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(configuration.role == .destructive ? BeaconPalette.danger : (filled ? .white : BeaconPalette.ink))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(filled
+                        ? AnyShapeStyle(LinearGradient(colors: [Color(red: 0.12, green: 0.39, blue: 0.70), Color(red: 0.07, green: 0.43, blue: 0.42)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        : AnyShapeStyle(BeaconPalette.ink.opacity(configuration.isPressed ? 0.12 : 0.06)))
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .opacity(isEnabled ? (configuration.isPressed ? 0.75 : 1) : 0.4)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: configuration.isPressed)
     }
+}
 
-    private var background: AnyShapeStyle {
-        AnyShapeStyle(filled ? Color.accentColor : Color(nsColor: .controlBackgroundColor))
-    }
+/// Keeps on/off states distinct when the window is inactive as well as in light/dark mode.
+struct BeaconSwitchStyle: ToggleStyle {
+    var labelsHidden = false
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var borderColor: Color {
-        filled ? BeaconPalette.outline.opacity(0.45) : BeaconPalette.glareStrong
+    func makeBody(configuration: Configuration) -> some View {
+        Button {
+            configuration.isOn.toggle()
+        } label: {
+            HStack(spacing: 12) {
+                if !labelsHidden {
+                    configuration.label
+                    Spacer(minLength: 8)
+                }
+                ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                    Capsule()
+                        .fill(configuration.isOn
+                              ? Color(red: 0.10, green: 0.42, blue: 0.83)
+                              : Color(nsColor: .secondaryLabelColor).opacity(0.35))
+                    HStack {
+                        if configuration.isOn {
+                            Image(systemName: "checkmark").foregroundStyle(.white)
+                            Spacer(minLength: 0)
+                        } else {
+                            Spacer(minLength: 0)
+                            Image(systemName: "minus").foregroundStyle(BeaconPalette.ink)
+                        }
+                    }
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(.horizontal, 7)
+                    Circle()
+                        .fill(.white)
+                        .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
+                        .frame(width: 18, height: 18)
+                        .padding(3)
+                }
+                .frame(width: 44, height: 24)
+                .accessibilityHidden(true)
+            }
+            .contentShape(Rectangle())
+            .opacity(isEnabled ? 1 : 0.5)
+        }
+        .buttonStyle(.plain)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.15), value: configuration.isOn)
+        .accessibilityRepresentation {
+            Toggle(isOn: configuration.$isOn) { configuration.label }
+                .toggleStyle(.switch)
+        }
     }
 }
 
@@ -316,7 +360,7 @@ struct BeaconGaugeBar: View {
     }
 
     private var clampedValue: Double {
-        min(max(value, 0), 1)
+        value.isFinite ? min(max(value, 0), 1) : 0
     }
 }
 
@@ -361,10 +405,27 @@ struct BeaconCardModifier: ViewModifier {
     let cornerRadius: CGFloat
 
     func body(content: Content) -> some View {
-        content.background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor))
-        )
+        content
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(BeaconPalette.cardStrong)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        colors.first?.opacity(0.4) ?? .clear,
+                                        BeaconPalette.outline.opacity(0.4)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.5
+                            )
+                    )
+            )
+            .shadow(color: BeaconPalette.shadow.opacity(0.4), radius: 12, x: 0, y: 6)
     }
 }
 
@@ -387,16 +448,16 @@ extension Color {
 }
 
 extension DateFormatter {
-    static let beaconMonth: DateFormatter = {
+    static var beaconMonth: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateFormat = "LLLL"
         return formatter
-    }()
+    }
 
-    static let beaconShortTime: DateFormatter = {
+    static var beaconShortTime: DateFormatter {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
         return formatter
-    }()
+    }
 }

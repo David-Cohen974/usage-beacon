@@ -16,6 +16,13 @@ enum CustomRESTProvider {
         guard let url = URL(string: endpoint) else {
             throw ProviderFailure.misconfigured("Custom REST endpoint URL is invalid.")
         }
+        guard let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+              url.host?.nilIfBlank != nil else {
+            throw ProviderFailure.misconfigured("Custom REST endpoint must be an HTTP or HTTPS URL with a host.")
+        }
+        guard isPublicHost(url.host!) else {
+            throw ProviderFailure.misconfigured("Custom REST endpoint cannot target localhost or a private network address.")
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = settings.httpMethod.isEmpty ? "GET" : settings.httpMethod
@@ -142,5 +149,24 @@ enum CustomRESTProvider {
             }
         }
         return current
+    }
+
+    private static func isPublicHost(_ host: String) -> Bool {
+        let normalized = host.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
+        if normalized == "localhost" || normalized.hasSuffix(".local") || normalized == "::1"
+            || normalized == "0.0.0.0" || normalized == "::" {
+            return false
+        }
+        let address = normalized.split(separator: ".").compactMap({ Int($0) })
+        guard address.count == 4,
+              address.allSatisfy({ 0...255 ~= $0 }) else {
+            return true
+        }
+        if address[0] == 10 || address[0] == 127 || address[0] == 169 && address[1] == 254
+            || address[0] == 192 && address[1] == 168
+            || address[0] == 172 && (16...31).contains(address[1]) {
+            return false
+        }
+        return true
     }
 }

@@ -148,6 +148,13 @@ enum CodexProvider {
     ) throws -> String {
         if let configured = configuredPath.nilIfBlank {
             let expanded = NSString(string: configured).expandingTildeInPath
+            guard expanded.hasPrefix("/") else {
+                throw ProviderFailure.misconfigured("The configured Codex executable path must be absolute.")
+            }
+            let dangerousNames = ["sh", "bash", "zsh", "fish", "osascript", "python", "python3", "ruby", "perl"]
+            guard dangerousNames.contains(URL(fileURLWithPath: expanded).lastPathComponent.lowercased()) == false else {
+                throw ProviderFailure.misconfigured("The configured Codex executable cannot be a shell or script interpreter.")
+            }
             guard fileManager.isExecutableFile(atPath: expanded) else {
                 throw ProviderFailure.misconfigured(
                     "The configured Codex executable is missing or cannot be run: \(expanded)"

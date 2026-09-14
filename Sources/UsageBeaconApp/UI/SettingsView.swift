@@ -91,6 +91,7 @@ struct SettingsView: View {
         }
         .background { BeaconBackdrop() }
         .tint(BeaconPalette.cyan)
+        .buttonStyle(BeaconActionButtonStyle())
         .frame(minWidth: 900, idealWidth: 980, minHeight: 540, idealHeight: 680)
     }
 
@@ -123,12 +124,12 @@ struct SettingsView: View {
                 Button("Turn Off") {
                     model.acknowledgeCrashReportingDisclosure(keepEnabled: false)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(BeaconActionButtonStyle())
 
                 Button("Keep On") {
                     model.acknowledgeCrashReportingDisclosure(keepEnabled: true)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(BeaconActionButtonStyle(filled: true))
                 .tint(BeaconPalette.teal)
             }
         }
@@ -190,8 +191,7 @@ struct SettingsView: View {
                 Spacer()
                 if !model.availableCalendars.isEmpty {
                     Toggle("Calendar adjustments", isOn: Binding(get: { model.configuration.settings.useCalendarAdjustments }, set: { model.setCalendarAdjustmentsEnabled($0) }))
-                        .labelsHidden()
-                        .toggleStyle(.switch)
+                        .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
                 }
             }
             if let calendarErrorMessage = model.calendarErrorMessage {
@@ -233,7 +233,7 @@ struct SettingsView: View {
                             Text(calendar.title).font(.system(size: 13, weight: .semibold))
                         }
                     }
-                    .toggleStyle(.switch)
+                    .toggleStyle(BeaconSwitchStyle())
                     if model.configuration.settings.selectedCalendarIDs.contains(calendar.id) {
                         Picker("Exclude", selection: Binding(
                             get: { model.configuration.settings.calendarExclusionModes[calendar.id] ?? .busyAllDay },
@@ -316,17 +316,17 @@ struct SettingsView: View {
                 model.requestCalendarAccess()
             }
             .disabled(model.isRequestingCalendarAccess)
-            .buttonStyle(.bordered)
+            .buttonStyle(BeaconActionButtonStyle())
         case .fullAccess, .unknown:
             Button("Refresh Calendars") {
                 model.refreshCalendarAccess()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(BeaconActionButtonStyle())
         case .writeOnly, .denied, .restricted:
             Button("Open System Settings") {
                 model.openCalendarPrivacySettings()
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(BeaconActionButtonStyle())
         }
     }
 
@@ -363,7 +363,7 @@ struct SettingsView: View {
                 Label("Provider meter in the menu bar", systemImage: "menubar.rectangle")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BeaconPalette.ink)
-                Text("Choose one provider to show beside the UsageBeacon icon. Its remaining percentage follows the same automatic refresh schedule.")
+                Text("Your first connected provider appears here automatically. Choose another provider or turn the meter off at any time.")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(BeaconPalette.mutedInk)
                     .fixedSize(horizontal: false, vertical: true)
@@ -398,7 +398,7 @@ struct SettingsView: View {
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(BeaconPalette.ink)
                         }
-                        .toggleStyle(.switch)
+                        .toggleStyle(BeaconSwitchStyle())
                         .disabled(provider.isEnabled == false)
                     }
                 }
@@ -415,11 +415,15 @@ struct SettingsView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundStyle(BeaconPalette.ink)
                         BeaconPill(
-                            title: "Ready to add",
-                            symbol: "checkmark.circle.fill",
+                            title: model.widgetSyncErrorMessage == nil ? "Available in Edit Widgets" : "Sync needs attention",
+                            symbol: model.widgetSyncErrorMessage == nil ? "square.grid.2x2" : "exclamationmark.triangle",
                             colors: [BeaconPalette.cyan, BeaconPalette.teal]
                         )
                     }
+                    if let error = model.widgetSyncErrorMessage {
+                        Text(error).font(.caption).foregroundStyle(BeaconPalette.danger)
+                    }
+                    Button("Refresh widget") { model.refreshWidget() }
                     Text("Open Notification Center, choose Edit Widgets, search for UsageBeacon, then pick a small, medium, or large widget.")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
@@ -439,8 +443,7 @@ struct SettingsView: View {
                 }
                 Spacer()
                 Toggle("Floating HUD", isOn: Binding(get: { model.configuration.settings.showFloatingHUD }, set: { model.setShowFloatingHUD($0) }))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
             }
             Divider().overlay(BeaconPalette.outline)
             HStack {
@@ -457,7 +460,7 @@ struct SettingsView: View {
                     Button("Open Login Items") {
                         model.openLoginItemsSettings()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(BeaconActionButtonStyle())
                 }
                 Toggle(
                     "Launch at login",
@@ -466,8 +469,7 @@ struct SettingsView: View {
                         set: { model.setLaunchAtLogin($0) }
                     )
                 )
-                .labelsHidden()
-                .toggleStyle(.switch)
+                .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
             }
             Divider().overlay(BeaconPalette.outline)
             HStack {
@@ -515,8 +517,7 @@ struct SettingsView: View {
                             set: { updater.setAutomaticallyChecksForUpdates($0) }
                         )
                     )
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
                 }
 
                 Divider().overlay(BeaconPalette.outline)
@@ -532,8 +533,7 @@ struct SettingsView: View {
                             set: { updater.setAutomaticallyDownloadsUpdates($0) }
                         )
                     )
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
                 }
 
                 Divider().overlay(BeaconPalette.outline)
@@ -549,8 +549,7 @@ struct SettingsView: View {
                             set: { updater.setReceivesBetaUpdates($0) }
                         )
                     )
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
                 }
 
                 Divider().overlay(BeaconPalette.outline)
@@ -569,7 +568,7 @@ struct SettingsView: View {
                         updater.checkForUpdates()
                     }
                     .disabled(!updater.canCheckForUpdates)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(BeaconActionButtonStyle())
                 }
                 .padding(.vertical, 14)
             }
@@ -596,8 +595,7 @@ struct SettingsView: View {
                             set: { model.setCrashReportingEnabled($0) }
                         )
                     )
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
                 }
 
                 Divider().overlay(BeaconPalette.outline)
@@ -613,8 +611,7 @@ struct SettingsView: View {
                             set: { model.setUsageAnalyticsEnabled($0) }
                         )
                     )
-                    .labelsHidden()
-                    .toggleStyle(.switch)
+                    .toggleStyle(BeaconSwitchStyle(labelsHidden: true))
                 }
 
                 Divider().overlay(BeaconPalette.outline)
@@ -684,7 +681,10 @@ struct SettingsView: View {
                 } label: {
                     Label("Add Provider", systemImage: "plus")
                 }
-                .menuStyle(.borderedButton)
+                .menuStyle(.borderlessButton)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(BeaconPalette.ink.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
             }
 
             if model.configuration.providers.isEmpty {
@@ -709,28 +709,28 @@ struct SettingsView: View {
                         } label: {
                             Label("Track Codex", systemImage: ProviderKind.codex.symbolName)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(BeaconActionButtonStyle())
 
                         Button {
                             model.addProviderAndBeginSetup(kind: .cursorPersonal)
                         } label: {
                             Label("Sign in to Cursor", systemImage: ProviderKind.cursorPersonal.symbolName)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(BeaconActionButtonStyle())
 
                         Button {
                             model.addProviderAndBeginSetup(kind: .claudePersonal)
                         } label: {
                             Label("Sign in to Claude", systemImage: ProviderKind.claudePersonal.symbolName)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(BeaconActionButtonStyle())
 
                         Button {
                             model.addProvider(kind: .manual)
                         } label: {
                             Label("Add Manual Budget", systemImage: ProviderKind.manual.symbolName)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(BeaconActionButtonStyle())
                     }
 
                     Label("Your password stays in the service’s own sign-in page. UsageBeacon reuses only the local browser session on this Mac.", systemImage: "lock.shield")
@@ -898,11 +898,14 @@ private struct ProviderEditorView: View {
     @State private var isExpanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 0) {
             header
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: 18) {
+                    Button(primaryActionTitle) { performPrimaryAction() }
+                        .buttonStyle(BeaconActionButtonStyle(filled: true))
+                        .disabled(snapshot?.isLoading == true)
                     HStack(alignment: .top, spacing: 16) {
                         SettingsPanel(
                             title: "Identity",
@@ -915,7 +918,7 @@ private struct ProviderEditorView: View {
                             }
 
                             Toggle("Include in tracking", isOn: $provider.isEnabled)
-                                .toggleStyle(.switch)
+                                .toggleStyle(BeaconSwitchStyle())
 
                             Text("This controls whether UsageBeacon refreshes this connector. It does not mean the account is connected.")
                                 .font(.system(size: 11, weight: .medium))
@@ -939,14 +942,15 @@ private struct ProviderEditorView: View {
                         } label: {
                             Label("Delete provider", systemImage: "trash")
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(BeaconActionButtonStyle())
                     }
                 }
-                .transition(.move(edge: .top).combined(with: .opacity))
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+                .transition(.opacity)
             }
         }
-        .padding(16)
-        .overlay(alignment: .bottom) { Divider() }
+        .background(BeaconPalette.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .task(id: provider.id) {
             secret = model.loadSecret(for: provider.id)
             if provider.kind == .cursorPersonal || provider.kind == .claudePersonal,
@@ -960,44 +964,37 @@ private struct ProviderEditorView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .center, spacing: 14) {
-            ProviderKindOrb(kind: provider.kind)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(provider.displayName)
-                        .font(.system(size: 16, weight: .bold))
-                    BeaconPill(
-                        title: setupStatus.title,
-                        symbol: setupStatus.symbol,
-                        colors: setupStatus.colors
-                    )
+        Button {
+            isExpanded.toggle()
+        } label: {
+            HStack(alignment: .center, spacing: 14) {
+                ProviderKindOrb(kind: provider.kind)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(provider.displayName)
+                            .font(.system(size: 16, weight: .bold))
+                        BeaconPill(title: setupStatus.title, symbol: setupStatus.symbol, colors: setupStatus.colors)
+                    }
+                    .foregroundStyle(BeaconPalette.ink)
+                    Text(providerMetadata)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(BeaconPalette.mutedInk)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                    .foregroundStyle(BeaconPalette.ink)
-
-                Text(providerMetadata)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(BeaconPalette.mutedInk)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            Spacer()
-
-            Button(primaryActionTitle) {
-                performPrimaryAction()
-            }
-            .buttonStyle(.bordered)
-
-            Button {
-                isExpanded.toggle()
-            } label: {
+                Spacer(minLength: 12)
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(BeaconPalette.ink)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(BeaconPalette.mutedInk)
+                    .accessibilityHidden(true)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded ? "Collapse \(provider.displayName) settings" : "Expand \(provider.displayName) settings")
+            .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+            .padding(16)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(provider.displayName) settings")
+        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+        .accessibilityHint("Click anywhere on this row to \(isExpanded ? "collapse" : "expand") settings")
     }
 
     private var providerMetadata: String {
@@ -1265,10 +1262,8 @@ private struct ProviderEditorView: View {
 
     private func formatPercent(_ value: Decimal) -> String {
         let number = value.doubleValue
-        if number.rounded() == number {
-            return "\(Int(number))%"
-        }
-        return String(format: "%.1f%%", number)
+        guard number.isFinite else { return "—" }
+        return number.formatted(.number.precision(.fractionLength(0...1))) + "%"
     }
 }
 
@@ -1309,19 +1304,19 @@ private struct PersonalConnectionControls: View {
                     Button(status == .waitingForSignIn ? "Reopen Sign-In" : "Sign in to \(serviceName)") {
                         onConnect()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(BeaconActionButtonStyle())
                 }
 
                 Button("Check Connection") {
                     onCheckSession()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(BeaconActionButtonStyle())
 
                 if status == .connected || status == .syncing || status == .waitingForSignIn {
                     Button("Disconnect") {
                         onDisconnect()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(BeaconActionButtonStyle())
                 }
             }
         }
@@ -1529,7 +1524,7 @@ private struct CursorProviderFields: View {
             }
 
             Toggle("Use overall spend, not only on-demand overages", isOn: $settings.useOverallSpend)
-                .toggleStyle(.switch)
+                .toggleStyle(BeaconSwitchStyle())
         }
     }
 }
@@ -1760,7 +1755,6 @@ private struct SettingsPanel<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 12)
-        .overlay(alignment: .top) { Divider() }
     }
 }
 

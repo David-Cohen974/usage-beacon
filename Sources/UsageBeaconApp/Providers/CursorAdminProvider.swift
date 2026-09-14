@@ -17,14 +17,9 @@ enum CursorAdminProvider {
             throw ProviderFailure.misconfigured("Cursor API key is missing.")
         }
 
-        let spendRequest = try makeRequest(
-            apiBaseURL: settings.apiBaseURL,
-            path: "teams/spend",
-            apiKey: apiKey,
-            body: CursorSpendRequest(searchTerm: accountEmail, page: 1, pageSize: 1000)
+        let spendResponse = try await fetchSpend(
+            settings: settings, apiKey: apiKey, httpClient: httpClient, accountEmail: accountEmail
         )
-        let (spendData, _) = try await httpClient.data(for: spendRequest)
-        let spendResponse = try JSONDecoder().decode(CursorSpendResponse.self, from: spendData)
 
         guard let member = spendResponse.teamMemberSpend.first(where: {
             $0.email.caseInsensitiveCompare(accountEmail) == .orderedSame
@@ -75,31 +70,62 @@ enum CursorAdminProvider {
         now: Date
     ) async throws -> CursorDailyUsageSummary {
         let startOfDay = Calendar.current.startOfDay(for: now)
-        let request = try makeRequest(
-            apiBaseURL: settings.apiBaseURL,
-            path: "teams/filtered-usage-events",
-            apiKey: apiKey,
-            body: CursorUsageEventsRequest(
-                startDate: startOfDay.timeIntervalSince1970 * 1000,
-                endDate: now.timeIntervalSince1970 * 1000,
-                page: 1,
-                pageSize: 1000,
-                email: settings.accountEmail
-            )
+        let events = try await fetchUsageEvents(
+            settings: settings, apiKey: apiKey, httpClient: httpClient,
+            startDate: startOfDay.timeIntervalSince1970 * 1000,
+            endDate: now.timeIntervalSince1970 * 1000
         )
-        let (data, _) = try await httpClient.data(for: request)
-        let response = try JSONDecoder().decode(CursorUsageEventsResponse.self, from: data)
-        let latestPromptCostUSD = response.usageEvents
+        let latestPromptCostUSD = events
             .max(by: { $0.timestampDate < $1.timestampDate })?
             .chargedCents
             .map(Decimal.fromCents)
-        let chargedEvents = response.usageEvents.compactMap(\.chargedCents)
+        let chargedEvents = events.compactMap(\.chargedCents)
         let spentTodayUSD = chargedEvents.isEmpty ? nil : Decimal.fromCents(chargedEvents.reduce(0, +))
 
         return CursorDailyUsageSummary(
             spentTodayUSD: spentTodayUSD,
             lastPromptCostUSD: latestPromptCostUSD
         )
+    }
+
+    private static func fetchSpend(
+        settings: CursorAdminSettings, apiKey: String, httpClient: HTTPClientProtocol, accountEmail: String
+    ) async throws -> CursorSpendResponse {
+        let pageSize = 1000
+        var page = 1
+        var members: [CursorSpendMember] = []
+        while page <= 100 {
+            let request = try makeRequest(apiBaseURL: settings.apiBaseURL, path: "teams/spend", apiKey: apiKey,
+                body: CursorSpendRequest(searchTerm: accountEmail, page: page, pageSize: pageSize))
+            let (data, _) = try await httpClient.data(for: request)
+            let response = try JSONDecoder().decode(CursorSpendResponse.self, from: data)
+            members.append(contentsOf: response.teamMemberSpend)
+            guard response.teamMemberSpend.count == pageSize else {
+                return CursorSpendResponse(teamMemberSpend: members, subscriptionCycleStart: response.subscriptionCycleStart)
+            }
+            page += 1
+        }
+        throw ProviderFailure.network("Cursor spend pagination exceeded the safety limit.")
+    }
+
+    private static func fetchUsageEvents(
+        settings: CursorAdminSettings, apiKey: String, httpClient: HTTPClientProtocol,
+        startDate: Double, endDate: Double
+    ) async throws -> [CursorUsageEvent] {
+        let pageSize = 1000
+        var page = 1
+        var events: [CursorUsageEvent] = []
+        while page <= 100 {
+            let request = try makeRequest(apiBaseURL: settings.apiBaseURL, path: "teams/filtered-usage-events", apiKey: apiKey,
+                body: CursorUsageEventsRequest(startDate: startDate, endDate: endDate, page: page,
+                    pageSize: pageSize, email: settings.accountEmail))
+            let (data, _) = try await httpClient.data(for: request)
+            let response = try JSONDecoder().decode(CursorUsageEventsResponse.self, from: data)
+            events.append(contentsOf: response.usageEvents)
+            guard response.usageEvents.count == pageSize else { return events }
+            page += 1
+        }
+        throw ProviderFailure.network("Cursor usage-event pagination exceeded the safety limit.")
     }
 
     private static func makeRequest<Body: Encodable>(

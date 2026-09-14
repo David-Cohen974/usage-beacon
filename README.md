@@ -61,19 +61,19 @@ swift run UsageBeaconApp
 ### Build the app bundle
 
 ```bash
-./Scripts/build-app.sh debug
+./Scripts/build-app.sh release
 ditto -x -k dist/UsageBeacon.zip /Applications
 open /Applications/UsageBeacon.app
 ```
 
-### Rebuild and relaunch during development
+### Build and install locally
 
 ```bash
 ./Scripts/rebuild-and-open.sh
 ```
 
 The built app runs as a menu bar app instead of appearing in the Dock.
-The script creates only `dist/UsageBeacon.zip`. Keeping a second unpacked `.app` in the source folder can make macOS register the wrong widget extension, so install and run the single copy in `/Applications`.
+The build script creates `dist/UsageBeacon.zip`. The installer defaults to Release, verifies the candidate, and removes its temporary rollback bundle after a successful installation. Keeping a second unpacked `.app` in the source folder can make macOS register the wrong widget extension, so install and run the single copy in `/Applications`.
 
 ### Add the widget
 

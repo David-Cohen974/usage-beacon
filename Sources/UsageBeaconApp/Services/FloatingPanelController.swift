@@ -38,6 +38,7 @@ final class FloatingPanelController {
             self?.resizePanel(isExpanded: isExpanded)
         }
         let panel = panel ?? makePanel()
+        panel.appearance = appearance.nsAppearance
         if let hostingView {
             hostingView.rootView = content
         } else {
@@ -61,7 +62,7 @@ final class FloatingPanelController {
     private func makePanel() -> NSPanel {
         let panel = NSPanel(
             contentRect: NSRect(x: 0, y: 0, width: 220, height: 44),
-            styleMask: [.nonactivatingPanel, .hudWindow],
+            styleMask: [.nonactivatingPanel],
             backing: .buffered,
             defer: false
         )

@@ -41,3 +41,15 @@ Do not describe a release as end-to-end production verified until the signed app
 All 65 tests passed with native interface captures enabled. The persistent-reader widget-store check passed. Signed universal local builds passed archive verification and were installed with a rollback copy. Existing provider settings survived, successful refreshes advanced the shared snapshot, and WidgetKit logged successful small, medium, and large timeline requests.
 
 Native renders cover the menu at its top and bottom and all Settings pages in light and dark appearances. The scroll check asserts a usable viewport and movement to the final provider. These checks do not establish a complete supported-OS, clean-install, gesture, sleep/wake, midnight, or automatic-upgrade acceptance matrix.
+
+## Release 1.3.2 verification on September 14, 2026
+
+- All 70 tests passed, including configuration recovery, concurrent provider refreshes, widget persistence, first-connected menu-bar selection, preserving an explicit meter opt-out, and legacy selection migration.
+- The separate-process widget-store test passed, and a Developer ID signed sandbox probe read the current shared App Group snapshot.
+- The universal app and DMG were Developer ID signed, notarized, stapled, and accepted by Gatekeeper. The installed candidate is version 1.3.2, build 100015, with one registered embedded widget extension.
+- The existing Cursor session survived the upgrade and returned current usage. Clicking the provider name and empty row space both expanded or collapsed the provider settings.
+- Switches were checked in System/dark and Light appearances. Enabled switches remained blue with a checkmark and right-positioned thumb; disabled switches used gray with a minus and left-positioned thumb.
+- Light, Dark, and System appearance switching worked, including returning to the current macOS dark appearance. The provider screen rendered without row separator lines.
+- Installer simulations confirmed rollback after a failed launch and removal of the temporary previous app after success. The previous Xcode build products were unregistered and removed so only `/Applications/UsageBeacon.app` remains discoverable.
+
+The live Notification Center widget gallery and rendered small, medium, and large widgets were not recaptured for 1.3.2 because macOS screen capture of Notification Center failed. Widget registration, the shared container, atomic persistence, and timeline reload paths were verified; final WidgetKit rendering remains subject to the system scheduler.
