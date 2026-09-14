@@ -8,6 +8,76 @@ import UsageBeaconShared
 
 struct UsageBeaconAppTests {
     @Test
+    @MainActor
+    func firstConnectedProviderGetsMeterButExplicitOffIsPreserved() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("config.json"))
+        let first = StoredProvider(kind: .manual)
+        let second = StoredProvider(kind: .manual)
+        var configuration = AppConfiguration.empty
+        configuration.providers = [first, second]
+        configuration.settings.showFloatingHUD = false
+        try store.save(configuration)
+        let model = AppModel(configurationStore: store, secretStore: InMemorySecretStore(),
+                             launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+                             telemetry: SpyTelemetryReporter(), widgetPublisher: { _ in }, autoStart: false)
+        #expect(model.configuration.settings.menuBarProviderIDs.isEmpty)
+        await model.performRefresh(providerID: second.id, force: true)
+        #expect(model.configuration.settings.menuBarProviderIDs == [second.id])
+        await model.performRefresh(providerID: first.id, force: true)
+        #expect(model.configuration.settings.menuBarProviderIDs == [second.id])
+        model.setProviderMenuBarVisibility(second.id, isVisible: false)
+        await model.performRefresh(providerID: first.id, force: true)
+        #expect(model.configuration.settings.menuBarProviderIDs.isEmpty)
+        #expect(store.load().settings.menuBarSelectionConfigured)
+        model.setProviderMenuBarVisibility(first.id, isVisible: true)
+        #expect(model.configuration.settings.menuBarProviderIDs == [first.id])
+    }
+
+    @Test(arguments: [true, false])
+    func legacyMeterSelectionMigratesWithoutOverridingASelection(hasSelection: Bool) throws {
+        var settings = GlobalSettings()
+        if hasSelection { settings.menuBarProviderIDs = [UUID()] }
+        var json = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(settings)) as? [String: Any])
+        json.removeValue(forKey: "menuBarSelectionConfigured")
+        let decoded = try JSONDecoder().decode(GlobalSettings.self, from: JSONSerialization.data(withJSONObject: json))
+        #expect(decoded.menuBarSelectionConfigured == hasSelection)
+        #expect(decoded.menuBarProviderIDs == settings.menuBarProviderIDs)
+    }
+
+    @Test
+    func duplicateProviderIDsRecoverWithoutLosingTheOriginalConnector() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("config.json"))
+        let provider = StoredProvider(kind: .manual)
+        var configuration = AppConfiguration.empty
+        configuration.providers = [provider, provider]
+        try store.save(configuration)
+        #expect(store.load().providers == [provider])
+    }
+
+    @Test
+    func nonFiniteUsageDoesNotCrashMenuBarFormatting() {
+        var snapshot = ProviderSnapshotState.placeholder(from: StoredProvider(kind: .manual))
+        snapshot.monthlyBudgetUSD = 100
+        snapshot.spentUSD = .nan
+        #expect(snapshot.utilizationRatio == nil)
+        #expect(snapshot.menuBarStatusText == "—")
+    }
+
+    @Test
+    func widgetStoreCreatesMissingContainerSubdirectories() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("nested/snapshot.json")
+        let snapshot = UsageBeaconWidgetSnapshot(providers: [])
+        try UsageBeaconWidgetSnapshotStore.save(snapshot, to: url)
+        #expect(UsageBeaconWidgetSnapshotStore.load(from: url) == snapshot)
+    }
+
+    @Test
     func zeroWorkdaysExplainWhyDailyBudgetIsUnavailable() {
         var snapshot = ProviderSnapshotState.placeholder(from: StoredProvider(kind: .manual))
         snapshot.workingDaysRemaining = 0

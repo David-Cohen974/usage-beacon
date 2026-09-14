@@ -125,6 +125,7 @@ struct GlobalSettings: Codable, Equatable {
     var showFloatingHUD: Bool = true
     var appearance: AppAppearance = .system
     var menuBarProviderIDs: Set<UUID> = []
+    var menuBarSelectionConfigured: Bool = false
     var launchAtLogin: Bool = true
     var crashReportingEnabled: Bool = true
     var usageAnalyticsEnabled: Bool = false
@@ -141,6 +142,7 @@ struct GlobalSettings: Codable, Equatable {
         case showFloatingHUD
         case appearance
         case menuBarProviderIDs
+        case menuBarSelectionConfigured
         case launchAtLogin
         case crashReportingEnabled
         case usageAnalyticsEnabled
@@ -161,6 +163,8 @@ struct GlobalSettings: Codable, Equatable {
         showFloatingHUD = try container.decodeIfPresent(Bool.self, forKey: .showFloatingHUD) ?? true
         appearance = try container.decodeIfPresent(AppAppearance.self, forKey: .appearance) ?? .system
         menuBarProviderIDs = try container.decodeIfPresent(Set<UUID>.self, forKey: .menuBarProviderIDs) ?? []
+        menuBarSelectionConfigured = try container.decodeIfPresent(Bool.self, forKey: .menuBarSelectionConfigured)
+            ?? !menuBarProviderIDs.isEmpty
         launchAtLogin = try container.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? true
         // Missing keys identify a configuration written before telemetry existed. Keep
         // those users opted out; only a genuinely new configuration uses the defaults above.
@@ -189,6 +193,7 @@ struct GlobalSettings: Codable, Equatable {
         try container.encode(showFloatingHUD, forKey: .showFloatingHUD)
         try container.encode(appearance, forKey: .appearance)
         try container.encode(menuBarProviderIDs, forKey: .menuBarProviderIDs)
+        try container.encode(menuBarSelectionConfigured, forKey: .menuBarSelectionConfigured)
         try container.encode(launchAtLogin, forKey: .launchAtLogin)
         try container.encode(crashReportingEnabled, forKey: .crashReportingEnabled)
         try container.encode(usageAnalyticsEnabled, forKey: .usageAnalyticsEnabled)
@@ -568,7 +573,8 @@ struct ProviderSnapshotState: Identifiable, Equatable {
 
     var utilizationRatio: Double? {
         if let primaryUsageWindow {
-            return min(max(primaryUsageWindow.usedPercent.doubleValue / 100, 0), 1)
+            let ratio = primaryUsageWindow.usedPercent.doubleValue / 100
+            return ratio.isFinite ? min(max(ratio, 0), 1) : nil
         }
 
         guard
@@ -578,7 +584,8 @@ struct ProviderSnapshotState: Identifiable, Equatable {
         else {
             return nil
         }
-        return min(max((spentUSD / monthlyBudgetUSD).doubleValue, 0), 1)
+        let ratio = (spentUSD / monthlyBudgetUSD).doubleValue
+        return ratio.isFinite ? min(max(ratio, 0), 1) : nil
     }
 
     var menuBarStatusText: String {
@@ -783,12 +790,12 @@ extension String {
 }
 
 extension DateFormatter {
-    static let shortDate: DateFormatter = {
+    static var shortDate: DateFormatter {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
         formatter.timeStyle = .none
         return formatter
-    }()
+    }
 }
 
 extension Date {

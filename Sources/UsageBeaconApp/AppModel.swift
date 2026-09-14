@@ -55,8 +55,13 @@ final class AppModel: ObservableObject {
         launchAtLoginController: LaunchAtLoginControlling = LaunchAtLoginController(),
         telemetry: TelemetryReporting = TelemetryController.shared,
         widgetPublisher: @escaping (UsageBeaconWidgetSnapshot) throws -> Void = { snapshot in
+            let previous = UsageBeaconWidgetSnapshotStore.load()
             try UsageBeaconWidgetSnapshotStore.save(snapshot)
-            WidgetCenter.shared.reloadTimelines(ofKind: UsageBeaconWidgetData.widgetKind)
+            // Preserve WidgetKit's refresh budget: appearance, focus and unchanged
+            // provider polls still update the file, but don't invalidate the timeline.
+            if previous?.providers != snapshot.providers {
+                WidgetCenter.shared.reloadTimelines(ofKind: UsageBeaconWidgetData.widgetKind)
+            }
         },
         autoStart: Bool = true
     ) {
@@ -96,6 +101,7 @@ final class AppModel: ObservableObject {
         )
         self.cursorPersonalSessionState = cursorDashboardSessionController.state
         self.claudePersonalSessionState = claudeDashboardSessionController.state
+        applyAppearance(configuration.settings.appearance)
 
         cursorDashboardSessionController.onStateChange = { [weak self] state in
             guard let self else {
@@ -307,19 +313,45 @@ final class AppModel: ObservableObject {
 
     func setAppearance(_ appearance: AppAppearance) {
         configuration.settings.appearance = appearance
+        applyAppearance(appearance)
         saveConfiguration()
         updateFloatingHUD()
+    }
+
+    /// Clear explicit window appearances as well as the application appearance.
+    /// SwiftUI's `preferredColorScheme(nil)` cannot remove an appearance that
+    /// AppKit attached to an already-created Settings window.
+    private func applyAppearance(_ appearance: AppAppearance) {
+        let nsAppearance = appearance.nsAppearance
+        NSApp?.appearance = nsAppearance
+        NSApp?.windows.forEach { window in
+            window.appearance = nsAppearance
+            window.invalidateShadow()
+            window.contentView?.needsDisplay = true
+        }
     }
 
     func setProviderMenuBarVisibility(_ providerID: UUID, isVisible: Bool) {
         guard configuration.providers.contains(where: { $0.id == providerID }) else {
             return
         }
+        configuration.settings.menuBarSelectionConfigured = true
         if isVisible {
             configuration.settings.menuBarProviderIDs = [providerID]
         } else {
             configuration.settings.menuBarProviderIDs.remove(providerID)
         }
+        saveConfiguration()
+    }
+
+    private func selectInitialMenuBarProviderIfNeeded() {
+        guard !configuration.settings.menuBarSelectionConfigured,
+              configuration.settings.menuBarProviderIDs.isEmpty,
+              let connected = orderedSnapshots.first(where: {
+                  $0.isEnabled && $0.lastUpdatedAt != nil && $0.errorMessage == nil
+              }) else { return }
+        configuration.settings.menuBarProviderIDs = [connected.id]
+        configuration.settings.menuBarSelectionConfigured = true
         saveConfiguration()
     }
 
@@ -640,6 +672,7 @@ final class AppModel: ObservableObject {
                 }
                 let enriched = enrich(rawSnapshot)
                 snapshotStates[provider.id] = enriched
+                selectInitialMenuBarProviderIfNeeded()
                 telemetry.track(
                     .refreshFinished(
                         providerKind: provider.kind,
@@ -845,7 +878,7 @@ final class AppModel: ObservableObject {
 
     private func scheduleRefreshTimer() {
         refreshTimer?.invalidate()
-        let interval = TimeInterval(max(1, configuration.settings.refreshIntervalMinutes) * 60)
+        let interval = TimeInterval(min(max(1, configuration.settings.refreshIntervalMinutes), 1440)) * 60
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.performRefreshAll(force: false)
@@ -911,6 +944,12 @@ final class AppModel: ObservableObject {
         publishWidgetSnapshot(from: snapshots)
     }
 
+    func refreshWidget() {
+        publishWidgetSnapshot()
+        WidgetCenter.shared.reloadTimelines(ofKind: UsageBeaconWidgetData.widgetKind)
+        refreshAll()
+    }
+
     private func publishWidgetSnapshot(from snapshots: [ProviderSnapshotState]? = nil) {
         let snapshots = snapshots ?? orderedSnapshots.filter(\.isEnabled)
         let hasLoadedSnapshot = snapshots.contains { $0.lastUpdatedAt != nil || $0.errorMessage != nil }
@@ -925,7 +964,8 @@ final class AppModel: ObservableObject {
                 primaryValue = "Needs attention"
                 secondaryValue = "Open UsageBeacon to reconnect"
             } else if let window = snapshot.primaryUsageWindow {
-                let remaining = Int(max(100 - window.usedPercent.doubleValue, 0).rounded())
+                let percent = window.usedPercent.doubleValue
+                let remaining = Int((percent.isFinite ? min(max(100 - percent, 0), 100) : 0).rounded())
                 primaryValue = "\(remaining)% left"
                 secondaryValue = window.title
             } else if let remaining = snapshot.remainingUSD {

@@ -8,11 +8,11 @@ enum DebugCommandRunner {
         from arguments: [String],
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) -> DebugCommand? {
+#if DEBUG
         if arguments.contains("--developer-test-crashlytics"),
            environment["USAGEBEACON_ALLOW_TEST_CRASH"] == "1" {
             return .testCrashlytics
         }
-#if DEBUG
         if let index = arguments.firstIndex(of: "--debug-cursor-personal") {
             let customURL = arguments.indices.contains(index + 1) ? arguments[index + 1] : nil
             return .debugCursorPersonal(pageURLOverride: customURL)

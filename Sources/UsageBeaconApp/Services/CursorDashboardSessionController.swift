@@ -353,9 +353,15 @@ private final class CursorDashboardPageLoader: NSObject, WKNavigationDelegate {
     }
 
     func load(url: URL) async throws -> CursorDashboardPageSnapshot {
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            navigationContinuation = continuation
-            webView.load(URLRequest(url: url))
+        let deadline = Date().addingTimeInterval(15)
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { try await self.waitForNavigation(url: url) }
+            group.addTask {
+                try await Task.sleep(for: .seconds(15))
+                throw ProviderFailure.network("Cursor usage page did not finish loading.")
+            }
+            defer { group.cancelAll() }
+            try await group.next()!
         }
 
         var latestSnapshot = CursorDashboardPageSnapshot(
@@ -366,7 +372,7 @@ private final class CursorDashboardPageLoader: NSObject, WKNavigationDelegate {
             resourceURLs: [],
             nextDataSample: nil
         )
-        let timeoutAt = Date().addingTimeInterval(15)
+        let timeoutAt = deadline
 
         while Date() < timeoutAt {
             let snapshot = try await webView.pageSnapshot()
@@ -390,19 +396,34 @@ private final class CursorDashboardPageLoader: NSObject, WKNavigationDelegate {
         throw ProviderFailure.network("Cursor usage page did not finish loading.")
     }
 
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        navigationContinuation?.resume()
+    private func waitForNavigation(url: URL) async throws {
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                navigationContinuation = continuation
+                webView.load(URLRequest(url: url))
+            }
+        } onCancel: {
+            Task { @MainActor [weak self] in self?.finishNavigation(error: CancellationError()) }
+        }
+    }
+
+    private func finishNavigation(error: Error? = nil) {
+        guard let continuation = navigationContinuation else { return }
         navigationContinuation = nil
+        if let error { continuation.resume(throwing: error) }
+        else { continuation.resume() }
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        finishNavigation()
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        navigationContinuation?.resume(throwing: error)
-        navigationContinuation = nil
+        finishNavigation(error: error)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        navigationContinuation?.resume(throwing: error)
-        navigationContinuation = nil
+        finishNavigation(error: error)
     }
 }
 

@@ -39,13 +39,17 @@ final class ConfigurationStore {
     func load() -> AppConfiguration {
         lastRecovery = nil
         saveBlockedByRecovery = false
-        guard fileManager.fileExists(atPath: fileURL.path) else {
+        guard fileManager.fileExists(atPath: fileURL.path(percentEncoded: false)) else {
             return .empty
         }
 
         do {
             let data = try Data(contentsOf: fileURL)
-            let configuration = try JSONDecoder().decode(AppConfiguration.self, from: data)
+            var configuration = try JSONDecoder().decode(AppConfiguration.self, from: data)
+            // Duplicate identities can be introduced by imports or interrupted migrations.
+            // Retain the first connector and its keychain identity instead of crashing at launch.
+            var seen = Set<UUID>()
+            configuration.providers = configuration.providers.filter { seen.insert($0.id).inserted }
             return Self.isLegacyExampleConfiguration(configuration) ? .empty : configuration
         } catch {
             preserveUnreadableConfiguration(causedBy: error)

@@ -73,8 +73,13 @@ enum AnthropicAdminProvider {
         let isoFormatter = ISO8601DateFormatter()
         var totalCents: Decimal = 0
         var nextPage: String?
+        var pageCount = 0
 
         repeat {
+            pageCount += 1
+            guard pageCount <= 100 else {
+                throw ProviderFailure.network("Anthropic cost report pagination exceeded the safety limit.")
+            }
             guard var components = URLComponents(string: settings.apiBaseURL) else {
                 throw ProviderFailure.misconfigured("Anthropic API base URL is invalid.")
             }
@@ -119,6 +124,9 @@ enum AnthropicAdminProvider {
                 }
             }
             nextPage = response.hasMore ? response.nextPage : nil
+            if response.hasMore && nextPage == nil {
+                throw ProviderFailure.network("Anthropic returned an incomplete pagination cursor.")
+            }
         } while nextPage != nil
 
         return Decimal.fromCents(totalCents)

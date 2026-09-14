@@ -70,6 +70,7 @@ public enum UsageBeaconWidgetSnapshotStore {
 
     public static func save(_ snapshot: UsageBeaconWidgetSnapshot, to url: URL) throws {
         let data = try JSONEncoder().encode(snapshot)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         // Commit the complete payload before asking the other process to reload.
         try data.write(to: url, options: .atomic)
     }

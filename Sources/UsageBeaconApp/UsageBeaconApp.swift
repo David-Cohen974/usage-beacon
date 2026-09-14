@@ -95,7 +95,6 @@ struct UsageBeaconApp: App {
                 DebugCommandView(command: debugCommand)
             } else {
                 MenuBarRootView(model: model)
-                    .preferredColorScheme(model.configuration.settings.appearance.colorScheme)
             }
         } label: {
             UsageBeaconMenuBarLabel(model: model)
@@ -107,7 +106,6 @@ struct UsageBeaconApp: App {
                 DebugCommandView(command: debugCommand)
             } else {
                 SettingsView(model: model, updater: updater)
-                    .preferredColorScheme(model.configuration.settings.appearance.colorScheme)
             }
         }
         .commands {

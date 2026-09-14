@@ -9,6 +9,7 @@ protocol SecretStoring: Sendable {
 
 struct KeychainSecretStore: SecretStoring, Sendable {
     private let service = "io.github.usagebeacon"
+    private let accessibility = kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String
 
     func loadSecret(account: String) -> String? {
         let query: [String: Any] = [
@@ -40,7 +41,8 @@ struct KeychainSecretStore: SecretStoring, Sendable {
         ]
 
         let attributes: [String: Any] = [
-            kSecValueData as String: data
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: accessibility
         ]
 
         let updateStatus = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
@@ -49,14 +51,15 @@ struct KeychainSecretStore: SecretStoring, Sendable {
         }
 
         guard updateStatus == errSecItemNotFound else {
-            throw ProviderFailure.network("Keychain update failed with status \(updateStatus).")
+            throw ProviderFailure.misconfigured("Keychain update failed with status \(updateStatus).")
         }
 
         var insertQuery = query
         insertQuery[kSecValueData as String] = data
+        insertQuery[kSecAttrAccessible as String] = accessibility
         let addStatus = SecItemAdd(insertQuery as CFDictionary, nil)
         guard addStatus == errSecSuccess else {
-            throw ProviderFailure.network("Keychain save failed with status \(addStatus).")
+            throw ProviderFailure.misconfigured("Keychain save failed with status \(addStatus).")
         }
     }
 
@@ -69,7 +72,7 @@ struct KeychainSecretStore: SecretStoring, Sendable {
 
         let status = SecItemDelete(query as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw ProviderFailure.network("Keychain delete failed with status \(status).")
+            throw ProviderFailure.misconfigured("Keychain delete failed with status \(status).")
         }
     }
 }
