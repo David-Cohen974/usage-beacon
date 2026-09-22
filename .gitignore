@@ -25,3 +25,6 @@ __pycache__/
 .env
 .env.*
 !.env.example
+
+# Keep website pages visible even when a global ignore excludes index.html.
+!site/**/index.html

@@ -27,11 +27,11 @@ struct URLSessionHTTPClient: HTTPClientProtocol, Sendable {
         return (data, httpResponse)
     }
 
-    private static func retryAfterSeconds(from response: HTTPURLResponse) -> TimeInterval? {
+    static func retryAfterSeconds(from response: HTTPURLResponse) -> TimeInterval? {
         guard let value = response.value(forHTTPHeaderField: "Retry-After") else {
             return nil
         }
-        if let seconds = TimeInterval(value), seconds >= 0 {
+        if let seconds = TimeInterval(value), seconds.isFinite, seconds >= 0 {
             return seconds
         }
 

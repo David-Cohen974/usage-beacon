@@ -48,6 +48,16 @@ public struct UsageBeaconWidgetSnapshot: Codable, Equatable, Sendable {
     public let updatedAt: Date
     public let providers: [UsageBeaconWidgetProvider]
 
+    /// A partial or stale total looks like a valid budget. Hide the aggregate
+    /// while any source reports a failure, leaving the source rows visible.
+    public var totalRemainingUSD: Double? {
+        guard !providers.contains(where: \.hasError) else { return nil }
+        let values = providers.compactMap(\.remainingUSD)
+        guard !values.isEmpty, values.allSatisfy(\.isFinite) else { return nil }
+        let total = values.reduce(0, +)
+        return total.isFinite ? total : nil
+    }
+
     public init(updatedAt: Date = Date(), providers: [UsageBeaconWidgetProvider]) {
         self.updatedAt = updatedAt
         self.providers = providers

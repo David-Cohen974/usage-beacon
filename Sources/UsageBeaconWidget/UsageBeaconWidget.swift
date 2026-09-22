@@ -2,7 +2,7 @@ import SwiftUI
 import UsageBeaconShared
 import WidgetKit
 
-private struct UsageBeaconEntry: TimelineEntry {
+struct UsageBeaconEntry: TimelineEntry {
     let date: Date
     let snapshot: UsageBeaconWidgetSnapshot?
 }
@@ -28,14 +28,14 @@ private struct UsageBeaconTimelineProvider: TimelineProvider {
     }
 }
 
-private struct UsageBeaconWidgetView: View {
+struct UsageBeaconWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: UsageBeaconEntry
 
     var body: some View {
         Group {
             if let snapshot = entry.snapshot, snapshot.providers.isEmpty == false {
-                content(snapshot)
+                content(snapshot, family: family)
             } else {
                 emptyState
             }
@@ -53,7 +53,7 @@ private struct UsageBeaconWidgetView: View {
     }
 
     @ViewBuilder
-    private func content(_ snapshot: UsageBeaconWidgetSnapshot) -> some View {
+    func content(_ snapshot: UsageBeaconWidgetSnapshot, family: WidgetFamily) -> some View {
         switch family {
         case .systemSmall:
             smallContent(snapshot)
@@ -65,23 +65,30 @@ private struct UsageBeaconWidgetView: View {
     }
 
     private func smallContent(_ snapshot: UsageBeaconWidgetSnapshot) -> some View {
-        let primary = snapshot.providers[0]
+        let primary = snapshot.providers.first(where: \.hasError) ?? snapshot.providers[0]
+        let errorCount = snapshot.providers.filter(\.hasError).count
+        let budgetCount = snapshot.providers.filter { $0.remainingUSD != nil }.count
         let totalValue = summaryValue(snapshot)
         let showsTotal = snapshot.providers.count > 1 && totalValue != nil
         return VStack(alignment: .leading, spacing: 8) {
             widgetHeader(snapshot)
             Spacer(minLength: 0)
-            Text(showsTotal ? "Total remaining" : primary.name)
+            Text(errorCount > 0 ? "Connection issue" : showsTotal ? "Total remaining" : primary.name)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.72))
                 .lineLimit(1)
-            Text(totalValue ?? primary.primaryValue)
+            Text(showsTotal ? (totalValue ?? primary.primaryValue) : primary.primaryValue)
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .minimumScaleFactor(0.62)
                 .lineLimit(1)
-            if showsTotal {
-                Text("Across \(snapshot.providers.count) tracked sources")
+            if errorCount > 0 {
+                Text(errorCount == 1 ? "\(primary.name) needs a refresh" : "\(errorCount) sources need a refresh")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.78))
+                    .lineLimit(2)
+            } else if showsTotal {
+                Text("Across \(budgetCount) budget source\(budgetCount == 1 ? "" : "s")")
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(.white.opacity(0.68))
                     .lineLimit(1)
@@ -131,10 +138,15 @@ private struct UsageBeaconWidgetView: View {
             Text("UsageBeacon")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.white)
-            Spacer()
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .layoutPriority(1)
+            Spacer(minLength: 4)
             Text(snapshot.updatedAt, style: .time)
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.white.opacity(0.58))
+                .lineLimit(1)
+                .fixedSize()
         }
     }
 
@@ -167,7 +179,7 @@ private struct UsageBeaconWidgetView: View {
 
     @ViewBuilder
     private func gauge(_ provider: UsageBeaconWidgetProvider) -> some View {
-        if let utilization = provider.utilization {
+        if !provider.hasError, let utilization = provider.utilization, utilization.isFinite {
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(.white.opacity(0.12))
@@ -201,9 +213,7 @@ private struct UsageBeaconWidgetView: View {
     }
 
     private func summaryValue(_ snapshot: UsageBeaconWidgetSnapshot) -> String? {
-        let remaining = snapshot.providers.compactMap(\.remainingUSD)
-        guard remaining.isEmpty == false else { return nil }
-        return remaining.reduce(0, +).formatted(.currency(code: "USD"))
+        snapshot.totalRemainingUSD?.formatted(.currency(code: "USD"))
     }
 
     private func statusColor(_ provider: UsageBeaconWidgetProvider) -> Color {

@@ -278,3 +278,12 @@ footer > span { display: none; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Optional recording overlays the existing preview without changing its size.
+   The original preview remains usable when JavaScript or media is unavailable. */
+.product-demo { position: relative; }
+.demo-fallback { display: contents; }
+.demo-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #101c29; opacity: 0; pointer-events: none; }
+.product-demo.video-is-playing .demo-video { opacity: 1; pointer-events: auto; z-index: 2; }
+.product-demo.video-is-playing .demo-fallback { visibility: hidden; }
+footer nav { flex-wrap: wrap; }

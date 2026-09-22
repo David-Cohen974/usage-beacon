@@ -53,3 +53,33 @@ Native renders cover the menu at its top and bottom and all Settings pages in li
 - Installer simulations confirmed rollback after a failed launch and removal of the temporary previous app after success. The previous Xcode build products were unregistered and removed so only `/Applications/UsageBeacon.app` remains discoverable.
 
 The live Notification Center widget gallery and rendered small, medium, and large widgets were not recaptured for 1.3.2 because macOS screen capture of Notification Center failed. Widget registration, the shared container, atomic persistence, and timeline reload paths were verified; final WidgetKit rendering remains subject to the system scheduler.
+
+## Release 1.3.3 local review on September 22, 2026
+
+Changes reviewed and covered by regression tests:
+
+- Claude page readiness requires readable usage or a discoverable usage endpoint; delayed page data is checked across two successive refreshes.
+- Quitting flushes pending provider edits synchronously.
+- Canceled refreshes neither publish late responses nor retry temporary failures, and clear their loading state.
+- Personal connector HTTP failures preserve `Retry-After`, including HTTP dates. Non-finite delays are rejected; Cursor rate limits do not trigger extra dashboard requests.
+- Manual release dispatch validates the checked-out tag commit, rather than the workflow event's commit. A temporary Git fixture accepted a tag on main and rejected both an unmerged tag and a mismatched checkout.
+
+Local checks:
+
+- The expanded 76-test suite passed.
+- The opt-in native menu layout/scrolling test passed and generated light/dark menu and Settings captures. The light menu and Providers captures were visually inspected.
+- Ten successive atomic widget writes passed with a separate persistent reader.
+- Actionlint, shell syntax, property-list validation, and version validation passed. CI now checks every shell script instead of passing additional filenames as arguments to the first script.
+- Version 1.3.3 (100016) built in Release configuration for arm64 and x86_64, passed Developer ID signature/archive checks, and stayed running throughout the launch smoke test. This local archive has not been notarized.
+- The preceding Claude fix was installed and successfully fetched usage through the user's live signed-in session.
+
+Release acceptance still requires evidence from the final notarized candidate: clean install, automatic upgrade from 1.3.2, visible small/medium/large widgets, and sleep/wake behavior. No public release was created by this review.
+
+### UI and widget follow-up
+
+- All 78 tests passed with fresh Settings, menu, HUD, and widget content captures. These isolated widget renders cover small, medium, and large layouts, including errors and six-source layouts; they do not prove desktop WidgetKit delivery.
+- Installed the updated signed universal 1.3.3 build. Native inspection confirmed all three sources connected, aligned provider badges, successful expand/collapse, and removal of the spurious login warning when launch at login is off and the service is unavailable.
+- The live HUD expanded and collapsed and showed current source values. The menu scrolling check passed.
+- Manual widget refresh advanced the real shared file with three sources and zero errors. The ten-write persistent-reader check passed again. A Developer ID signed, sandboxed app using the widget's entitlements read the same three sources with zero errors. An initial standalone probe failed because it lacked bundle metadata; the bundled probe succeeded.
+- Notification Center/desktop capture failed through the macOS automation interface. Actual small/medium/large desktop rendering, sleep/wake, enabling login launch, and automatic upgrade remain unverified.
+- Screenshot report: `dist/ui-audit/report.md` (local generated artifacts, excluded from Git).

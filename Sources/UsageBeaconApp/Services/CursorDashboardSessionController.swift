@@ -249,7 +249,7 @@ final class CursorDashboardSessionController: NSObject, NSWindowDelegate {
             throw ProviderFailure.httpStatus(
                 code: httpResponse.statusCode,
                 message: "Cursor endpoint failed with HTTP \(httpResponse.statusCode) (\(statusDescription)).",
-                retryAfterSeconds: nil
+                retryAfterSeconds: URLSessionHTTPClient.retryAfterSeconds(from: httpResponse)
             )
         }
 
