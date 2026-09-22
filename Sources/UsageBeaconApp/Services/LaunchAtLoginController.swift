@@ -41,7 +41,7 @@ final class LaunchAtLoginController: LaunchAtLoginControlling {
             }
             try service.register()
         } else {
-            guard service.status != .notRegistered else {
+            guard service.status == .enabled || service.status == .requiresApproval else {
                 return
             }
             try service.unregister()

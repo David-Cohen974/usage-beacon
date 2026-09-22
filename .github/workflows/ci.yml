@@ -37,7 +37,7 @@ jobs:
       - name: Validate release sources
         run: |
           plutil -lint Resources/UsageBeacon-Info.plist Resources/UsageBeaconWidget-Info.plist
-          bash -n Scripts/*.sh
+          for script in Scripts/*.sh; do bash -n "$script"; done
           python3 -m py_compile Scripts/generate-site-data.py
           ./Scripts/verify-version.sh "$(sed -n 's/^MARKETING_VERSION *= *//p' Config/Version.xcconfig)"
 

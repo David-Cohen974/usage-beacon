@@ -66,7 +66,7 @@ let package = Package(
         ),
         .testTarget(
             name: "UsageBeaconAppTests",
-            dependencies: ["UsageBeaconApp", "UsageBeaconShared"]
+            dependencies: ["UsageBeaconApp", "UsageBeaconShared", "UsageBeaconWidget"]
         )
     ]
 )

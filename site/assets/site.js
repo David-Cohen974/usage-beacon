@@ -129,6 +129,7 @@ function initHomeDemo() {
         item.classList.toggle("is-active", item === surface);
         item.setAttribute("aria-pressed", String(item === surface));
       });
+      demo.dispatchEvent(new Event("show-static-demo"));
       const mode = surface.dataset.surface;
       demo.dataset.activeSurface = mode;
       panel.hidden = mode === "hud";
@@ -157,3 +158,43 @@ initHomeDemo();
 setInterval(() => { if (!document.hidden) loadLatestRelease(); }, 5 * 60 * 1000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) loadLatestRelease(); });
 window.addEventListener("pageshow", (event) => { if (event.persisted) loadLatestRelease(); });
+
+
+function initDemoVideo() {
+  const demo = document.querySelector(".product-demo");
+  const video = demo?.querySelector(".demo-video");
+  const fallback = demo?.querySelector(".demo-fallback");
+  const source = video?.querySelector("source[data-src]");
+  if (!video || !fallback || !source || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  let enabled = true;
+  const restoreFallback = () => {
+    demo.classList.remove("video-is-playing");
+    fallback.inert = false;
+    fallback.removeAttribute("aria-hidden");
+    video.setAttribute("aria-hidden", "true");
+    video.tabIndex = -1;
+  };
+  video.addEventListener("playing", () => {
+    if (!enabled) return;
+    demo.classList.add("video-is-playing");
+    fallback.inert = true;
+    fallback.setAttribute("aria-hidden", "true");
+    video.removeAttribute("aria-hidden");
+    video.tabIndex = 0;
+  });
+  video.addEventListener("canplay", () => {
+    if (enabled) video.play().catch(restoreFallback);
+  }, { once: true });
+  video.addEventListener("error", restoreFallback);
+  source.addEventListener("error", restoreFallback);
+  demo.addEventListener("show-static-demo", () => {
+    enabled = false;
+    video.pause();
+    restoreFallback();
+  });
+  video.muted = true;
+  source.src = source.dataset.src;
+  video.load();
+}
+initDemoVideo();

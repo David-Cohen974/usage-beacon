@@ -627,6 +627,7 @@ final class AppModel: ObservableObject {
     }
 
     func performRefresh(providerID: UUID, force: Bool) async {
+        guard !Task.isCancelled else { return }
         guard let provider = configuration.providers.first(where: { $0.id == providerID }) else {
             return
         }
@@ -638,6 +639,10 @@ final class AppModel: ObservableObject {
         let refreshStartedAt = Date()
         defer {
             inFlightProviderRefreshes.remove(provider.id)
+            if snapshotStates[provider.id]?.isLoading == true {
+                snapshotStates[provider.id]?.isLoading = false
+                updateFloatingHUD()
+            }
         }
 
         var loadingState = snapshotStates[provider.id] ?? .placeholder(from: provider)
@@ -658,6 +663,8 @@ final class AppModel: ObservableObject {
         var finalError: Error?
         var attemptsUsed = 0
         for attempt in 1 ... maximumAutomaticRetryAttempts {
+            guard !Task.isCancelled,
+                  configuration.providers.first(where: { $0.id == provider.id }) == provider else { return }
             attemptsUsed = attempt
             do {
                 let rawSnapshot = try await ProviderResolver.fetch(
@@ -670,6 +677,7 @@ final class AppModel: ObservableObject {
                     snapshotStates[provider.id]?.isLoading = false
                     return
                 }
+                try Task.checkCancellation()
                 let enriched = enrich(rawSnapshot)
                 snapshotStates[provider.id] = enriched
                 selectInitialMenuBarProviderIfNeeded()
@@ -687,10 +695,16 @@ final class AppModel: ObservableObject {
                 updateFloatingHUD()
                 return
             } catch {
+                guard !Task.isCancelled, !(error is CancellationError),
+                      (error as? URLError)?.code != .cancelled else { return }
                 finalError = error
                 if attempt < maximumAutomaticRetryAttempts,
                    shouldRetry(provider: provider, error: error) {
-                    try? await Task.sleep(for: retryDelay(forAttempt: attempt, error: error))
+                    do {
+                        try await Task.sleep(for: retryDelay(forAttempt: attempt, error: error))
+                    } catch {
+                        return
+                    }
                     continue
                 }
                 break
@@ -805,11 +819,19 @@ final class AppModel: ObservableObject {
                 guard Task.isCancelled == false else {
                     return
                 }
+                self?.pendingConfigurationSaveTask = nil
                 self?.persistConfiguration()
             }
             return
         }
 
+        pendingConfigurationSaveTask?.cancel()
+        pendingConfigurationSaveTask = nil
+        persistConfiguration()
+    }
+
+    func flushPendingConfigurationSave() {
+        guard pendingConfigurationSaveTask != nil else { return }
         pendingConfigurationSaveTask?.cancel()
         pendingConfigurationSaveTask = nil
         persistConfiguration()

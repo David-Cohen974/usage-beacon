@@ -5,8 +5,93 @@ import Foundation
 import Testing
 @testable import UsageBeaconApp
 import UsageBeaconShared
+import WidgetKit
+@testable import UsageBeaconWidget
 
 struct UsageBeaconAppTests {
+    @Test
+    func widgetTotalsDoNotHideErrorsOrDisplayInvalidAmounts() {
+        func provider(error: Bool, remaining: Double?) -> UsageBeaconWidgetProvider {
+            UsageBeaconWidgetProvider(id: UUID(), name: "Source", sourceName: "Source",
+                primaryValue: "Needs attention", secondaryValue: "Refresh", remainingUSD: remaining,
+                spentTodayUSD: nil, perWorkingDayUSD: nil, utilization: nil, hasError: error)
+        }
+        let healthy = provider(error: false, remaining: 100)
+        #expect(UsageBeaconWidgetSnapshot(providers: [healthy]).totalRemainingUSD == 100)
+        #expect(UsageBeaconWidgetSnapshot(providers: [healthy, provider(error: true, remaining: 500)]).totalRemainingUSD == nil)
+        #expect(UsageBeaconWidgetSnapshot(providers: [provider(error: false, remaining: .infinity)]).totalRemainingUSD == nil)
+        #expect(UsageBeaconWidgetSnapshot(providers: [provider(error: false, remaining: nil)]).totalRemainingUSD == nil)
+    }
+
+    @Test
+    @MainActor
+    func pendingProviderEditIsSavedBeforeQuit() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("config.json"))
+        var provider = StoredProvider(kind: .manual)
+        var configuration = AppConfiguration.empty
+        configuration.providers = [provider]
+        configuration.settings.showFloatingHUD = false
+        try store.save(configuration)
+        let model = AppModel(configurationStore: store, secretStore: InMemorySecretStore(),
+                             launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+                             telemetry: SpyTelemetryReporter(), widgetPublisher: { _ in }, autoStart: false)
+        provider.displayName = "Edited immediately before quitting"
+        model.updateProvider(provider)
+        #expect(store.load().providers.first?.displayName != provider.displayName)
+        model.flushPendingConfigurationSave()
+        #expect(store.load().providers.first == provider)
+    }
+
+    @Test(arguments: [false, true])
+    @MainActor
+    func cancelledRefreshDoesNotPublishOrRetry(fail: Bool) async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("config.json"))
+        var provider = StoredProvider(kind: .customREST)
+        provider.customREST?.endpointURL = "https://example.com/usage"
+        provider.customREST?.spentPath = "spent"
+        provider.customREST?.monthlyBudgetPath = "budget"
+        var configuration = AppConfiguration.empty
+        configuration.providers = [provider]
+        configuration.settings.showFloatingHUD = false
+        try store.save(configuration)
+        let client = SuspendedHTTPClient(fail: fail)
+        let model = AppModel(configurationStore: store, secretStore: InMemorySecretStore(), httpClient: client,
+                             launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+                             telemetry: SpyTelemetryReporter(), widgetPublisher: { _ in }, autoStart: false)
+        let refresh = Task { await model.performRefresh(providerID: provider.id, force: true) }
+        await client.waitUntilStarted()
+        refresh.cancel()
+        await client.finish()
+        await refresh.value
+        #expect(await client.requestCount == 1)
+        #expect(model.snapshotStates[provider.id]?.lastUpdatedAt == nil)
+        #expect(model.snapshotStates[provider.id]?.errorMessage == nil)
+        #expect(model.snapshotStates[provider.id]?.isLoading == false)
+    }
+
+    @Test
+    func retryAfterSupportsSecondsDatesAndRejectsNonFiniteValues() {
+        func response(_ value: String) -> HTTPURLResponse {
+            HTTPURLResponse(url: URL(string: "https://example.com")!, statusCode: 429,
+                            httpVersion: nil, headerFields: ["Retry-After": value])!
+        }
+        #expect(URLSessionHTTPClient.retryAfterSeconds(from: response("42")) == 42)
+        for value in ["nan", "inf", "-1", "invalid"] {
+            #expect(URLSessionHTTPClient.retryAfterSeconds(from: response(value)) == nil)
+        }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss z"
+        let future = formatter.string(from: Date().addingTimeInterval(120))
+        let delay = URLSessionHTTPClient.retryAfterSeconds(from: response(future)) ?? -1
+        #expect(delay > 115 && delay <= 120)
+    }
+
     @Test
     @MainActor
     func firstConnectedProviderGetsMeterButExplicitOffIsPreserved() async throws {
@@ -1385,6 +1470,56 @@ struct UsageBeaconAppTests {
     }
 
     @Test
+    func claudeReadinessWaitsForValuesInsteadOfHeadings() {
+        var page = ClaudeDashboardPageSnapshot(
+            title: "Usage - Claude",
+            urlString: "https://claude.ai/settings/usage",
+            bodyText: "Usage\nCurrent session\nCurrent week\nMember analytics",
+            anchorHrefs: [], resourceURLs: [], nextDataSample: nil
+        )
+        #expect(!page.looksUsageLike)
+        page.bodyText += "\n42% used"
+        #expect(page.looksUsageLike)
+        page.urlString = "https://claude.ai/login"
+        #expect(!page.looksUsageLike)
+    }
+
+    @Test
+    func claudeReadinessAcceptsOrganizationEndpointBeforeUsageRequest() {
+        var page = ClaudeDashboardPageSnapshot(
+            title: "Claude", urlString: "https://claude.ai/settings/usage",
+            bodyText: "Usage", anchorHrefs: [],
+            resourceURLs: ["https://example.com/api/organizations/wrong/settings"],
+            nextDataSample: nil
+        )
+        #expect(ClaudePersonalProvider.usageEndpoint(from: page) == nil)
+        #expect(!page.looksUsageLike)
+        page.resourceURLs.append("https://claude.ai/api/organizations/org-test/settings")
+        #expect(page.looksUsageLike)
+        #expect(ClaudePersonalProvider.usageEndpoint(from: page) ==
+            "https://claude.ai/api/organizations/org-test/usage")
+    }
+
+    @Test
+    @MainActor
+    func claudeUsagePageWaitsForDelayedUsageAcrossRefreshes() async throws {
+        let htmlURL = try writeTemporaryHTML("""
+        <html><head><title>Claude Usage</title></head>
+        <body>Usage<div>Current session</div><div id="usage"></div>
+        <script>
+        setTimeout(() => { document.getElementById('usage').textContent = '22% used'; }, 1200);
+        </script></body></html>
+        """)
+        var provider = StoredProvider(kind: .claudePersonal)
+        provider.claudePersonal = ClaudePersonalSettings(usagePageURL: htmlURL.absoluteString)
+        for _ in 0..<2 {
+            let snapshot = try await ClaudePersonalProvider.fetch(provider: provider, now: Date())
+            #expect(snapshot.usageWindows.count == 1)
+            #expect(snapshot.usageWindows.first?.usedPercent == decimal("22"))
+        }
+    }
+
+    @Test
     func claudePersonalUsageSummaryMapsRollingWindowsAndSpend() throws {
         let data = Data(
             """
@@ -1744,15 +1879,22 @@ private func utcDate(year: Int, month: Int, day: Int) -> Date {
 }
 
 private actor SuspendedHTTPClient: HTTPClientProtocol {
+    private let fail: Bool
+    private(set) var requestCount = 0
+
+    init(fail: Bool = false) { self.fail = fail }
+
     private var pending: CheckedContinuation<Void, Never>?
     private var started: CheckedContinuation<Void, Never>?
 
     func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requestCount += 1
         await withCheckedContinuation { continuation in
             pending = continuation
             started?.resume()
             started = nil
         }
+        if fail { throw ProviderFailure.network("Temporary failure") }
         return (Data(#"{"spent":100,"budget":700}"#.utf8), response(for: request))
     }
 
@@ -1840,5 +1982,77 @@ extension UsageBeaconAppTests {
             }
             window.contentView = nil
         }
+    }
+}
+
+
+extension UsageBeaconAppTests {
+    @Test @MainActor
+    func surfaceLayoutCapture() async throws {
+        guard let path = ProcessInfo.processInfo.environment["USAGEBEACON_UI_CAPTURE_DIR"] else { return }
+        let directory = URL(fileURLWithPath: path)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        func capture<V: View>(_ view: V, name: String, size: NSSize) async throws {
+            let host = NSHostingView(rootView: view)
+            let window = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = host
+            window.setContentSize(size)
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(200))
+            let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: rep)
+            try #require(rep.representation(using: .png, properties: [:])).write(to: directory.appendingPathComponent(name + ".png"))
+            window.contentView = nil
+        }
+        let store = ConfigurationStore(fileURL: directory.appendingPathComponent("surface-fixture.json"))
+        var config = AppConfiguration.empty
+        let provider = StoredProvider(kind: .manual, displayName: "Personal budget")
+        config.providers = [provider]
+        config.settings.showFloatingHUD = false
+        try store.save(config)
+        let model = AppModel(configurationStore: store, secretStore: InMemorySecretStore(),
+            launchAtLoginController: MockLaunchAtLoginController(status: .disabled),
+            telemetry: SpyTelemetryReporter(), widgetPublisher: { _ in }, autoStart: false)
+        await model.performRefreshAll(force: true)
+        try await capture(ScrollView {
+            ProviderEditorView(model: model, provider: .constant(provider), snapshot: model.orderedSnapshots.first, isExpanded: true)
+                .padding(16)
+        }.preferredColorScheme(.light), name: "provider-expanded", size: NSSize(width: 660, height: 920))
+        let good = UsageBeaconWidgetProvider(id: UUID(), name: "Cursor Personal", sourceName: "Cursor",
+            primaryValue: "$482 left", secondaryValue: "$21 today", remainingUSD: 482,
+            spentTodayUSD: 21, perWorkingDayUSD: 26, utilization: 0.31, hasError: false)
+        let failed = UsageBeaconWidgetProvider(id: UUID(), name: "Claude Personal", sourceName: "Claude",
+            primaryValue: "Needs attention", secondaryValue: "Open UsageBeacon to reconnect", remainingUSD: 495,
+            spentTodayUSD: nil, perWorkingDayUSD: nil, utilization: 0.4, hasError: true)
+        for (family, size, label) in [(WidgetFamily.systemSmall, NSSize(width: 170, height: 170), "small"),
+                                      (.systemMedium, NSSize(width: 360, height: 170), "medium"),
+                                      (.systemLarge, NSSize(width: 360, height: 380), "large")] {
+            let snapshot = UsageBeaconWidgetSnapshot(providers: [good, failed])
+            let view = UsageBeaconWidgetView(entry: UsageBeaconEntry(date: Date(), snapshot: snapshot))
+                .content(snapshot, family: family)
+                .padding(16)
+                .background(Color(red: 0.08, green: 0.12, blue: 0.20))
+            try await capture(view, name: "widget-" + label, size: size)
+            let healthy = UsageBeaconWidgetSnapshot(providers: (1...6).map { index in
+                UsageBeaconWidgetProvider(id: UUID(), name: "Provider \(index)", sourceName: "Manual",
+                    primaryValue: "$482 left", secondaryValue: "$21 today", remainingUSD: 482,
+                    spentTodayUSD: 21, perWorkingDayUSD: 26, utilization: 0.31, hasError: false)
+            })
+            try await capture(UsageBeaconWidgetView(entry: UsageBeaconEntry(date: Date(), snapshot: healthy))
+                .content(healthy, family: family).padding(16)
+                .background(Color(red: 0.08, green: 0.12, blue: 0.20)),
+                name: "widget-" + label + "-six-sources", size: size)
+        }
+        var first = ProviderSnapshotState.placeholder(from: StoredProvider(kind: .manual, displayName: "Cursor Personal"))
+        first.remainingUSD = 482
+        first.monthlyBudgetUSD = 700
+        first.spentUSD = 218
+        var second = ProviderSnapshotState.placeholder(from: StoredProvider(kind: .claudePersonal, displayName: "Claude Personal"))
+        second.errorMessage = "UsageBeacon could not read Claude usage from Settings → Usage. Open Settings to check the connection."
+        let hudState = FloatingHUDState()
+        hudState.isExpanded = true
+        hudState.selectedProviderID = second.id
+        try await capture(FloatingHUDView(snapshots: [first, second], state: hudState, appearance: .dark, onExpansionChange: { _ in })
+            .preferredColorScheme(.dark), name: "hud-error", size: NSSize(width: 250, height: 208))
     }
 }

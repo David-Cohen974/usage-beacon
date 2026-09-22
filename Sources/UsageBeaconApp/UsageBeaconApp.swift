@@ -35,6 +35,11 @@ private enum SettingsWindowPresenter {
 @MainActor
 private final class UsageBeaconApplicationDelegate: NSObject, NSApplicationDelegate {
     static var shouldPresentSettingsOnLaunch = true
+    static var flushPendingSettings: (() -> Void)?
+
+    func applicationWillTerminate(_ notification: Notification) {
+        Self.flushPendingSettings?()
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard DebugCommandRunner.command(from: CommandLine.arguments) == nil,
@@ -71,6 +76,9 @@ struct UsageBeaconApp: App {
     init() {
         if debugCommand == nil {
             let model = AppModel()
+            UsageBeaconApplicationDelegate.flushPendingSettings = { [weak model] in
+                model?.flushPendingConfigurationSave()
+            }
             UsageBeaconApplicationDelegate.shouldPresentSettingsOnLaunch = model.configuration.providers.isEmpty
             _model = StateObject(wrappedValue: model)
             _updater = StateObject(wrappedValue: UpdaterController())

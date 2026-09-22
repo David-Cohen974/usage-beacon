@@ -889,13 +889,13 @@ struct SettingsView: View {
     }
 }
 
-private struct ProviderEditorView: View {
+struct ProviderEditorView: View {
     @ObservedObject var model: AppModel
     @Binding var provider: StoredProvider
     let snapshot: ProviderSnapshotState?
 
     @State private var secret: String = ""
-    @State private var isExpanded = false
+    @State var isExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -903,13 +903,15 @@ private struct ProviderEditorView: View {
 
             if isExpanded {
                 VStack(alignment: .leading, spacing: 18) {
-                    Button(primaryActionTitle) { performPrimaryAction() }
-                        .buttonStyle(BeaconActionButtonStyle(filled: true))
-                        .disabled(snapshot?.isLoading == true)
-                    HStack(alignment: .top, spacing: 16) {
+                    HStack {
+                        Spacer()
+                        Button(primaryActionTitle) { performPrimaryAction() }
+                            .buttonStyle(BeaconActionButtonStyle(filled: true))
+                            .disabled(snapshot?.isLoading == true)
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
                         SettingsPanel(
-                            title: "Identity",
-                            subtitle: "Name it the way you want it to appear in the menu bar and HUD.",
+                            title: "Provider",
                             colors: provider.kind.accentColors
                         ) {
                             ProviderFieldGroup("Display name") {
@@ -920,7 +922,7 @@ private struct ProviderEditorView: View {
                             Toggle("Include in tracking", isOn: $provider.isEnabled)
                                 .toggleStyle(BeaconSwitchStyle())
 
-                            Text("This controls whether UsageBeacon refreshes this connector. It does not mean the account is connected.")
+                            Text("Pause to stop refreshing this provider. Your connection stays saved.")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(BeaconPalette.mutedInk)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -970,18 +972,19 @@ private struct ProviderEditorView: View {
             HStack(alignment: .center, spacing: 14) {
                 ProviderKindOrb(kind: provider.kind)
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(provider.displayName)
-                            .font(.system(size: 16, weight: .bold))
-                        BeaconPill(title: setupStatus.title, symbol: setupStatus.symbol, colors: setupStatus.colors)
-                    }
-                    .foregroundStyle(BeaconPalette.ink)
+                    Text(provider.displayName)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(BeaconPalette.ink)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                     Text(providerMetadata)
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(BeaconPalette.mutedInk)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 12)
+                BeaconPill(title: setupStatus.title, symbol: setupStatus.symbol, colors: setupStatus.colors)
+                    .fixedSize()
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(BeaconPalette.mutedInk)
@@ -993,34 +996,35 @@ private struct ProviderEditorView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(provider.displayName) settings")
-        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+        .accessibilityValue("\(setupStatus.title), \(isExpanded ? "Expanded" : "Collapsed")")
         .accessibilityHint("Click anywhere on this row to \(isExpanded ? "collapse" : "expand") settings")
     }
 
     private var providerMetadata: String {
         let source = provider.kind == .manual ? "Manual budget" : provider.kind.title
+        let prefix = provider.displayName == source ? "" : "\(source) · "
         switch setupStatus {
         case .paused:
-            return "\(source) · Tracking is paused"
+            return "\(prefix)Tracking is paused"
         case .setupRequired:
-            return "\(source) · Not connected yet — complete setup to start syncing"
+            return "\(prefix)Not connected yet — complete setup to start syncing"
         case .signInRequired:
-            return "\(source) · Not connected — sign in to continue"
+            return "\(prefix)Not connected — sign in to continue"
         case .waitingForSignIn:
-            return "\(source) · Finish signing in in the browser window"
+            return "\(prefix)Finish signing in in the browser window"
         case .checking:
-            return "\(source) · Checking the saved session"
+            return "\(prefix)Checking the saved session"
         case .syncing:
-            return "\(source) · Reading the latest usage"
+            return "\(prefix)Reading the latest usage"
         case .connected:
             guard let updated = snapshot?.lastUpdatedAt else {
-                return "\(source) · Signed in — waiting for the first sync"
+                return "\(prefix)Signed in — waiting for the first sync"
             }
-            return "\(source) · Connected · Updated \(DateFormatter.beaconShortTime.string(from: updated))"
+            return "\(prefix)Updated \(DateFormatter.beaconShortTime.string(from: updated))"
         case .ready:
-            return "\(source) · Ready to sync"
+            return "\(prefix)Ready to sync"
         case .needsAttention:
-            return "\(source) · \(snapshot?.errorMessage ?? "Check this connector’s setup")"
+            return "\(prefix)\(snapshot?.errorMessage ?? "Check this connector’s setup")"
         }
     }
 
@@ -1167,8 +1171,7 @@ private struct ProviderEditorView: View {
     @ViewBuilder
     private func snapshotSummary(_ snapshot: ProviderSnapshotState) -> some View {
         SettingsPanel(
-            title: "Live Snapshot",
-            subtitle: "A current preview of what this provider is sending into the cockpit.",
+            title: "Latest usage",
             colors: snapshot.accentColors
         ) {
             if let errorMessage = snapshot.errorMessage {
@@ -1185,8 +1188,7 @@ private struct ProviderEditorView: View {
                 if snapshot.usageWindows.isEmpty == false {
                     LazyVGrid(
                         columns: [
-                            GridItem(.flexible(), spacing: 10),
-                            GridItem(.flexible(), spacing: 10)
+                            GridItem(.adaptive(minimum: 160), spacing: 10)
                         ],
                         spacing: 10
                     ) {
@@ -1204,8 +1206,7 @@ private struct ProviderEditorView: View {
                 if snapshot.usageWindows.isEmpty || snapshot.monthlyBudgetUSD != nil {
                     LazyVGrid(
                     columns: [
-                        GridItem(.flexible(), spacing: 10),
-                        GridItem(.flexible(), spacing: 10)
+                        GridItem(.adaptive(minimum: 160), spacing: 10)
                     ],
                     spacing: 10
                 ) {

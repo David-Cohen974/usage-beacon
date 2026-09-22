@@ -78,6 +78,11 @@ enum CursorPersonalProvider {
             if case .authentication = failure {
                 throw failure
             }
+            if case .httpStatus(code: 429, message: _, retryAfterSeconds: _) = failure {
+                // Opening the dashboard would immediately issue more requests
+                // while the service is asking us to back off.
+                throw failure
+            }
         } catch {
             // The rendered usage page remains a fallback for transient endpoint or parsing failures.
         }

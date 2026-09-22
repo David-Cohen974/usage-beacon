@@ -70,6 +70,9 @@ enum ClaudePersonalProvider {
             guard let components = URLComponents(string: resourceURL) else {
                 continue
             }
+            guard components.host?.lowercased() == "claude.ai" else {
+                continue
+            }
             let path = components.path
             guard let match = path.range(
                 of: #"/api/organizations/([^/]+)/"#,
@@ -552,7 +555,7 @@ enum ClaudePersonalUsageParser {
         return nil
     }
 
-    private static func looksLikeDisabledMemberAnalytics(_ text: String) -> Bool {
+    static func looksLikeDisabledMemberAnalytics(_ text: String) -> Bool {
         let lowered = text.lowercased()
         return lowered.contains("member analytics")
             && (

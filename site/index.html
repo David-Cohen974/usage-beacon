@@ -12,9 +12,9 @@
     <meta property="og:image" content="https://david-cohen974.github.io/usage-beacon/assets/app-icon.png">
     <title>UsageBeacon — Your AI usage, always in sight</title>
     <link rel="icon" href="assets/app-icon.png">
-    <link rel="stylesheet" href="assets/site.css?v=10">
+    <link rel="stylesheet" href="assets/site.css?v=11">
     <script type="module" src="assets/remote-config.js?v=1"></script>
-    <script src="assets/site.js?v=10" defer></script>
+    <script src="assets/site.js?v=11" defer></script>
   </head>
   <body data-page="home">
     <a class="skip-link" href="#main">Skip to content</a>
@@ -47,6 +47,10 @@
         </div>
 
         <div class="product-demo" data-active-surface="menu" data-demo-state="open" aria-label="Example UsageBeacon preview">
+          <video class="demo-video" autoplay muted loop playsinline preload="metadata" poster="assets/demo-poster.jpg" controls tabindex="-1" aria-hidden="true" aria-label="UsageBeacon demo: menu bar, expanded view, widget, and floating HUD">
+            <source data-src="assets/demo.mp4" type="video/mp4">
+          </video>
+          <div class="demo-fallback">
           <div class="demo-caption"><span class="live-dot"></span> A glance at your Mac <span>Example data</span></div>
           <div class="mac-menubar"><span class="mac-app">◈ &nbsp; UsageBeacon</span><span class="menubar-usage" aria-label="Cursor: 68 percent remaining">◉ &nbsp; Cursor <b>68%</b></span><span class="mac-time">Mon 9:41</span></div>
           <div class="demo-desktop">
@@ -64,7 +68,8 @@
             </div>
             <div class="hud-preview" hidden><span>Cursor · Monthly budget left</span><strong>68%</strong><small>$73.44 remaining</small></div>
           </div>
-          <div class="demo-toolbar"><span data-preview-description>Click the menu bar icon for the full picture.</span><button class="shortcut-control" type="button" aria-pressed="true" hidden>Toggle HUD <kbd>⇧⌘U</kbd></button></div>
+          <div class="demo-toolbar"><span data-preview-description>Click the menu bar icon for the full picture.</span><button class="shortcut-control" type="button" aria-pressed="false" hidden>Toggle HUD <kbd>⇧⌘U</kbd></button></div>
+          </div>
         </div>
       </section>
 
@@ -176,7 +181,7 @@
       <span>© 2026 · Free and open source</span>
       <nav aria-label="Footer navigation">
         <a href="https://github.com/David-Cohen974/usage-beacon">GitHub</a>
-        <a href="privacy/">Privacy</a>
+        <a href="privacy/">Privacy</a><a href="terms/">Terms</a><a href="about/">About</a>
         <a href="changelog/">Changelog</a>
         <a id="support" class="support-link" data-support-link href="https://buymeacoffee.com/David134974" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">☕</span> Buy me a coffee</a>
         <a class="download-link" href="https://github.com/David-Cohen974/usage-beacon/releases/latest">Download</a>

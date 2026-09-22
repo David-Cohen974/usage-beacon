@@ -36,36 +36,21 @@ struct ClaudeDashboardPageSnapshot: Codable, Equatable {
     }
 
     var looksUsageLike: Bool {
-        if !isClaudeURL {
-            return bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
-        }
+        guard !looksUnauthenticated else { return false }
 
-        if resourceURLs.contains(where: { resourceURL in
-            guard let components = URLComponents(string: resourceURL) else {
-                return false
-            }
-            return components.host?.lowercased() == "claude.ai"
-                && components.path.range(
-                    of: #"^/api/organizations/[^/]+/usage$"#,
-                    options: .regularExpression
-                ) != nil
-        }) {
+        // Headings render before the account data. Only stop polling once we
+        // can fetch the endpoint or parse actual usage values.
+        if isClaudeURL, ClaudePersonalProvider.usageEndpoint(from: self) != nil {
             return true
         }
-
-        let loweredBody = bodyText.lowercased()
-        return loweredBody.contains("usage")
-            && (
-                loweredBody.contains("current session")
-                    || loweredBody.contains("current week")
-                    || loweredBody.contains("5-hour")
-                    || loweredBody.contains("five-hour")
-                    || loweredBody.contains("7-day")
-                    || loweredBody.contains("seven-day")
-                    || loweredBody.contains("month-to-date")
-                    || loweredBody.contains("spend limit")
-                    || loweredBody.contains("member analytics")
-            )
+        if ClaudePersonalUsageParser.looksLikeDisabledMemberAnalytics(bodyText) {
+            return true
+        }
+        return (try? ClaudePersonalUsageParser.parse(
+            page: self,
+            now: Date(),
+            budgetOverrideUSD: nil
+        )) != nil
     }
 }
 
@@ -207,6 +192,18 @@ final class ClaudeDashboardSessionController: NSObject, NSWindowDelegate {
             throw ProviderFailure.misconfigured("Claude usage page URL is invalid.")
         }
 
+        // Reuse the signed-in page when it is already displaying this account's
+        // usage. A fresh hidden page can still be hydrating its settings view.
+        if pageURL == lastConnectionPageURL,
+           let webView = connectionWebView,
+           !webView.isLoading,
+           let snapshot = try? await webView.claudePageSnapshot(),
+           snapshot.isClaudeURL,
+           !snapshot.looksUnauthenticated,
+           ClaudePersonalProvider.usageEndpoint(from: snapshot) != nil {
+            return snapshot
+        }
+
         let loader = ClaudeDashboardPageLoader(configuration: makeConfiguration())
         let snapshot = try await loader.load(url: url)
         if snapshot.looksUnauthenticated {
@@ -245,7 +242,7 @@ final class ClaudeDashboardSessionController: NSObject, NSWindowDelegate {
             throw ProviderFailure.httpStatus(
                 code: httpResponse.statusCode,
                 message: "Claude endpoint failed with HTTP \(httpResponse.statusCode) (\(statusDescription)).",
-                retryAfterSeconds: nil
+                retryAfterSeconds: URLSessionHTTPClient.retryAfterSeconds(from: httpResponse)
             )
         }
 
@@ -298,6 +295,11 @@ final class ClaudeDashboardSessionController: NSObject, NSWindowDelegate {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = dataStore
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.userContentController.addUserScript(WKUserScript(
+            source: "performance.setResourceTimingBufferSize(2000);",
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
         return configuration
     }
 
@@ -357,29 +359,16 @@ private final class ClaudeDashboardPageLoader: NSObject, WKNavigationDelegate {
             try await group.next()!
         }
 
-        var latestSnapshot = ClaudeDashboardPageSnapshot(
-            title: "",
-            urlString: url.absoluteString,
-            bodyText: "",
-            anchorHrefs: [],
-            resourceURLs: [],
-            nextDataSample: nil
-        )
         let timeoutAt = deadline
 
         while Date() < timeoutAt {
             let snapshot = try await webView.claudePageSnapshot()
-            latestSnapshot = snapshot
 
             if snapshot.looksUnauthenticated || snapshot.looksUsageLike {
                 return snapshot
             }
 
             try await Task.sleep(for: .milliseconds(400))
-        }
-
-        if latestSnapshot.bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false {
-            return latestSnapshot
         }
 
         throw ProviderFailure.network("Claude usage page did not finish loading.")
@@ -430,8 +419,7 @@ private extension WKWebView {
             .slice(0, 200),
           resourceURLs: performance.getEntriesByType('resource')
             .map(entry => entry.name)
-            .filter((href, index, all) => href && all.indexOf(href) === index)
-            .slice(0, 200),
+            .filter((href, index, all) => href && all.indexOf(href) === index),
           nextDataSample: (() => {
             const nextData = document.querySelector('#__NEXT_DATA__');
             if (!nextData || !nextData.textContent) return null;
