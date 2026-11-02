@@ -1,5 +1,5 @@
 {
-  "originHash" : "4a4224400bf021fb00d7f0a1cbefa16c8df9fa7ee9172bbc3a28885dcc475842",
+  "originHash" : "44adc478f9e95f2d61b0f747f75160b153ac81d8e566651e95d0103f7d72768b",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -123,8 +123,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle",
       "state" : {
-        "revision" : "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
-        "version" : "2.9.6"
+        "revision" : "ab7d71291238df6e0492143b120c9b696a35f603",
+        "version" : "2.10.1"
       }
     }
   ],
